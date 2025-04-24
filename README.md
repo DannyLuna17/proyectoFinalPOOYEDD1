@@ -1,6 +1,10 @@
 # EcoRunner - Proyecto Final POO
 
 ### IMPORTANTE
+
+## Nota
+Crear una carpta llamada proyFinalPOO, ahí inicializar el repo y ejecutar.
+
 ## Requisitos para la intro de video
 
 Para que funcione la intro animada, hay que instalar la biblioteca Video:
