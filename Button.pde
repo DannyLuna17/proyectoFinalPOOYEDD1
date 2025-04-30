@@ -3,18 +3,25 @@
  * Used for all menu screens and navigation
  */
 class Button {
-  float x, y, w, h;
+  float x, y;
+  float width, height;
   String text;
   color baseColor, hoverColor, textColor;
   boolean isHovered;
-  boolean isHighlighted; // For keyboard navigation
+  boolean isHighlighted; // Para navegación por teclado
+  boolean isAnimatingPress = false;
+  int pressAnimationTimer = 0;
   boolean keyboardHoverEmulation = false; // Flag for emulating hover via keyboard
+  Menu menu;
+  AccessibilityManager accessManager;
   
   // Animation properties
+  float animProgress = 0; // 0 to 1
+  float hoverGrowth = 0.05;
+  float scale = 1.0; // Para efecto de escala al pasar el cursor/resaltar
   float glowIntensity = 0;
   float maxGlowIntensity = 60;
   float glowSpeed = 2;
-  float scale = 1.0; // For scaling effect on hover/highlight
   float targetScale = 1.0;
   float scaleSpeed = 0.05; // How quickly the button scales
   
@@ -26,28 +33,43 @@ class Button {
   color defaultBaseColor = color(227, 242, 255); // Light pastel blue
   color defaultTextColor = color(20, 20, 30);    // Dark (near-black)
   
-  Button(float x, float y, float w, float h, String text) {
+  Button(float x, float y, float w, float h, String text, AccessibilityManager accessManager) {
     this.x = x;
     this.y = y;
-    this.w = w;
-    this.h = h;
+    this.width = w;
+    this.height = h;
     this.text = text;
-    baseColor = defaultBaseColor;
-    textColor = defaultTextColor;
+    this.accessManager = accessManager;
+    this.baseColor = defaultBaseColor;
+    this.textColor = defaultTextColor;
     updateHoverColor();
     isHovered = false;
     isHighlighted = false; // Initialize highlighted state
   }
   
-  Button(float x, float y, float w, float h, String text, color baseColor) {
+  Button(float x, float y, float w, float h, String text, color baseColor, AccessibilityManager accessManager) {
     this.x = x;
     this.y = y;
-    this.w = w;
-    this.h = h;
+    this.width = w;
+    this.height = h;
     this.text = text;
-    // Use the provided color but with the new default color as fallback
-    this.baseColor = defaultBaseColor;
+    this.accessManager = accessManager;
+    this.baseColor = baseColor;
     this.textColor = defaultTextColor;
+    updateHoverColor();
+    isHovered = false;
+    isHighlighted = false;
+  }
+  
+  Button(float x, float y, float w, float h, String text, color baseColor, color textColor, AccessibilityManager accessManager) {
+    this.x = x;
+    this.y = y;
+    this.width = w;
+    this.height = h;
+    this.text = text;
+    this.accessManager = accessManager;
+    this.baseColor = baseColor;
+    this.textColor = textColor;
     updateHoverColor();
     isHovered = false;
     isHighlighted = false;
@@ -125,7 +147,7 @@ class Button {
   
   boolean isMouseOver() {
     // Check if mouse is over the button
-    return mouseX >= x - w/2 && mouseX <= x + w/2 && mouseY >= y - h/2 && mouseY <= y + h/2;
+    return mouseX >= x - width/2 && mouseX <= x + width/2 && mouseY >= y - height/2 && mouseY <= y + height/2;
   }
   
   void display() {
@@ -156,7 +178,7 @@ class Button {
     if (!accessManager.highContrastMode && !accessManager.reduceAnimations) {
       noStroke();
       fill(0, 60);
-      rect(2, 3, w, h, h/2); // Full rounded corners for pill shape with offset for shadow
+      rect(2, 3, width, height, height/2); // Full rounded corners for pill shape with offset for shadow
     }
     
     // Draw glow effect when highlighted or hovered
@@ -171,7 +193,7 @@ class Button {
                          color(red(displayColor), green(displayColor), blue(displayColor), alpha); // Color-matched glow
                          
         fill(glowColor);
-        rect(0, 0, w + size, h + size, (h + size)/2); // Full pill shape
+        rect(0, 0, width + size, height + size, (height + size)/2); // Full pill shape
       }
     }
     
@@ -184,14 +206,14 @@ class Button {
       strokeWeight(1);
     }
     fill(displayColor);
-    rect(0, 0, w, h, h/2); // Use h/2 for fully rounded corners (pill shape)
+    rect(0, 0, width, height, height/2); // Use h/2 for fully rounded corners (pill shape)
     
     // Draw white outline for highlighted/hovered buttons
     if (isHighlighted || isHovered || keyboardHoverEmulation) {
       strokeWeight(2);
       stroke(255);
       noFill();
-      rect(0, 0, w + 4, h + 4, (h + 4)/2);
+      rect(0, 0, width + 4, height + 4, (height + 4)/2);
     }
     
     // Apply text size adjustment from accessibility manager
@@ -219,7 +241,7 @@ class Button {
       fill(accessManager.highContrastMode ? color(255) : color(255, 220));
       textSize(12);
       textAlign(CENTER, BOTTOM);
-      text("Enter/Space to select", x, y + h/2 + 20);
+      text("Enter/Space to select", x, y + height/2 + 20);
     } else {
       popMatrix(); // Reset transformation
     }
@@ -242,5 +264,10 @@ class Button {
   // Toggle button highlight
   void toggleHighlight() {
     isHighlighted = !isHighlighted;
+  }
+  
+  // Also initialize the menu reference for buttons in a menu
+  void setMenu(Menu menu) {
+    this.menu = menu;
   }
 } 

@@ -20,19 +20,59 @@ class EcoSystem {
   String[] positiveMessages = {
     "¡Buen reciclaje!",
     "¡Elección ecológica!",
-    "¡Reduciendo huella de carbono!",
+    "¡Menos huella de carbono!",
     "¡Energía renovable!",
-    "¡Impulso de energía limpia!",
-    "¡Acción sostenible!"
+    "¡Energía limpia!",
+    "¡Acción sostenible!",
+    "¡Un árbol absorbe CO2!",
+    "¡Reciclar ahorra energía!",
+    "¡Bicicleta = cero emisiones!",
+    "¡Las LED ahorran energía!",
+    "¡Ahorra agua!",
+    "¡Papel reciclable!",
+    "¡Bolsas de tela!",
+    "¡Reduce, Reutiliza, Recicla!",
+    "¡Vidrio reciclable!"
   };
   
   String[] negativeMessages = {
-    "¡Cuidado con la contaminación!",
-    "¡Emisiones de carbono elevadas!",
+    "¡Cuidado contaminación!",
+    "¡Emisiones de carbono!",
     "¡Daño ambiental!",
-    "¡Impacto climático creciente!",
-    "¡Acción insostenible!",
-    "¡Desperdicio de energía!"
+    "¡Cambio climático!",
+    "¡No sostenible!",
+    "¡Desperdicio!",
+    "¡Plástico = 500 años!",
+    "¡Pilas contaminan agua!",
+    "¡Plástico afecta fauna marina!",
+    "¡Demasiado plástico!",
+    "¡No desperdicies agua!",
+    "¡Evita deforestación!",
+    "¡Contaminar aire es peligroso!",
+    "¡Cuidado con microplásticos!",
+    "¡Aguas residuales contaminan!"
+  };
+  
+  // Tips según nivel
+  String[] beginerEcoTips = {
+    "¡Separa residuos!",
+    "¡Cierra el grifo!",
+    "¡Usa bolsas reutilizables!",
+    "¡Apaga luces!"
+  };
+  
+  String[] intermediateEcoTips = {
+    "¡Cultiva plantas!",
+    "¡Menos empaques!",
+    "¡Usa transporte público!",
+    "¡Consume local!"
+  };
+  
+  String[] advancedEcoTips = {
+    "¡Composta!",
+    "¡Energía solar!",
+    "¡Dieta sostenible!",
+    "¡Planta árboles!"
   };
   
   // Efecto ambiental
@@ -46,8 +86,40 @@ class EcoSystem {
   boolean pollutionEffect = false;
   float pollutionDensity = 0;
   
+  // AccessibilityManager
+  AccessibilityManager accessManager;
+  
   EcoSystem() {
     ecoHealth = startingHealth;
+    // Use default accessibility
+    this.accessManager = new AccessibilityManager();
+  }
+  
+  // Constructor con gestor de accesibilidad
+  EcoSystem(AccessibilityManager accessManager) {
+    ecoHealth = startingHealth;
+    this.accessManager = accessManager;
+  }
+  
+  // Aumentar la salud del ecosistema (usado por coleccionables ECO_BOOST)
+  void boost(float amount) {
+    ecoHealth += amount * 100; // Convertir de escala 0-1 a escala 0-100
+    ecoHealth = constrain(ecoHealth, minEcoHealth, maxEcoHealth);
+    
+    // Mostrar efecto visual
+    String message = "¡Eco Boost +" + int(amount * 100) + "!";
+    showEffect(message, goodColor);
+  }
+  
+  // Reducir contaminación (usado por coleccionables ECO_CLEANUP)
+  void reduce(float amount) {
+    // Similar a boost pero con mensaje diferente
+    ecoHealth += amount * 100; // Convertir de escala 0-1 a escala 0-100
+    ecoHealth = constrain(ecoHealth, minEcoHealth, maxEcoHealth);
+    
+    // Mostrar efecto visual
+    String message = "¡Contaminación -" + int(amount * 100) + "!";
+    showEffect(message, normalColor);
   }
   
   void update() {
@@ -77,6 +149,17 @@ class EcoSystem {
     } else {
       pollutionEffect = false;
       pollutionDensity = 0;
+    }
+  }
+  
+  // Método para obtener el nivel actual de contaminación (0.0 a 1.0)
+  float getPollutionLevel() {
+    // Devuelve un valor entre 0.0 (sin contaminación) y 1.0 (contaminación máxima)
+    // Basado en la salud del ecosistema
+    if (pollutionEffect) {
+      return map(ecoHealth, minEcoHealth, warningThreshold, 1.0, 0.0);
+    } else {
+      return 0.0;
     }
   }
   
@@ -199,5 +282,35 @@ class EcoSystem {
     } else {
       return 1.0;
     }
+  }
+  
+  String getAppropriateEcoTip(int difficultyLevel) {
+    // Devuelve un tip adecuado al nivel de dificultad del jugador
+    if (difficultyLevel <= 3) {
+      return beginerEcoTips[int(random(beginerEcoTips.length))];
+    } else if (difficultyLevel <= 6) {
+      return intermediateEcoTips[int(random(intermediateEcoTips.length))];
+    } else {
+      return advancedEcoTips[int(random(advancedEcoTips.length))];
+    }
+  }
+  
+  // Métodos para ajustar la salud del ecosistema directamente
+  void increaseHealth(float amount) {
+    ecoHealth += amount;
+    ecoHealth = constrain(ecoHealth, minEcoHealth, maxEcoHealth);
+    
+    // Mostrar efecto visual
+    String message = "¡Eco +" + int(amount) + "!";
+    showEffect(message, goodColor);
+  }
+  
+  void decreaseHealth(float amount) {
+    ecoHealth -= amount;
+    ecoHealth = constrain(ecoHealth, minEcoHealth, maxEcoHealth);
+    
+    // Mostrar efecto visual
+    String message = "¡Eco -" + int(amount) + "!";
+    showEffect(message, criticalColor);
   }
 } 

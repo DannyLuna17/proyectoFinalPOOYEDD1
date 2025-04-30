@@ -1,9 +1,56 @@
 # EcoRunner - Proyecto Final POO
 
-### IMPORTANTE
+## ChangeLog
+
+### v1.3.0
+- Añadido sistema de plataformas verticales
+- Cámara dinámica que sigue al jugador
+- Nuevos tipos de plataformas (rebote, móviles)
+- Ítems especiales en plataformas
+- Tutorial para nuevas mecánicas
+
+### v1.2.0
+- Video intro y transiciones
+
+### v1.1.0
+- Framework de pruebas y errores
+
+### v1.0.5
+- Corregido menús
+
+### v1.0.4
+- Arreglada navegación
+
+### v1.0.3
+- Arreglado reinicio en modo daltónico
+
+### v1.0.2
+- Corrección de texto
+
+### v1.0.1
+- Navegación con teclado y ratón
 
 ## Nota
-Crear una carpta llamada proyFinalPOO, ahí inicializar el repo y ejecutar.
+Crear una carpeta llamada proyFinalPOO, ahí inicializar el repo y ejecutar.
+
+## Controles del juego
+
+- **ESPACIO**: Saltar (mantén pulsado para saltar más alto)
+- **S**: Deslizar
+- **ESPACIO** (en plataforma): Saltar entre plataformas
+- **S** (en plataforma): Caer de la plataforma
+
+## Nuevas mecánicas de plataformas
+
+El juego ahora cuenta con un sistema de plataformas verticales que permiten:
+
+1. **Exploración vertical**: Salta entre niveles de altura para explorar nuevas rutas
+2. **Plataformas especiales**:
+   - **Azules**: Plataformas estándar
+   - **Verdes**: Plataformas de rebote (te impulsan automáticamente)
+   - **Moradas**: Plataformas con movimiento vertical
+   - **Naranjas**: Plataformas con movimiento horizontal
+3. **Recompensas exclusivas**: Las plataformas pueden contener ítems especiales que otorgan más puntos
 
 ## Requisitos para la intro de video
 
@@ -13,86 +60,13 @@ Para que funcione la intro animada, hay que instalar la biblioteca Video:
 2. Ve a Sketch > Import Library > Add Library...
 3. Busca "Video"
 4. Instala la biblioteca "Video" de The Processing Foundation
-5. Reinicia Processing si hace falta
+5. Reinicia Processing
 
 Si no está instalada, el juego usa el menú normal sin la intro.
 
-## Testing
-
-### Atajos
-
-- **T**: Ejecuta tests automáticos
-- **D**: Cambia opciones de debug
-- **L**: Muestra los logs
-
-### Opciones de debug
-
-- Cajas de colisión: Muestra hitboxes
-- Métricas: Muestra FPS y memoria
-- Debug del eco-sistema: Muestra estado detallado
-- Validación: Activa validación automática
-
-El juego incluye tests automáticos para comprobar que todo funciona bien y un sistema de debug para detectar errores:
-
-1. **Tests**: Verifica las mecánicas básicas
-2. **Debug visual**: Muestra hitboxes, métricas, etc.
-3. **Manejo de errores**: Evita crashes
-4. **Validación**: Comprueba que todo esté bien
-5. **Logs**: Con varios niveles
-
-## Framework de testing
-
-### TestFramework
-
-La clase `TestFramework` tiene tests para:
-
-- Movimiento y salto del jugador
-- Colisiones con obstáculos y coleccionables
-- Power-ups y sus efectos
-- Eco-sistema y sus estados
-- Puntuación
-
-### DebugSystem
-
-La clase `DebugSystem` tiene herramientas para:
-
-- Ver FPS y memoria
-- Ver hitboxes
-- Ver estado del eco-sistema
-- Sistema de logs
-- Validación de estados
-
-### TestRunner
-
-La clase `TestRunner` integra todo:
-
-- Teclas para ejecutar tests
-- Muestra resultados
-- Maneja errores
-
-### Niveles de log
-
-Hay cuatro niveles:
-
-1. ERROR: Problemas graves
-2. WARNING: Problemas menores
-3. INFO: Información general
-4. DEBUG: Información detallada
-
-## Manejo de errores
-
-El framework:
-
-1. Captura excepciones
-2. Intenta recuperarse
-3. Evita crashes
-4. Muestra errores visualmente
-5. Mantiene la integridad del juego
-
 ## Consejos
 
-1. Usa la tecla **D** para ver opciones de debug
-2. Usa la tecla **L** para ver logs
-3. Ejecuta tests con **T** para comprobar si todo funciona
-4. Mira la consola para errores detallados
+1. Salta entre plataformas para conseguir ítems especiales
+2. Las plataformas verdes dan un impulso extra al saltar
+3. Usa el deslizamiento para caer rápidamente de las plataformas
 

@@ -5,7 +5,7 @@ class Player {
   float vSpeed = 0;
   float gravity = 0.5;
   float jumpForce = -12;
-  float maxJumpForce = -10;
+  float maxJumpForce = -12;
   boolean isJumping = false;
   boolean isSliding = false;
   boolean spacePressed = false;
@@ -54,13 +54,42 @@ class Player {
   float shieldSize = 0;
   float shieldPulse = 0;
   
+  // Variables para plataformas
+  boolean isOnPlatform = false;
+  Platform currentPlatform = null;
+  float lastPlatformY = 0;
+  boolean isPlatformJump = false;
+  float platformJumpBonus = 1.2; // Bonus de salto en plataformas
+  
+  // Referencias externas
+  AccessibilityManager accessManager;
+  SoundManager soundManager;
+  
+  // Constructor simplificado
   Player(float x, float groundY) {
+    // Crear un AccessibilityManager y pasarlo tanto al constructor padre como al SoundManager
+    AccessibilityManager am = new AccessibilityManager();
+    SoundManager sm = new SoundManager(am);
     this.x = x;
     this.groundY = groundY;
     this.y = groundY;
     this.size = 50;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
+    this.accessManager = am;
+    this.soundManager = sm;
+  }
+  
+  // Constructor principal
+  Player(float x, float groundY, AccessibilityManager accessManager, SoundManager soundManager) {
+    this.x = x;
+    this.groundY = groundY;
+    this.y = groundY;
+    this.size = 50;
+    this.currentColor = normalColor;
+    this.baseSpeed = 0;
+    this.accessManager = accessManager;
+    this.soundManager = soundManager;
   }
   
   void update() {
@@ -115,21 +144,116 @@ class Player {
   }
   
   void handleJump() {
+    // Si estamos en plataforma y no saltando, ajustar Y
+    if (isOnPlatform && !isJumping && currentPlatform != null) {
+      // Para plataformas móviles, actualizamos la posición Y constantemente
+      y = currentPlatform.y;
+      
+      // Mantener velocidad vertical a cero cuando estamos parados sobre una plataforma
+      vSpeed = 0;
+    }
+    
     if (spacePressed && isJumping && jumpHoldTime < maxJumpHoldTime) {
       jumpHoldTime++;
-      vSpeed = map(jumpHoldTime, 0, maxJumpHoldTime, jumpForce, maxJumpForce);
+      // Si saltamos desde una plataforma, aplicar bonus de salto
+      if (isPlatformJump) {
+        vSpeed = map(jumpHoldTime, 0, maxJumpHoldTime, jumpForce * platformJumpBonus, maxJumpForce * platformJumpBonus);
+      } else {
+        vSpeed = map(jumpHoldTime, 0, maxJumpHoldTime, jumpForce, maxJumpForce);
+      }
     }
     
     if (isJumping) {
       vSpeed += gravity;
       y += vSpeed;
       
+      // Comprobar si aterrizamos en el suelo
       if (y >= groundY) {
         y = groundY;
         vSpeed = 0;
         isJumping = false;
+        isPlatformJump = false;
         jumpHoldTime = 0;
+        isOnPlatform = false;
+        currentPlatform = null;
       }
+    }
+  }
+  
+  // Comprobar colisión con plataformas
+  void checkPlatformCollision(ArrayList<Platform> platforms) {
+    // Si estamos deslizándonos, no interactuamos con plataformas
+    if (isSliding) {
+      return;
+    }
+    
+    // Resetear estado de plataforma si no estamos saltando
+    if (!isJumping && !isOnPlatform) {
+      isOnPlatform = false;
+      currentPlatform = null;
+    }
+    
+    // Comprobar cada plataforma
+    boolean foundPlatform = false;
+    
+    // Primera pasada: priorizar plataforma actual si todavía estamos sobre ella
+    if (isOnPlatform && currentPlatform != null) {
+      if (currentPlatform.isPlayerOn(this)) {
+        foundPlatform = true;
+        y = currentPlatform.y; // Asegurar que seguimos la plataforma
+        lastPlatformY = currentPlatform.y;
+        
+        // Si estábamos cayendo, resetear estado de salto
+        if (isJumping && vSpeed > 0) {
+          vSpeed = 0;
+          isJumping = false;
+          jumpHoldTime = 0;
+        }
+      }
+    }
+    
+    // Si no estamos en la plataforma actual, buscar otras
+    if (!foundPlatform) {
+      for (Platform platform : platforms) {
+        // Evitar volver a comprobar la plataforma actual si ya lo hicimos
+        if (platform == currentPlatform) continue;
+        
+        // Comprobar si el jugador está sobre la plataforma
+        if (platform.isPlayerOn(this)) {
+          // Estamos sobre una plataforma
+          isOnPlatform = true;
+          currentPlatform = platform;
+          lastPlatformY = platform.y;
+          
+          // Si estábamos cayendo (saltando), aterrizar en la plataforma
+          if (isJumping && vSpeed > 0) {
+            y = platform.y;
+            vSpeed = 0;
+            isJumping = false;
+            jumpHoldTime = 0;
+            
+            // Comprobar si es plataforma de rebote
+            if (platform.type == 1) {
+              // Plataforma de rebote - salto automático más fuerte
+              jump();
+              vSpeed = jumpForce * 1.3;
+              isPlatformJump = true;
+              soundManager.playCollectSound(); // Efecto de rebote
+            }
+          }
+          
+          foundPlatform = true;
+          break;
+        }
+      }
+    }
+    
+    // Si no encontramos plataforma y estábamos en una, comenzar a caer
+    if (!foundPlatform && isOnPlatform && !isJumping) {
+      isOnPlatform = false;
+      currentPlatform = null;
+      isJumping = true;
+      vSpeed = 0; // Comenzar a caer sin velocidad inicial
     }
   }
   
@@ -206,14 +330,33 @@ class Player {
       text("2x", x, y - size - 10);
       popStyle();
     }
+    
+    // Indicador de plataforma
+    if (isOnPlatform && currentPlatform != null) {
+      pushStyle();
+      stroke(adjustedCurrentColor);
+      strokeWeight(2);
+      line(x - 15, y + 5, x + 15, y + 5);
+      popStyle();
+    }
   }
   
   void jump() {
-    if (!isJumping && !isSliding) {
+    if ((!isJumping && !isSliding) || isOnPlatform) {
       isJumping = true;
       spacePressed = true;
-      vSpeed = jumpForce;
+      
+      // Salto desde plataforma
+      if (isOnPlatform) {
+        isPlatformJump = true;
+        vSpeed = jumpForce * platformJumpBonus; // Salto más potente desde plataformas
+      } else {
+        isPlatformJump = false;
+        vSpeed = jumpForce;
+      }
+      
       jumpHoldTime = 0;
+      isOnPlatform = false;
       
       soundManager.playJumpSound();
       
@@ -233,6 +376,14 @@ class Player {
       slideDuration = 0;
       currentColor = slidingColor;
       
+      // Si estábamos en una plataforma, caer
+      if (isOnPlatform) {
+        isOnPlatform = false;
+        currentPlatform = null;
+        isJumping = true;
+        vSpeed = 0;
+      }
+      
       soundManager.playMenuSound();
       
       if (accessManager.visualCuesForAudio) {
@@ -249,110 +400,146 @@ class Player {
     }
   }
   
-  boolean isColliding(Obstacle obstacle) {
-    if (isInvincible) return false;
-    
-    float playerWidth = isSliding ? size * 1.2 : size;
-    float playerHeight = isSliding ? size/2 : size;
-    float playerTop = isSliding ? y + size/4 - playerHeight/2 : y - size;
-    
-    if (x + playerWidth/2 > obstacle.x - obstacle.w/2 &&
-        x - playerWidth/2 < obstacle.x + obstacle.w/2 &&
-        y > obstacle.getTop() &&
-        playerTop < obstacle.getTop() + obstacle.getHeight()) {
-      return true;
-    }
-    return false;
+  // Para saber si está en el aire (no en el suelo ni en plataforma)
+  boolean isInAir() {
+    return isJumping && !isOnPlatform && y < groundY;
   }
   
-  boolean isCollectingItem(Collectible collectible) {
-    float playerWidth = isSliding ? size * 1.2 : size;
-    float playerHeight = isSliding ? size/2 : size;
-    float playerTop = isSliding ? y + size/4 - playerHeight/2 : y - size;
-    
-    float dist = dist(x, y - size/2, collectible.x, collectible.y);
-    return dist < (size/2 + collectible.size/2);
-  }
-  
-  void takeDamage() {
-    if (!isInvincible) {
-      if (!hasShield) {
-        health--;
-        isInvincible = true;
-        invincibilityTimer = 0;
-      } else {
-        deactivateShield();
-      }
-    }
-  }
-  
+  // Para saber si está muerto
   boolean isDead() {
     return health <= 0;
   }
   
-  void drawHealthBar(float x, float y, float width, float height) {
-    pushStyle();
-    
-    rectMode(CORNER);
-    
-    // Fondo
-    color bgColor = accessManager.highContrastMode ? color(40) : color(100);
-    fill(bgColor);
-    rect(x, y, width, height);
-    
-    // Barra de salud
-    color healthBarColor = accessManager.highContrastMode ? 
-                          accessManager.highContrastUIElement : color(0, 255, 0);
-    fill(healthBarColor);
-    float healthWidth = map(health, 0, 3, 0, width);
-    rect(x, y, healthWidth, height);
-    
-    // Borde
-    noFill();
-    color borderColor = accessManager.getUIBorderColor(color(0));
-    stroke(borderColor);
-    strokeWeight(2);
-    rect(x, y, width, height);
-    
-    popStyle();
+  // Método para tomar daño
+  void takeDamage() {
+    if (!isInvincible && !hasShield) {
+      health--;
+      isInvincible = true;
+      invincibilityTimer = 0;
+      
+      // Efecto de daño
+      soundManager.playHitSound();
+    } else if (hasShield) {
+      // El escudo absorbe el golpe
+      deactivateShield();
+      soundManager.playShieldBreakSound();
+    }
   }
   
+  // Métodos para power-ups
   void activateShield(int duration) {
     hasShield = true;
     shieldDuration = duration;
     shieldTimer = 0;
   }
   
-  void activateSpeedBoost(int duration) {
-    hasSpeedBoost = true;
-    speedMultiplier = 1.5;
-    speedBoostDuration = duration;
-    speedBoostTimer = 0;
-  }
-  
-  void activateDoublePoints(int duration) {
-    hasDoublePoints = true;
-    pointsMultiplier = 2;
-    doublePointsDuration = duration;
-    doublePointsTimer = 0;
-  }
-  
   void deactivateShield() {
     hasShield = false;
+    shieldDuration = 0;
     shieldTimer = 0;
+  }
+  
+  void activateSpeedBoost(int duration, float multiplier) {
+    hasSpeedBoost = true;
+    speedBoostDuration = duration;
+    speedBoostTimer = 0;
+    speedMultiplier = multiplier;
   }
   
   void deactivateSpeedBoost() {
     hasSpeedBoost = false;
+    speedBoostDuration = 0;
+    speedBoostTimer = 0;
     speedMultiplier = 1.0;
+  }
+  
+  void activateDoublePoints(int duration) {
+    hasDoublePoints = true;
+    doublePointsDuration = duration;
+    doublePointsTimer = 0;
+    pointsMultiplier = 2;
   }
   
   void deactivateDoublePoints() {
     hasDoublePoints = false;
+    doublePointsDuration = 0;
+    doublePointsTimer = 0;
     pointsMultiplier = 1;
   }
   
-  int getPointsMultiplier() {
-    return pointsMultiplier;
+  // Método para detectar colisión con obstáculos
+  boolean isColliding(Obstacle obstacle) {
+    // Obtener dimensiones del jugador
+    float playerWidth = isSliding ? size * 1.2 : size;
+    float playerHeight = isSliding ? size/2 : size;
+    float playerBottom = y;
+    float playerTop = isSliding ? playerBottom - playerHeight/2 : playerBottom - playerHeight;
+    float playerLeft = x - playerWidth/2;
+    float playerRight = x + playerWidth/2;
+    
+    // Obtener dimensiones del obstáculo
+    float obstacleTop = obstacle.y - obstacle.h;
+    float obstacleBottom = obstacle.y;
+    float obstacleLeft = obstacle.x - obstacle.w/2;
+    float obstacleRight = obstacle.x + obstacle.w/2;
+    
+    // Si el jugador es invencible, no hay colisión
+    if (isInvincible) return false;
+    
+    // Comprobar si hay solapamiento en ambas dimensiones
+    return (playerRight > obstacleLeft && 
+            playerLeft < obstacleRight && 
+            playerBottom > obstacleTop && 
+            playerTop < obstacleBottom);
+  }
+  
+  // Método para comprobar si estamos recogiendo un coleccionable
+  boolean isCollectingItem(Collectible collectible) {
+    // Calcular distancia entre el centro del jugador y el centro del coleccionable
+    float distance = dist(x, y - size/2, collectible.x, collectible.y);
+    
+    // Considerar colisión si la distancia es menor que la suma de los radios
+    float collectionRadius = (size/2 + collectible.size/2) * 0.8;
+    
+    return distance < collectionRadius;
+  }
+  
+  // Dibujar barra de salud
+  void drawHealthBar(float x, float y, float w, float h) {
+    pushStyle();
+    rectMode(CORNER);
+    
+    // Fondo de la barra
+    fill(accessManager.getBackgroundColor(color(100)));
+    rect(x, y, w, h);
+    
+    // Barra de salud
+    float healthWidth = map(health, 0, 3, 0, w);
+    
+    // Color según nivel de salud
+    color healthColor;
+    if (health >= 2) {
+      healthColor = color(0, 255, 0); // Verde
+    } else if (health == 1) {
+      healthColor = color(255, 255, 0); // Amarillo
+    } else {
+      healthColor = color(255, 0, 0); // Rojo
+    }
+    
+    fill(accessManager.getForegroundColor(healthColor));
+    rect(x, y, healthWidth, h);
+    
+    // Borde
+    stroke(accessManager.getForegroundColor(color(255)));
+    noFill();
+    rect(x, y, w, h);
+    
+    // Texto
+    fill(accessManager.getUITextColor(color(255), accessManager.getBackgroundColor(color(100))));
+    textAlign(CENTER, CENTER);
+    textSize(accessManager.getAdjustedTextSize(14));
+    text("HP: " + health, x + w/2, y + h/2);
+    
+    popStyle();
   }
 } 

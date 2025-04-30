@@ -1,6 +1,4 @@
-/**
- * Clase para gestionar opciones de accesibilidad
- */
+// Clase para opciones de accesibilidad
 class AccessibilityManager {
   // Ajustes visuales
   boolean highContrastMode = false;
@@ -211,19 +209,35 @@ class AccessibilityManager {
     }
   }
   
-  color getUITextColor(color defaultColor, color backgroundColor) {
+  char getPauseKey() {
+    if (alternativeControls) {
+      return 'p';
+    } else {
+      return pauseKey;
+    }
+  }
+  
+  boolean shouldUseKeyboard() {
+    return !mouseOnly;
+  }
+  
+  boolean shouldUseMouse() {
+    return !keyboardOnly;
+  }
+  
+  color getUITextColor(color defaultTextColor, color backgroundColor) {
     if (highContrastMode) {
       float bgBrightness = brightness(backgroundColor);
       
-      if (bgBrightness > 127) {
-        return color(0);
+      if (bgBrightness > 128) {
+        return highContrastTextOnLight;
       } else {
-        return color(255, 255, 0);
+        return highContrastTextOnDark;
       }
     } else if (colorBlindMode) {
       return colorBlindText;
     } else {
-      return defaultColor;
+      return defaultTextColor;
     }
   }
   
@@ -280,12 +294,12 @@ class AccessibilityManager {
   void displaySoundCue(String soundType, float x, float y) {
     if (!visualCuesForAudio) return;
     
-    SoundCue cue = new SoundCue(soundType, x, y);
+    SoundCue cue = new SoundCue(soundType, x, y, this);
     activeSoundCues.add(cue);
   }
   
   String getKeyboardNavInstructions() {
-    return "Use ARROW KEYS or W/S to navigate, ENTER/SPACE to select, ESC to go back";
+    return "Usa las FLECHAS o W/S para navegar, ENTER/ESPACIO para seleccionar, ESC para volver";
   }
   
   void updateSoundCues() {
@@ -307,11 +321,11 @@ class AccessibilityManager {
     fill(0);
     textSize(12);
     textAlign(LEFT);
-    text("High Contrast: " + highContrastMode, 10, height - 70);
-    text("Color Blind: " + colorBlindMode, 10, height - 55);
-    text("Visual Cues: " + visualCuesForAudio, 10, height - 40);
-    text("Alt Controls: " + alternativeControls, 10, height - 25);
-    text("Keyboard Only: " + keyboardOnly, 10, height - 10);
+    text("Alto Contraste: " + highContrastMode, 10, height - 70);
+    text("Daltonismo: " + colorBlindMode, 10, height - 55);
+    text("Pistas Visuales: " + visualCuesForAudio, 10, height - 40);
+    text("Controles Alt: " + alternativeControls, 10, height - 25);
+    text("Solo Teclado: " + keyboardOnly, 10, height - 10);
     popStyle();
   }
 }
@@ -326,12 +340,14 @@ class SoundCue {
   float maxLifespan = 2000;
   color cueColor;
   float size;
+  AccessibilityManager manager;
   
-  SoundCue(String type, float x, float y) {
+  SoundCue(String type, float x, float y, AccessibilityManager manager) {
     this.type = type;
     this.x = x;
     this.y = y;
     this.lifespan = maxLifespan;
+    this.manager = manager;
     
     setCueProperties();
   }
@@ -354,6 +370,14 @@ class SoundCue {
         cueColor = color(255, 0, 0);
         size = 35;
         break;
+      case "hit":
+        cueColor = color(255, 50, 50);
+        size = 40;
+        break;
+      case "shield_break":
+        cueColor = color(100, 255, 100);
+        size = 45;
+        break;
       case "powerup":
         cueColor = color(200, 0, 255);
         size = 40;
@@ -371,10 +395,10 @@ class SoundCue {
         size = 25;
     }
     
-    if (accessManager.highContrastMode) {
-      cueColor = accessManager.highContrastForeground;
-    } else if (accessManager.colorBlindMode) {
-      cueColor = accessManager.colorBlindForeground;
+    if (manager.highContrastMode) {
+      cueColor = manager.highContrastForeground;
+    } else if (manager.colorBlindMode) {
+      cueColor = manager.colorBlindForeground;
     }
   }
   

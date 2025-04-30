@@ -1,13 +1,13 @@
 /**
- * SoundManager class - Handles all audio feedback for the game
- * Controls both sound effects and background music
+ * Clase SoundManager - Maneja toda la retroalimentación de audio para el juego
+ * Controla tanto los efectos de sonido como la música de fondo
  */
 class SoundManager {
-  // Sound flags
+  // Indicadores de sonido
   boolean isSoundOn = true;
   boolean isMusicOn = true;
   
-  // Sound objects (commented out until sound files are added)
+  // Objetos de sonido (comentados hasta que se añadan los archivos de sonido)
   // import processing.sound.*;
   // SoundFile buttonSound;
   // SoundFile menuSound;
@@ -18,13 +18,20 @@ class SoundManager {
   // SoundFile powerUpSound;
   // SoundFile backgroundMusic;
   
-  // Sound effect source positions (for positional audio and visual cues)
+  // Posiciones de la fuente de efectos de sonido (para audio posicional y señales visuales)
   float lastSoundX = 0;
   float lastSoundY = 0;
   String lastSoundType = "";
   
+  // Referencia al gestor de accesibilidad
+  AccessibilityManager accessManager;
+  
+  // Constructor predeterminado
   SoundManager() {
-    // Initialize sound files (commented out until sound files are added)
+    // Inicializar con gestor de accesibilidad predeterminado
+    this.accessManager = new AccessibilityManager();
+    
+    // Inicializar archivos de sonido (comentados hasta que se añadan los archivos de sonido)
     // buttonSound = new SoundFile(proyFinalPOO.this, "button.wav");
     // menuSound = new SoundFile(proyFinalPOO.this, "menu.wav");
     // gameOverSound = new SoundFile(proyFinalPOO.this, "gameover.wav");
@@ -34,19 +41,39 @@ class SoundManager {
     // powerUpSound = new SoundFile(proyFinalPOO.this, "powerup.wav");
     // backgroundMusic = new SoundFile(proyFinalPOO.this, "bgmusic.wav");
     
-    // Start background music
+    // Iniciar música de fondo
     // playBackgroundMusic();
     
     println("Sound Manager initialized");
   }
   
-  // Toggle sound effects on/off
+  // Constructor con parámetro AccessibilityManager
+  SoundManager(AccessibilityManager accessManager) {
+    this.accessManager = accessManager;
+    
+    // Inicializar archivos de sonido (comentados hasta que se añadan los archivos de sonido)
+    // buttonSound = new SoundFile(proyFinalPOO.this, "button.wav");
+    // menuSound = new SoundFile(proyFinalPOO.this, "menu.wav");
+    // gameOverSound = new SoundFile(proyFinalPOO.this, "gameover.wav");
+    // jumpSound = new SoundFile(proyFinalPOO.this, "jump.wav");
+    // collisionSound = new SoundFile(proyFinalPOO.this, "collision.wav");
+    // collectSound = new SoundFile(proyFinalPOO.this, "collect.wav");
+    // powerUpSound = new SoundFile(proyFinalPOO.this, "powerup.wav");
+    // backgroundMusic = new SoundFile(proyFinalPOO.this, "bgmusic.wav");
+    
+    // Iniciar música de fondo
+    // playBackgroundMusic();
+    
+    println("Sound Manager initialized with AccessibilityManager");
+  }
+  
+  // Activar/desactivar efectos de sonido
   void toggleSound() {
     isSoundOn = !isSoundOn;
     println("Sound effects: " + (isSoundOn ? "ON" : "OFF"));
   }
   
-  // Toggle background music on/off
+  // Activar/desactivar música de fondo
   void toggleMusic() {
     isMusicOn = !isMusicOn;
     println("Music: " + (isMusicOn ? "ON" : "OFF"));
@@ -60,7 +87,7 @@ class SoundManager {
     // }
   }
   
-  // Play button click sound
+  // Reproducir sonido de clic de botón
   void playButtonSound() {
     if (isSoundOn) {
       // if (buttonSound != null) {
@@ -68,14 +95,14 @@ class SoundManager {
       // }
       println("Button sound");
       
-      // Remember sound properties for visual cues
+      // Recordar propiedades del sonido para señales visuales
       lastSoundType = "button";
       lastSoundX = mouseX;
       lastSoundY = mouseY;
     }
   }
   
-  // Play menu navigation sound
+  // Reproducir sonido de navegación del menú
   void playMenuSound() {
     if (isSoundOn) {
       // if (menuSound != null) {
@@ -83,14 +110,14 @@ class SoundManager {
       // }
       println("Menu sound");
       
-      // Remember sound properties for visual cues
+      // Recordar propiedades del sonido para señales visuales
       lastSoundType = "menu";
       lastSoundX = width/2;
       lastSoundY = height/2;
     }
   }
   
-  // Play game over sound
+  // Reproducir sonido de fin de juego
   void playGameOverSound() {
     if (isSoundOn) {
       // if (gameOverSound != null) {
@@ -98,19 +125,19 @@ class SoundManager {
       // }
       println("Game over sound");
       
-      // Remember sound properties for visual cues
+      // Recordar propiedades del sonido para señales visuales
       lastSoundType = "gameover";
       lastSoundX = width/2;
       lastSoundY = height/2;
       
-      // Display sound cue if enabled
+      // Mostrar señal visual si está habilitado
       if (accessManager.visualCuesForAudio) {
         accessManager.displaySoundCue(lastSoundType, lastSoundX, lastSoundY);
       }
     }
   }
   
-  // Play jump sound
+  // Reproducir sonido de salto
   void playJumpSound() {
     if (isSoundOn) {
       // if (jumpSound != null) {
@@ -118,12 +145,12 @@ class SoundManager {
       // }
       println("Jump sound");
       
-      // Remember sound properties for visual cues
+      // Recordar propiedades del sonido para señales visuales
       lastSoundType = "jump";
     }
   }
   
-  // Play collision sound
+  // Reproducir sonido de colisión
   void playCollisionSound() {
     if (isSoundOn) {
       // if (collisionSound != null) {
@@ -131,12 +158,30 @@ class SoundManager {
       // }
       println("Collision sound");
       
-      // Remember sound properties for visual cues
+      // Recordar propiedades del sonido para señales visuales
       lastSoundType = "collision";
     }
   }
   
-  // Play item collection sound
+  // Reproducir sonido de daño cuando el jugador es golpeado
+  void playHitSound() {
+    if (isSoundOn) {
+      // if (collisionSound != null) {  // Podemos reutilizar el sonido de colisión
+      //   collisionSound.play();
+      // }
+      println("Hit sound");
+      
+      // Recordar propiedades del sonido para señales visuales
+      lastSoundType = "hit";
+      
+      // Mostrar señal visual si está habilitado
+      if (accessManager.visualCuesForAudio) {
+        accessManager.displaySoundCue("hit", lastSoundX, lastSoundY);
+      }
+    }
+  }
+  
+  // Reproducir sonido de recolección de objetos
   void playCollectSound() {
     if (isSoundOn) {
       // if (collectSound != null) {
@@ -144,17 +189,17 @@ class SoundManager {
       // }
       println("Collect sound");
       
-      // Remember sound properties for visual cues
+      // Recordar propiedades del sonido para señales visuales
       lastSoundType = "collect";
       
-      // Display sound cue if enabled
+      // Mostrar señal visual si está habilitado
       if (accessManager.visualCuesForAudio) {
         accessManager.displaySoundCue(lastSoundType, lastSoundX, lastSoundY);
       }
     }
   }
   
-  // Play power-up sound
+  // Reproducir sonido de power-up
   void playPowerUpSound() {
     if (isSoundOn) {
       // if (powerUpSound != null) {
@@ -162,17 +207,56 @@ class SoundManager {
       // }
       println("Power-up sound");
       
-      // Remember sound properties for visual cues
+      // Recordar propiedades del sonido para señales visuales
       lastSoundType = "powerup";
       
-      // Display sound cue if enabled
+      // Mostrar señal visual si está habilitado
       if (accessManager.visualCuesForAudio) {
         accessManager.displaySoundCue(lastSoundType, lastSoundX, lastSoundY);
       }
     }
   }
   
-  // Play background music (looping)
+  // Reproducir sonido de ruptura de escudo
+  void playShieldBreakSound() {
+    if (isSoundOn) {
+      // if (powerUpSound != null) {
+      //   powerUpSound.play(0.5, 1.5); // Reproducir con pitch más alto para efecto de ruptura
+      // }
+      println("Shield break sound");
+      
+      // Recordar propiedades del sonido para señales visuales
+      lastSoundType = "shield_break";
+      
+      // Mostrar señal visual si está habilitado
+      if (accessManager.visualCuesForAudio) {
+        accessManager.displaySoundCue("shield_break", lastSoundX, lastSoundY);
+      }
+    }
+  }
+  
+  // Reproducir sonido de subida de nivel
+  void playLevelUpSound() {
+    if (isSoundOn) {
+      // Podríamos usar el mismo sonido de powerUp hasta tener uno específico
+      // if (powerUpSound != null) {
+      //   powerUpSound.play();
+      // }
+      println("Level up sound");
+      
+      // Recordar propiedades del sonido para señales visuales
+      lastSoundType = "levelup";
+      lastSoundX = width/2;
+      lastSoundY = height/3;
+      
+      // Mostrar señal visual si está habilitado
+      if (accessManager.visualCuesForAudio) {
+        accessManager.displaySoundCue(lastSoundType, lastSoundX, lastSoundY);
+      }
+    }
+  }
+  
+  // Reproducir música de fondo (en bucle)
   void playBackgroundMusic() {
     if (isMusicOn) {
       // if (backgroundMusic != null) {
@@ -182,7 +266,26 @@ class SoundManager {
     }
   }
   
-  // Set the position of the sound source (for positional audio and visual cues)
+  // Detener todos los efectos de sonido y música
+  void stopAllSounds() {
+    // Detener música de fondo si está reproduciéndose
+    // if (backgroundMusic != null && backgroundMusic.isPlaying()) {
+    //   backgroundMusic.stop();
+    // }
+    
+    // Detener todos los demás efectos de sonido si es necesario
+    // if (buttonSound != null && buttonSound.isPlaying()) buttonSound.stop();
+    // if (menuSound != null && menuSound.isPlaying()) menuSound.stop();
+    // if (gameOverSound != null && gameOverSound.isPlaying()) gameOverSound.stop();
+    // if (jumpSound != null && jumpSound.isPlaying()) jumpSound.stop();
+    // if (collisionSound != null && collisionSound.isPlaying()) collisionSound.stop();
+    // if (collectSound != null && collectSound.isPlaying()) collectSound.stop();
+    // if (powerUpSound != null && powerUpSound.isPlaying()) powerUpSound.stop();
+    
+    println("All sounds stopped");
+  }
+  
+  // Establecer la posición de la fuente de sonido (para audio posicional y señales visuales)
   void setSoundPosition(float x, float y) {
     lastSoundX = x;
     lastSoundY = y;

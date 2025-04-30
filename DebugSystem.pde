@@ -1,6 +1,6 @@
 /**
  * DebugSystem.pde
- * Sistema para manejo de errores y depuración del juego
+ * Sistema para debug del juego
  */
  
 class DebugSystem {
@@ -10,27 +10,27 @@ class DebugSystem {
   final int LOG_INFO = 2;
   final int LOG_DEBUG = 3;
   
-  // Constantes de teclas
+  // Teclas
   final int PAGE_UP = 33;
   final int PAGE_DOWN = 34;
   final int HOME = 36;
   final int END = 35;
   
-  // Nivel actual (solo se mostrarán mensajes de este nivel o mayor prioridad)
+  // Nivel actual
   int currentLogLevel = LOG_WARNING;
   
-  // Almacenamiento de logs
+  // Logs
   ArrayList<LogEntry> logEntries = new ArrayList<LogEntry>();
   int maxLogEntries = 1000;
   
-  // Posición scroll del visor de logs
+  // Scroll del visor
   int logScrollPosition = 0;
-  int logEntriesPerPage = 18; // Entradas visibles a la vez
+  int logEntriesPerPage = 18;
   
-  // Validación de estado del juego
+  // Validación
   boolean validationActive = false;
   
-  // Visualización de debug
+  // Visualización
   boolean showCollisionBoxes = false;
   boolean showPerformanceMetrics = false;
   boolean showEcoSystemDebug = false;
@@ -40,11 +40,17 @@ class DebugSystem {
   int frameTimeIndex = 0;
   int frameCount = 0;
   
-  // Cálculo de FPS
+  // FPS
   float lastFrameTime = 0;
   float smoothedFrameRate = 60;
   
-  DebugSystem() {
+  // Referencias a componentes del juego
+  GameStateManager gameStateManager;
+  Game game;
+  
+  DebugSystem(GameStateManager gameStateManager, Game game) {
+    this.gameStateManager = gameStateManager;
+    this.game = game;
     logInfo("Sistema de debug iniciado");
   }
   
@@ -78,16 +84,16 @@ class DebugSystem {
     }
   }
   
-  // Añadir entrada al log
+  // Añadir entrada
   void addLogEntry(LogEntry entry) {
     logEntries.add(entry);
-    // Eliminar entradas más antiguas si se supera el máximo
+    // Eliminar entradas antiguas
     while (logEntries.size() > maxLogEntries) {
       logEntries.remove(0);
     }
   }
   
-  // Imprimir stack trace para identificar errores
+  // Imprimir stack trace
   void printCurrentStack() {
     try {
       throw new Exception("Stack trace");
@@ -96,22 +102,32 @@ class DebugSystem {
     }
   }
   
-  // Update que se llama cada frame
+  // Cerrar archivo de log y realizar la limpieza necesaria
+  void closeLogFile() {
+    logInfo("Cerrando archivo de log de depuración");
+    // Si tuviéramos un manejador de archivo real, lo cerraríamos aquí
+    // Como los logs actualmente solo se almacenan en memoria y se imprimen en consola,
+    // solo añadimos una entrada final en el log
+    addLogEntry(new LogEntry(LOG_INFO, "Log de depuración cerrado"));
+    println("[INFO] Log de depuración cerrado");
+  }
+  
+  // Actualizar cada frame
   void update() {
-    // Actualizar métricas de tiempo
+    // Métricas de tiempo
     float currentTime = millis();
     if (lastFrameTime > 0) {
       float frameTime = currentTime - lastFrameTime;
       frameTimes[frameTimeIndex] = frameTime;
       frameTimeIndex = (frameTimeIndex + 1) % frameTimes.length;
       
-      // Calcular FPS suavizado
+      // FPS suavizado
       float totalTime = 0;
       for (float time : frameTimes) {
         if (time > 0) totalTime += time;
       }
       
-      // Calcular tiempo medio de frame y convertir a FPS
+      // Tiempo medio de frame
       int validFrames = 0;
       for (float time : frameTimes) {
         if (time > 0) validFrames++;
@@ -127,13 +143,13 @@ class DebugSystem {
     lastFrameTime = currentTime;
     frameCount++;
     
-    // Ejecutar validación si está activada
+    // Validación
     if (validationActive && frameCount % 60 == 0) { // Una vez por segundo
       validateGameState();
     }
   }
   
-  // Mostrar info de debug
+  // Mostrar info
   void display() {
     pushStyle();
     
@@ -152,7 +168,7 @@ class DebugSystem {
     popStyle();
   }
   
-  // Mostrar FPS y datos de rendimiento
+  // FPS y rendimiento
   void displayPerformanceMetrics() {
     fill(0, 150);
     rect(10, 10, 120, 60);
@@ -161,17 +177,17 @@ class DebugSystem {
     textAlign(LEFT);
     textSize(14);
     text("FPS: " + nf(smoothedFrameRate, 0, 1), 20, 30);
-    text("Memory: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024*1024) + " MB", 20, 50);
+    text("Memoria: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024*1024) + " MB", 20, 50);
   }
   
-  // Mostrar cajas de colisión para debug
+  // Cajas de colisión
   void displayCollisionBoxes() {
-    if (gameState != STATE_GAME) return;
+    if (gameStateManager.getState() != STATE_GAME) return;
     
     noFill();
     strokeWeight(2);
     
-    // Caja de colisión del jugador
+    // Jugador
     stroke(255, 0, 0);
     if (game.player.isSliding) {
       // Hitbox al deslizarse
@@ -181,22 +197,22 @@ class DebugSystem {
       ellipse(game.player.x, game.player.y - game.player.size/2, game.player.size, game.player.size);
     }
     
-    // Cajas de colisión de obstáculos
+    // Obstáculos
     stroke(0, 0, 255);
-    for (Obstacle obstacle : game.obstacles) {
+    for (Obstacle obstacle : game.obstacleManager.getObstacles()) {
       rect(obstacle.x - obstacle.w/2, obstacle.getTop(), obstacle.w, obstacle.getHeight());
     }
     
-    // Cajas de colisión de coleccionables
+    // Coleccionables
     stroke(0, 255, 0);
-    for (Collectible collectible : game.collectibles) {
+    for (Collectible collectible : game.collectibleManager.getCollectibles()) {
       ellipse(collectible.x, collectible.y, collectible.size, collectible.size);
     }
   }
   
-  // Display detailed eco-system debugging information
+  // Debug del eco-sistema
   void displayEcoSystemDebug() {
-    if (gameState != STATE_GAME) return;
+    if (gameStateManager.getState() != STATE_GAME) return;
     
     EcoSystem eco = game.ecoSystem;
     
@@ -206,168 +222,170 @@ class DebugSystem {
     fill(255);
     textAlign(LEFT);
     textSize(12);
-    text("Eco Health: " + nf(eco.ecoHealth, 0, 1), width - 190, 30);
-    text("State: " + getEcoStateName(eco), width - 190, 50);
-    text("Pollution: " + (eco.pollutionEffect ? "Yes (" + nf(eco.pollutionDensity, 0, 2) + ")" : "No"), width - 190, 70);
-    text("Active Effect: " + (eco.hasActiveEffect ? eco.activeEffectName : "None"), width - 190, 90);
+    text("Salud Eco: " + nf(eco.ecoHealth, 0, 1), width - 190, 30);
+    text("Estado: " + getEcoStateName(eco), width - 190, 50);
+    text("Contaminación: " + (eco.pollutionEffect ? "Sí (" + nf(eco.pollutionDensity, 0, 2) + ")" : "No"), width - 190, 70);
+    text("Efecto Activo: " + (eco.hasActiveEffect ? eco.activeEffectName : "Ninguno"), width - 190, 90);
   }
   
-  // Get eco-system state name
+  // Obtener nombre del estado del ecosistema
   String getEcoStateName(EcoSystem eco) {
-    if (eco.isInGoodState()) return "GOOD";
-    if (eco.isInWarningState()) return "WARNING";
-    if (eco.isInCriticalState()) return "CRITICAL";
+    if (eco.isInGoodState()) return "BUENO";
+    if (eco.isInWarningState()) return "ALERTA";
+    if (eco.isInCriticalState()) return "CRÍTICO";
     return "NORMAL";
   }
   
-  // Display runtime error overlay (for serious errors)
+  // Mostrar overlay de error en tiempo de ejecución (para errores graves)
   void displayErrorOverlay(String errorMessage) {
     pushStyle();
-    // Semi-transparent background
+    // Fondo semi-transparente
     fill(0, 200);
     rect(0, 0, width, height);
     
-    // Error box
+    // Caja de error
     fill(40);
     stroke(255, 0, 0);
     strokeWeight(3);
     rect(width/2 - 250, height/2 - 100, 500, 200);
     
-    // Error title
+    // Título del error
     fill(255, 0, 0);
     textAlign(CENTER);
     textSize(24);
-    text("Runtime Error", width/2, height/2 - 70);
+    text("Error en Ejecución", width/2, height/2 - 70);
     
-    // Error message
+    // Mensaje de error
     fill(255);
     textAlign(CENTER);
     textSize(16);
     text(errorMessage, width/2, height/2);
     
-    // Recovery instructions
+    // Instrucciones de recuperación
     fill(200);
     textSize(14);
-    text("Press ESC to return to main menu", width/2, height/2 + 70);
+    text("Presiona ESC para volver al menú principal", width/2, height/2 + 70);
     popStyle();
   }
   
-  // Game state validation - check for inconsistent state
+  // Validación del estado del juego - comprobar si hay estado inconsistente
   void validateGameState() {
-    if (gameState != STATE_GAME) return;
+    if (gameStateManager.getState() != STATE_GAME) return;
     
     try {
-      // Check player is in valid state
+      // Comprobar si el jugador está en un estado válido
       validatePlayerState();
       
-      // Check eco-system is in valid state
+      // Comprobar si el ecosistema está en un estado válido
       validateEcoSystemState();
       
-      // Check obstacles are in valid state
+      // Comprobar si los obstáculos están en un estado válido
       validateObstacles();
       
-      // Check collectibles are in valid state
+      // Comprobar si los coleccionables están en un estado válido
       validateCollectibles();
     } catch (Exception e) {
-      logError("Game state validation failed: " + e.getMessage());
+      logError("Falló la validación del estado del juego: " + e.getMessage());
     }
   }
   
-  // Validate player state
+  // Validar estado del jugador
   void validatePlayerState() {
     Player player = game.player;
     
-    // Ensure player position is within reasonable bounds
+    // Asegurar que la posición del jugador está dentro de límites razonables
     if (Float.isNaN(player.x) || Float.isNaN(player.y)) {
-      logError("Player position contains NaN values");
+      logError("La posición del jugador contiene valores NaN");
       fixPlayerPosition();
     }
     
-    // Ensure player is not below ground level
+    // Asegurar que el jugador no está por debajo del nivel del suelo
     if (player.y > player.groundY + 50) {
-      logWarning("Player below ground level, resetting position");
+      logWarning("Jugador por debajo del nivel del suelo, reposicionando");
       player.y = player.groundY;
     }
     
-    // Check for valid health values
+    // Comprobar valores de salud válidos
     if (player.health < 0 || player.health > 3) {
-      logWarning("Invalid player health: " + player.health);
+      logWarning("Salud de jugador inválida: " + player.health);
       player.health = constrain(player.health, 0, 3);
     }
     
-    // Check for inconsistent jump state
+    // Comprobar estado de salto inconsistente
     if (player.isJumping && player.y >= player.groundY) {
-      logWarning("Inconsistent jump state, player on ground but isJumping = true");
+      logWarning("Estado de salto inconsistente, jugador en suelo pero isJumping = true");
       player.isJumping = false;
     }
   }
   
-  // Validate eco-system state
+  // Validar estado del ecosistema
   void validateEcoSystemState() {
     EcoSystem eco = game.ecoSystem;
     
-    // Ensure health is within bounds
+    // Asegurar que la salud está dentro de los límites
     if (eco.ecoHealth < eco.minEcoHealth || eco.ecoHealth > eco.maxEcoHealth) {
-      logWarning("Eco-system health out of bounds: " + eco.ecoHealth);
+      logWarning("Salud del ecosistema fuera de límites: " + eco.ecoHealth);
       eco.ecoHealth = constrain(eco.ecoHealth, eco.minEcoHealth, eco.maxEcoHealth);
     }
     
-    // Check for consistent state flags
+    // Comprobar la consistencia de los indicadores de estado
     boolean goodState = eco.isInGoodState();
     boolean warningState = eco.isInWarningState();
     boolean criticalState = eco.isInCriticalState();
     
-    // Only one state should be true at a time
+    // Solo un estado debe ser verdadero a la vez
     if ((goodState && warningState) || (goodState && criticalState) || (warningState && criticalState)) {
-      logWarning("Inconsistent eco-system state flags");
+      logWarning("Indicadores de estado del ecosistema inconsistentes");
     }
   }
   
-  // Validate obstacles
+  // Validar obstáculos
   void validateObstacles() {
-    // Look for invalid obstacles
-    for (int i = game.obstacles.size() - 1; i >= 0; i--) {
-      Obstacle obstacle = game.obstacles.get(i);
+    // Buscar obstáculos inválidos
+    ArrayList<Obstacle> obstacles = game.obstacleManager.getObstacles();
+    for (int i = obstacles.size() - 1; i >= 0; i--) {
+      Obstacle obstacle = obstacles.get(i);
       
-      // Check for valid position
+      // Comprobar posición válida
       if (Float.isNaN(obstacle.x) || Float.isNaN(obstacle.y)) {
-        logWarning("Obstacle has NaN position, removing");
-        game.obstacles.remove(i);
+        logWarning("Obstáculo tiene posición NaN, eliminando");
+        obstacles.remove(i);
         continue;
       }
       
-      // Check for obstacles off-screen
+      // Comprobar obstáculos fuera de pantalla
       if (obstacle.x < -500) {
-        logWarning("Obstacle far off-screen, removing");
-        game.obstacles.remove(i);
+        logWarning("Obstáculo muy lejos de la pantalla, eliminando");
+        obstacles.remove(i);
       }
     }
   }
   
-  // Validate collectibles
+  // Validar coleccionables
   void validateCollectibles() {
-    // Look for invalid collectibles
-    for (int i = game.collectibles.size() - 1; i >= 0; i--) {
-      Collectible collectible = game.collectibles.get(i);
+    // Buscar coleccionables inválidos
+    ArrayList<Collectible> collectibles = game.collectibleManager.getCollectibles();
+    for (int i = collectibles.size() - 1; i >= 0; i--) {
+      Collectible collectible = collectibles.get(i);
       
-      // Check for valid position
+      // Comprobar posición válida
       if (Float.isNaN(collectible.x) || Float.isNaN(collectible.y)) {
-        logWarning("Collectible has NaN position, removing");
-        game.collectibles.remove(i);
+        logWarning("Coleccionable tiene posición NaN, eliminando");
+        collectibles.remove(i);
         continue;
       }
       
-      // Check for collectibles off-screen
+      // Comprobar coleccionables fuera de pantalla
       if (collectible.x < -500) {
-        logWarning("Collectible far off-screen, removing");
-        game.collectibles.remove(i);
+        logWarning("Coleccionable muy lejos de la pantalla, eliminando");
+        collectibles.remove(i);
       }
     }
   }
   
-  // Emergency recovery methods
+  // Métodos de recuperación de emergencia
   
-  // Fix player position if invalid
+  // Arreglar posición del jugador si es inválida
   void fixPlayerPosition() {
     Player player = game.player;
     if (Float.isNaN(player.x) || player.x < 0 || player.x > width) {
@@ -379,14 +397,14 @@ class DebugSystem {
     player.vSpeed = 0;
   }
   
-  // Show log viewer (for in-game debugging)
+  // Mostrar visor de logs (para depuración en el juego)
   void showLogViewer() {
     pushStyle();
-    // Semi-transparent background
+    // Fondo semi-transparente
     fill(0, 200);
     rect(0, 0, width, height);
     
-    // Log panel
+    // Panel de logs
     fill(40);
     stroke(200);
     strokeWeight(2);
@@ -396,32 +414,32 @@ class DebugSystem {
     float panelHeight = 400;
     rect(panelX, panelY, panelWidth, panelHeight);
     
-    // Title
+    // Título
     fill(255);
     textAlign(CENTER);
     textSize(20);
-    text("Debug Log", width/2, panelY + 30);
+    text("Log de Depuración", width/2, panelY + 30);
     
-    // Calculate total entries and maximum scroll position
+    // Calcular entradas totales y posición máxima de scroll
     int totalVisibleEntries = min(logEntriesPerPage, logEntries.size());
     int maxScrollPosition = max(0, logEntries.size() - logEntriesPerPage);
     
-    // Clamp scroll position
+    // Limitar posición de scroll
     logScrollPosition = constrain(logScrollPosition, 0, maxScrollPosition);
     
-    // Log entries area with clipping
+    // Área de entradas de log con recorte
     pushMatrix();
     pushStyle();
-    // Create a clipping region for the log entries
+    // Crear una región de recorte para las entradas de log
     float logAreaX = panelX + 10;
     float logAreaY = panelY + 60;
-    float logAreaWidth = panelWidth - 40; // Make room for scrollbar
+    float logAreaWidth = panelWidth - 40; // Dejar espacio para la barra de desplazamiento
     float logAreaHeight = panelHeight - 120;
     
-    // Use a clip rect to prevent text from extending outside the panel
+    // Usar un rect de recorte para evitar que el texto se extienda fuera del panel
     clip(logAreaX, logAreaY, logAreaWidth, logAreaHeight);
     
-    // Log entries
+    // Entradas de log
     textAlign(LEFT);
     textSize(12);
     int startIndex = logScrollPosition;
@@ -431,7 +449,7 @@ class DebugSystem {
     for (int i = startIndex; i < endIndex; i++) {
       LogEntry entry = logEntries.get(i);
       
-      // Color based on log level
+      // Color según nivel de log
       switch (entry.level) {
         case LOG_ERROR:
           fill(255, 0, 0);
@@ -447,21 +465,21 @@ class DebugSystem {
           break;
       }
       
-      // Format timestamp
+      // Formatear timestamp
       String timestamp = entry.getFormattedTimestamp();
       
-      // Display log entry with proper word wrap
+      // Mostrar entrada de log con ajuste de palabras apropiado
       text(timestamp + " " + entry.getMessage(), logAreaX, y);
       y += 20;
     }
     
-    // End clipping
+    // Finalizar recorte
     popStyle();
     popMatrix();
     
-    // Draw scrollbar if needed
+    // Dibujar barra de desplazamiento si es necesario
     if (logEntries.size() > logEntriesPerPage) {
-      // Scrollbar background
+      // Fondo de la barra de desplazamiento
       fill(60);
       float scrollbarX = panelX + panelWidth - 25;
       float scrollbarY = logAreaY;
@@ -469,9 +487,9 @@ class DebugSystem {
       float scrollbarHeight = logAreaHeight;
       rect(scrollbarX, scrollbarY, scrollbarWidth, scrollbarHeight);
       
-      // Scrollbar handle
+      // Manejador de la barra de desplazamiento
       float handleHeight = (float)logEntriesPerPage / logEntries.size() * scrollbarHeight;
-      handleHeight = max(20, handleHeight); // Minimum handle size
+      handleHeight = max(20, handleHeight); // Tamaño mínimo del manejador
       
       float scrollRatio = (float)logScrollPosition / maxScrollPosition;
       float handleY = scrollbarY + scrollRatio * (scrollbarHeight - handleHeight);
@@ -480,15 +498,15 @@ class DebugSystem {
       rect(scrollbarX, handleY, scrollbarWidth, handleHeight);
     }
     
-    // Instructions
+    // Instrucciones
     fill(200);
     textAlign(CENTER);
     textSize(14);
-    text("Press ESC to close | Page Up/Down to scroll | Mouse wheel to scroll", width/2, panelY + panelHeight - 20);
+    text("Presiona ESC para cerrar | Re Pág/Av Pág para desplazarte | Rueda del ratón para desplazarte", width/2, panelY + panelHeight - 20);
     popStyle();
   }
   
-  // Handle keyboard input for log viewer
+  // Manejar entrada de teclado para el visor de logs
   void handleLogViewerKeyPressed() {
     if (keyCode == PAGE_UP) {
       logScrollPosition = max(0, logScrollPosition - 5);
@@ -507,42 +525,57 @@ class DebugSystem {
     }
   }
   
-  // Handle mouse wheel for log viewer
+  // Manejar rueda del ratón para el visor de logs
   void handleLogViewerMouseWheel(int delta) {
-    // delta is positive when scrolling up, negative when scrolling down
+    // delta es positivo cuando se desplaza hacia arriba, negativo cuando se desplaza hacia abajo
     logScrollPosition = constrain(logScrollPosition - delta, 0, max(0, logEntries.size() - logEntriesPerPage));
   }
   
-  // Toggle debug displays
+  // Alternar visualizaciones de debug
   void toggleCollisionBoxes() {
     showCollisionBoxes = !showCollisionBoxes;
-    logInfo("Collision boxes " + (showCollisionBoxes ? "enabled" : "disabled"));
+    logInfo("Cajas de colisión " + (showCollisionBoxes ? "activadas" : "desactivadas"));
   }
   
   void togglePerformanceMetrics() {
     showPerformanceMetrics = !showPerformanceMetrics;
-    logInfo("Performance metrics " + (showPerformanceMetrics ? "enabled" : "disabled"));
+    logInfo("Métricas de rendimiento " + (showPerformanceMetrics ? "activadas" : "desactivadas"));
   }
   
   void toggleEcoSystemDebug() {
     showEcoSystemDebug = !showEcoSystemDebug;
-    logInfo("EcoSystem debug " + (showEcoSystemDebug ? "enabled" : "disabled"));
+    logInfo("Debug del ecosistema " + (showEcoSystemDebug ? "activado" : "desactivado"));
   }
   
   void toggleValidation() {
     validationActive = !validationActive;
-    logInfo("Game state validation " + (validationActive ? "enabled" : "disabled"));
+    logInfo("Validación del estado del juego " + (validationActive ? "activada" : "desactivada"));
   }
   
-  // Set log level
+  // Establecer nivel de log
   void setLogLevel(int level) {
     currentLogLevel = constrain(level, LOG_ERROR, LOG_DEBUG);
     String[] levelNames = {"ERROR", "WARNING", "INFO", "DEBUG"};
-    logInfo("Log level set to " + levelNames[currentLogLevel]);
+    logInfo("Nivel de log establecido a " + levelNames[currentLogLevel]);
+  }
+  
+  private String getTimestamp() {
+    // Formatear marca de tiempo
+    return nf(hour(), 2) + ":" + nf(minute(), 2) + ":" + nf(second(), 2);
+  }
+  
+  String formatTimestamp(float millis) {
+    // Formato: HH:MM:SS.mmm
+    int hours = floor(millis / (1000 * 60 * 60));
+    int minutes = floor((millis % (1000 * 60 * 60)) / (1000 * 60));
+    int seconds = floor((millis % (1000 * 60)) / 1000);
+    int ms = floor(millis % 1000);
+    
+    return nf(hours, 2) + ":" + nf(minutes, 2) + ":" + nf(seconds, 2) + "." + nf(ms, 3);
   }
 }
 
-// Log entry data structure
+// Estructura de datos para entradas de log
 class LogEntry {
   int level;
   String message;
@@ -569,7 +602,7 @@ class LogEntry {
   }
   
   String getFormattedTimestamp() {
-    // Format: HH:MM:SS.mmm
+    // Formato: HH:MM:SS.mmm
     int seconds = (int)(timestamp / 1000) % 60;
     int minutes = (int)((timestamp / (1000 * 60)) % 60);
     int hours = (int)((timestamp / (1000 * 60 * 60)) % 24);

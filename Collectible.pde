@@ -3,32 +3,72 @@ class Collectible {
   float size;
   float speed;
   
-  // Collectible type constants
-  static final int COIN = 0;        // Basic points collectible
-  static final int GEM = 1;         // High-value collectible
-  static final int SHIELD = 2;      // Invincibility power-up
-  static final int SPEED_BOOST = 3; // Increased speed power-up
-  static final int DOUBLE_POINTS = 4; // Double points power-up
+  // Tipos de coleccionables
+  static final int COIN = 0;        // Moneda básica
+  static final int GEM = 1;         // Gema (más valor)
+  static final int SHIELD = 2;      // Escudo temporal
+  static final int SPEED_BOOST = 3; // Aumento de velocidad
+  static final int DOUBLE_POINTS = 4; // Puntos dobles
   
-  // Environmental collectible types
-  static final int ECO_POSITIVE = 5; // Eco-friendly items (recycling, renewable energy)
-  static final int ECO_NEGATIVE = 6; // Harmful items (pollution, waste)
+  // Coleccionables ambientales
+  static final int ECO_POSITIVE = 5; // Items ecológicos 
+  static final int ECO_NEGATIVE = 6; // Items contaminantes
+  
+  // Tipos específicos de coleccionables ambientales
+  static final int ECO_BOOST = 7;    // Mejora el ecosistema
+  static final int ECO_CLEANUP = 8;  // Limpia la contaminación
+  
+  // Valores por tipo
+  final int[] VALUE_BY_TYPE = {
+    10,    // COIN
+    50,    // GEM
+    20,    // SHIELD
+    15,    // SPEED_BOOST
+    15,    // DOUBLE_POINTS
+    40,    // ECO_POSITIVE
+    -30,   // ECO_NEGATIVE
+    50,    // ECO_BOOST
+    75     // ECO_CLEANUP
+  };
+  
+  // Duración en frames (60 fps)
+  final int[] DURATION_BY_TYPE = {
+    0,     // COIN
+    0,     // GEM
+    300,   // SHIELD - 5 segundos
+    240,   // SPEED_BOOST - 4 segundos
+    360,   // DOUBLE_POINTS - 6 segundos
+    0,     // ECO_POSITIVE
+    0,     // ECO_NEGATIVE
+    0,     // ECO_BOOST
+    0      // ECO_CLEANUP
+  };
   
   int type;
   color itemColor;
   float rotation = 0;
   boolean collected = false;
   
-  // Environmental impact values
-  float ecoImpact = 0; // Positive values help environment, negative values harm it
+  // Valores ambientales
+  float ecoImpact = 0; // Positivo ayuda, negativo daña
   
-  // Collection animation
+  // Animación al recoger
   boolean animating = false;
   float animationTime = 0;
   float maxAnimationTime = 30;
   
-  // Particle effects (simple implementation)
+  // Platform binding properties
+  boolean isPlatformBound = false;
+  Platform boundPlatform = null;
+  
+  // Efectos de partículas
   ArrayList<Particle> particles;
+  
+  // Constructor with default size and speed
+  Collectible(float x, float y, int type) {
+    // Default size of 30 and speed of 5
+    this(x, y, 30, 5, type);
+  }
   
   Collectible(float x, float y, float size, float speed, int type) {
     this.x = x;
@@ -38,96 +78,142 @@ class Collectible {
     this.type = type;
     this.particles = new ArrayList<Particle>();
     
-    // Assign color based on type
     setupVisuals();
-    
-    // Assign environmental impact value based on type
     setupEcoImpact();
   }
   
+  // Method to bind a collectible to a platform
+  void setPlatformBound(boolean bound, Platform platform) {
+    this.isPlatformBound = bound;
+    this.boundPlatform = platform;
+  }
+  
   void setupVisuals() {
-    // Assign colors and properties based on collectible type
+    // Color según tipo
     switch(type) {
       case COIN:
-        itemColor = color(255, 215, 0); // Gold
+        itemColor = color(255, 215, 0); // Dorado
         break;
       case GEM:
-        itemColor = color(0, 191, 255); // Deep blue
+        itemColor = color(0, 191, 255); // Azul
         break;
       case SHIELD:
-        itemColor = color(100, 255, 100); // Green
+        itemColor = color(100, 255, 100); // Verde
         break;
       case SPEED_BOOST:
-        itemColor = color(255, 50, 50); // Red
+        itemColor = color(255, 50, 50); // Rojo
         break;
       case DOUBLE_POINTS:
-        itemColor = color(255, 100, 255); // Purple
+        itemColor = color(255, 100, 255); // Morado
         break;
       case ECO_POSITIVE:
-        itemColor = color(0, 200, 100); // Bright green
+        itemColor = color(0, 200, 100); // Verde brillante
         break;
       case ECO_NEGATIVE:
-        itemColor = color(100, 0, 0); // Dark red
+        itemColor = color(100, 0, 0); // Rojo oscuro
+        break;
+      case ECO_BOOST:
+        itemColor = color(0, 255, 0); // Verde brillante
+        break;
+      case ECO_CLEANUP:
+        itemColor = color(255, 255, 0); // Amarillo
         break;
       default:
-        itemColor = color(255, 215, 0); // Default gold
+        itemColor = color(255, 215, 0); // Dorado por defecto
     }
   }
   
   void setupEcoImpact() {
-    // Set the environmental impact based on collectible type
     switch(type) {
       case COIN:
-        ecoImpact = 0; // Neutral impact
+        ecoImpact = 0; // Neutral
         break;
       case GEM:
-        ecoImpact = 2; // Slightly positive impact
+        ecoImpact = 2; // Ligero positivo
         break;
       case SHIELD:
-        ecoImpact = 5; // Moderate positive impact
+        ecoImpact = 5; // Moderado positivo
         break;
       case SPEED_BOOST:
-        ecoImpact = 0; // Neutral impact
+        ecoImpact = 0; // Neutral
         break;
       case DOUBLE_POINTS:
-        ecoImpact = 3; // Slightly positive impact
+        ecoImpact = 3; // Ligero positivo
         break;
       case ECO_POSITIVE:
-        ecoImpact = 10; // Strong positive impact
+        ecoImpact = 10; // Muy positivo
         break;
       case ECO_NEGATIVE:
-        ecoImpact = -15; // Strong negative impact
+        ecoImpact = -15; // Muy negativo
+        break;
+      case ECO_BOOST:
+        ecoImpact = 5; // Moderado positivo
+        break;
+      case ECO_CLEANUP:
+        ecoImpact = 7; // Muy positivo
         break;
       default:
-        ecoImpact = 0; // Default - neutral impact
+        ecoImpact = 0; // Neutral
     }
   }
   
   void update() {
-    // Move collectible from right to left
+    // Mover de derecha a izquierda
     x -= speed;
     
-    // Simple animation - rotate the collectible
+    // Rotar para animar
     rotation += 0.05;
     
-    // Handle collection animation
+    // Animación al recoger
     if (animating) {
       animationTime++;
       
-      // Generate particles during animation
+      // Generar partículas
       if (animationTime < 10 && animationTime % 3 == 0) {
         for (int i = 0; i < 3; i++) {
           particles.add(new Particle(x, y, itemColor));
         }
       }
       
-      // End of animation
       if (animationTime >= maxAnimationTime) {
         collected = true;
       }
     }
     
-    // Update particles
+    // Actualizar partículas
+    for (int i = particles.size() - 1; i >= 0; i--) {
+      Particle p = particles.get(i);
+      p.update();
+      if (p.isDead()) {
+        particles.remove(i);
+      }
+    }
+  }
+  
+  void update(float obstacleSpeed) {
+    // Mover de derecha a izquierda usando la velocidad proporcionada
+    x -= obstacleSpeed;
+    
+    // Rotar para animar
+    rotation += 0.05;
+    
+    // Animación al recoger
+    if (animating) {
+      animationTime++;
+      
+      // Generar partículas
+      if (animationTime < 10 && animationTime % 3 == 0) {
+        for (int i = 0; i < 3; i++) {
+          particles.add(new Particle(x, y, itemColor));
+        }
+      }
+      
+      if (animationTime >= maxAnimationTime) {
+        collected = true;
+      }
+    }
+    
+    // Actualizar partículas
     for (int i = particles.size() - 1; i >= 0; i--) {
       Particle p = particles.get(i);
       p.update();
@@ -139,7 +225,7 @@ class Collectible {
   
   void display() {
     if (animating) {
-      // Draw only particles during animation
+      // Solo dibujar partículas
       for (Particle p : particles) {
         p.display();
       }
@@ -155,25 +241,21 @@ class Collectible {
     fill(itemColor);
     noStroke();
     
-    // Draw different shapes based on collectible type
+    // Dibujar según tipo
     switch(type) {
       case COIN:
-        // Simple circle for coins
         ellipse(0, 0, size, size);
-        // Inner detail
         fill(255, 235, 50);
         ellipse(0, 0, size * 0.7, size * 0.7);
         break;
         
       case GEM:
-        // Diamond shape for gems
         beginShape();
         vertex(0, -size/2);
         vertex(size/2, 0);
         vertex(0, size/2);
         vertex(-size/2, 0);
         endShape(CLOSE);
-        // Inner detail
         fill(100, 220, 255);
         beginShape();
         vertex(0, -size/3);
@@ -184,7 +266,6 @@ class Collectible {
         break;
         
       case SHIELD:
-        // Shield shape
         ellipse(0, 0, size, size);
         fill(150, 255, 150);
         ellipse(0, 0, size * 0.7, size * 0.7);
@@ -193,7 +274,6 @@ class Collectible {
         break;
         
       case SPEED_BOOST:
-        // Lightning bolt for speed
         fill(255, 100, 100);
         beginShape();
         vertex(-size/4, -size/2);
@@ -201,13 +281,11 @@ class Collectible {
         vertex(-size/4, size/4);
         vertex(size/4, size/2);
         endShape(CLOSE);
-        // Highlight
         fill(255, 200, 200);
         ellipse(0, 0, size * 0.3, size * 0.3);
         break;
         
       case DOUBLE_POINTS:
-        // Star shape for double points
         float angle = TWO_PI / 5;
         float halfAngle = angle/2.0;
         beginShape();
@@ -223,15 +301,12 @@ class Collectible {
         break;
       
       case ECO_POSITIVE:
-        // Recycling symbol or leaf shape for eco-friendly items
-        // Draw a recycling triangle
         float s = size * 0.8;
         strokeWeight(size/10);
         stroke(0, 150, 0);
         noFill();
         triangle(0, -s/2, s/2, s/3, -s/2, s/3);
         
-        // Add recycling arrows
         stroke(0, 200, 0);
         line(-s/4, s/6, 0, -s/4);
         line(s/4, s/6, 0, -s/4);
@@ -243,18 +318,25 @@ class Collectible {
         break;
         
       case ECO_NEGATIVE:
-        // Pollution or waste symbol for harmful items
-        // Draw a factory/smokestack
         fill(100, 0, 0);
-        rect(-size/3, -size/4, size/6, size/2); // Left chimney
-        rect(size/6, -size/3, size/6, size/2);  // Right chimney
-        rect(-size/2, size/4, size, size/4);    // Factory base
+        rect(-size/3, -size/4, size/6, size/2); // Chimenea izq
+        rect(size/6, -size/3, size/6, size/2);  // Chimenea der
+        rect(-size/2, size/4, size, size/4);    // Base fábrica
         
-        // Smoke clouds
         fill(80, 80, 80, 200);
         ellipse(-size/3, -size/3, size/3, size/3);
         ellipse(size/6, -size/2, size/3, size/3);
         ellipse(-size/5, -size/2, size/4, size/4);
+        break;
+        
+      case ECO_BOOST:
+        fill(0, 255, 0);
+        ellipse(0, 0, size * 0.8, size * 0.8);
+        break;
+        
+      case ECO_CLEANUP:
+        fill(255, 255, 0);
+        ellipse(0, 0, size * 0.8, size * 0.8);
         break;
     }
     
@@ -267,55 +349,67 @@ class Collectible {
       animating = true;
       animationTime = 0;
       
-      // Generate initial particles
       for (int i = 0; i < 10; i++) {
         particles.add(new Particle(x, y, itemColor));
       }
     }
   }
   
-  boolean isOffscreen() {
+  boolean isOffScreen() {
     return x < -size;
   }
   
-  // Get point value of collectible
   int getPointValue() {
-    switch(type) {
-      case COIN: return 50;
-      case GEM: return 200;
-      case ECO_POSITIVE: return 100;
-      case ECO_NEGATIVE: return 25; // Lower points for eco-negative items
-      default: return 25;
+    if (type >= 0 && type < VALUE_BY_TYPE.length) {
+      return VALUE_BY_TYPE[type];
     }
+    return 10; // Valor por defecto
   }
   
-  // Get power-up duration in frames (60 = 1 second at 60fps)
   int getPowerUpDuration() {
-    switch(type) {
-      case SHIELD: return 300; // 5 seconds
-      case SPEED_BOOST: return 180; // 3 seconds
-      case DOUBLE_POINTS: return 300; // 5 seconds
-      default: return 0;
+    if (type >= 0 && type < DURATION_BY_TYPE.length) {
+      return DURATION_BY_TYPE[type];
     }
+    return 300; // Duración por defecto
   }
   
-  // Helper method to check if this is a power-up type
   boolean isPowerUp() {
     return type == SHIELD || type == SPEED_BOOST || type == DOUBLE_POINTS;
   }
   
-  // Helper method to check if this has environmental impact
   boolean hasEcoImpact() {
     return ecoImpact != 0;
   }
   
-  // Get the environmental impact value
   float getEcoImpact() {
     return ecoImpact;
   }
+  
+  int getValue() {
+    return getPointValue(); // Redirige al método existente
+  }
+  
+  int getType() {
+    return type;
+  }
+  
+  color getColor() {
+    return itemColor;
+  }
+  
+  boolean checkCollision(Player player) {
+    // Calculate distance between player and collectible
+    float distance = dist(x, y, player.x, player.y);
+    
+    // Use average of player and collectible sizes for collision detection
+    float collisionThreshold = (size + player.size) * 0.4;
+    
+    // Return true if collision detected
+    return distance < collisionThreshold;
+  }
 }
 
-// Simple particle class for collection effects
+// Clase para efectos de partículas
 class Particle {
   PVector position;
   PVector velocity;

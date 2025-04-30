@@ -1,43 +1,43 @@
 class Weather {
-  // Weather types
+  // Tipos de clima
   static final int CLEAR = 0;
   static final int RAIN = 1;
   static final int FOG = 2;
   static final int WIND = 3;
   static final int HEATWAVE = 4;
   
-  // Current state
+  // Estado actual
   int currentWeather = CLEAR;
-  float intensity = 0; // 0.0 to 1.0
+  float intensity = 0; // 0.0 a 1.0
   float transitionProgress = 0;
-  int transitionDuration = 180; // frames for weather transition
+  int transitionDuration = 180; // frames para la transición del clima
   boolean isTransitioning = false;
   int targetWeather = CLEAR;
   
-  // Weather timers and durations
+  // Temporizadores y duraciones del clima
   int weatherTimer = 0;
-  int weatherDuration = 600; // Base duration for weather events (10 seconds at 60fps)
-  int clearDuration = 1200; // Base duration for clear weather periods (20 seconds at 60fps)
+  int weatherDuration = 600; // Duración base para eventos climáticos (10 segundos a 60fps)
+  int clearDuration = 1200; // Duración base para períodos de clima despejado (20 segundos a 60fps)
   
-  // Weather probabilities - can be influenced by ecosystem health
+  // Probabilidades del clima - pueden ser influenciadas por la salud del ecosistema
   float rainProbability = 0.3; 
   float fogProbability = 0.2;
   float windProbability = 0.2;
   float heatwaveProbability = 0.1;
   
-  // Weather effect parameters
-  float jumpModifier = 0; // -0.3 to +0.3
-  float speedModifier = 0; // -0.3 to +0.3
-  float visibilityModifier = 0; // -0.7 to 0
+  // Parámetros de efectos del clima
+  float jumpModifier = 0; // -0.3 a +0.3
+  float speedModifier = 0; // -0.3 a +0.3
+  float visibilityModifier = 0; // -0.7 a 0
   
-  // Visual effect elements
+  // Elementos de efectos visuales
   ArrayList<Raindrop> raindrops;
   ArrayList<WindParticle> windParticles;
   color fogColor = color(255, 255, 255, 0);
   float fogOpacity = 0;
   float[] heatwaveDistortion;
   
-  // Weather name for display
+  // Nombre del clima para mostrar
   String weatherName = "Clear";
   
   Weather() {
@@ -45,119 +45,119 @@ class Weather {
     windParticles = new ArrayList<WindParticle>();
     heatwaveDistortion = new float[width];
     
-    // Initialize heat wave distortion values
+    // Inicializar valores de distorsión de ola de calor
     for (int i = 0; i < width; i++) {
       heatwaveDistortion[i] = 0;
     }
   }
   
   void update(EcoSystem ecoSystem) {
-    // Update weather timer
+    // Actualizar temporizador del clima
     weatherTimer++;
     
-    // In transition mode, progress the transition
+    // En modo de transición, avanzar la transición
     if (isTransitioning) {
       transitionProgress += 1.0 / transitionDuration;
       
       if (transitionProgress >= 1.0) {
-        // Transition complete
+        // Transición completa
         completeTransition();
       } else {
-        // Update intensity during transition
+        // Actualizar intensidad durante la transición
         if (currentWeather == CLEAR) {
-          // Transitioning from clear to weather event
+          // Transición de clima despejado a evento climático
           intensity = transitionProgress;
         } else if (targetWeather == CLEAR) {
-          // Transitioning from weather event to clear
+          // Transición de evento climático a despejado
           intensity = 1.0 - transitionProgress;
         } else {
-          // Transitioning between two weather events
+          // Transición entre dos eventos climáticos
           intensity = max(0.3, min(1.0, transitionProgress));
         }
       }
     } 
     
-    // Check if weather should change
+    // Comprobar si el clima debería cambiar
     if (!isTransitioning) {
-      // Get the base duration for the current weather
+      // Obtener la duración base para el clima actual
       int baseDuration = (currentWeather == CLEAR) ? clearDuration : weatherDuration;
       
-      // Adjust duration based on ecosystem health
+      // Ajustar duración según la salud del ecosistema
       float durationMultiplier = 1.0;
       
       if (ecoSystem.isInCriticalState()) {
-        // More extreme weather in critical state
+        // Clima más extremo en estado crítico
         if (currentWeather == CLEAR) {
-          durationMultiplier = 0.7; // Clear weather doesn't last as long
+          durationMultiplier = 0.7; // El clima despejado no dura tanto
         } else {
-          durationMultiplier = 1.4; // Bad weather lasts longer
+          durationMultiplier = 1.4; // El mal tiempo dura más
         }
       } else if (ecoSystem.isInWarningState()) {
-        // Slightly more extreme weather in warning state
+        // Clima ligeramente más extremo en estado de advertencia
         if (currentWeather == CLEAR) {
-          durationMultiplier = 0.9; // Slightly shorter clear weather
+          durationMultiplier = 0.9; // Clima despejado un poco más corto
         } else {
-          durationMultiplier = 1.2; // Slightly longer weather events
+          durationMultiplier = 1.2; // Eventos climáticos un poco más largos
         }
       }
       
       int adjustedDuration = int(baseDuration * durationMultiplier);
       
-      // Check if it's time for a weather change
+      // Comprobar si es hora de un cambio de clima
       if (weatherTimer >= adjustedDuration) {
         selectNewWeather(ecoSystem);
       }
     }
     
-    // Update visual effects and parameters based on current weather state
+    // Actualizar efectos visuales y parámetros según el estado del clima actual
     updateWeatherEffects();
     
-    // Update gameplay effect parameters
+    // Actualizar parámetros de jugabilidad
     updateGameplayParameters();
   }
   
   void selectNewWeather(EcoSystem ecoSystem) {
-    // Reset weather timer
+    // Reiniciar temporizador del clima
     weatherTimer = 0;
     
-    // Determine target weather based on probabilities and eco-system state
-    float[] probabilities = new float[5]; // probability for each weather type
+    // Determinar clima objetivo basado en probabilidades y estado del ecosistema
+    float[] probabilities = new float[5]; // probabilidad para cada tipo de clima
     
-    // Start with base probabilities
-    probabilities[CLEAR] = 0.4; // 40% chance for clear weather
+    // Comenzar con probabilidades base
+    probabilities[CLEAR] = 0.4; // 40% de probabilidad para clima despejado
     probabilities[RAIN] = rainProbability;
     probabilities[FOG] = fogProbability;
     probabilities[WIND] = windProbability;
     probabilities[HEATWAVE] = heatwaveProbability;
     
-    // Adjust probabilities based on ecosystem state
+    // Ajustar probabilidades según el estado del ecosistema
     if (ecoSystem.isInCriticalState()) {
-      // Critical state has more extreme weather, less clear weather
-      probabilities[CLEAR] *= 0.5; // 50% less chance of clear weather
-      probabilities[RAIN] *= 1.5; // 50% more rain
-      probabilities[FOG] *= 1.5; // 50% more fog
-      probabilities[WIND] *= 1.3; // 30% more wind
-      probabilities[HEATWAVE] *= 2.0; // Twice as many heatwaves
+      // El estado crítico tiene clima más extremo, menos clima despejado
+      probabilities[CLEAR] *= 0.5; // 50% menos probabilidad de clima despejado
+      probabilities[RAIN] *= 1.5; // 50% más lluvia
+      probabilities[FOG] *= 1.5; // 50% más niebla
+      probabilities[WIND] *= 1.3; // 30% más viento
+      probabilities[HEATWAVE] *= 2.0; // El doble de olas de calor
     } else if (ecoSystem.isInWarningState()) {
-      // Warning state has slightly more extreme weather
-      probabilities[CLEAR] *= 0.8; // 20% less chance of clear weather
-      probabilities[RAIN] *= 1.2; // 20% more rain
-      probabilities[FOG] *= 1.2; // 20% more fog
-      probabilities[WIND] *= 1.1; // 10% more wind
-      probabilities[HEATWAVE] *= 1.3; // 30% more heatwaves
+      // El estado de advertencia tiene clima ligeramente más extremo
+      probabilities[CLEAR] *= 0.8; // 20% menos probabilidad de clima despejado
+      probabilities[RAIN] *= 1.2; // 20% más lluvia
+      probabilities[FOG] *= 1.2; // 20% más niebla
+      probabilities[WIND] *= 1.1; // 10% más viento
+      probabilities[HEATWAVE] *= 1.3; // 30% más olas de calor
     }
     
-    // Never transition to the same weather (except clear)
+    // Nunca hacer transición al mismo clima (excepto despejado)
     if (currentWeather != CLEAR) {
       probabilities[currentWeather] = 0;
     }
     
-    // If already in clear weather, force a change to a weather event
+    // Si ya está en clima despejado, forzar un cambio a un evento climático
     if (currentWeather == CLEAR) {
       probabilities[CLEAR] = 0;
     }
     
-    // Normalize probabilities to ensure they sum to 1.0
+    // Normalizar probabilidades para asegurar que sumen 1.0
     float totalProbability = 0;
     for (int i = 0; i < probabilities.length; i++) {
       totalProbability += probabilities[i];
@@ -167,7 +167,7 @@ class Weather {
       probabilities[i] /= totalProbability;
     }
     
-    // Select weather using the probability distribution
+    // Seleccionar clima usando la distribución de probabilidad
     float random = random(1);
     float cumulativeProbability = 0;
     
@@ -179,7 +179,7 @@ class Weather {
       }
     }
     
-    // Start transition to new weather
+    // Iniciar transición al nuevo clima
     startTransition();
   }
   
@@ -193,79 +193,77 @@ class Weather {
     transitionProgress = 0;
     currentWeather = targetWeather;
     
-    // Set intensity based on target weather
+    // Establecer intensidad según el clima objetivo
     if (currentWeather == CLEAR) {
       intensity = 0;
     } else {
-      // Random intensity for the weather event
+      // Intensidad aleatoria para el evento climático
       intensity = random(0.5, 1.0);
     }
     
-    // Update weather name
+    // Actualizar nombre del clima
     updateWeatherName();
   }
   
   void updateWeatherName() {
     switch (currentWeather) {
       case CLEAR:
-        weatherName = "Clear";
+        weatherName = "Despejado";
         break;
       case RAIN:
-        if (intensity > 0.8) weatherName = "Heavy Rain";
-        else if (intensity > 0.5) weatherName = "Rain";
-        else weatherName = "Light Rain";
+        if (intensity > 0.8) weatherName = "Lluvia Intensa";
+        else if (intensity > 0.5) weatherName = "Lluvia";
+        else weatherName = "Llovizna";
         break;
       case FOG:
-        if (intensity > 0.8) weatherName = "Dense Fog";
-        else if (intensity > 0.5) weatherName = "Fog";
-        else weatherName = "Light Fog";
+        if (intensity > 0.8) weatherName = "Niebla Densa";
+        else if (intensity > 0.5) weatherName = "Niebla";
+        else weatherName = "Niebla Ligera";
         break;
       case WIND:
-        if (intensity > 0.8) weatherName = "Strong Wind";
-        else if (intensity > 0.5) weatherName = "Wind";
-        else weatherName = "Light Breeze";
+        if (intensity > 0.8) weatherName = "Viento Fuerte";
+        else if (intensity > 0.5) weatherName = "Viento";
+        else weatherName = "Brisa Suave";
         break;
       case HEATWAVE:
-        if (intensity > 0.8) weatherName = "Extreme Heat";
-        else if (intensity > 0.5) weatherName = "Heatwave";
-        else weatherName = "Warm Weather";
+        if (intensity > 0.8) weatherName = "Calor Extremo";
+        else if (intensity > 0.5) weatherName = "Ola de Calor";
+        else weatherName = "Clima Cálido";
         break;
     }
   }
   
   void updateGameplayParameters() {
-    // Reset modifiers
-    jumpModifier = 0;
-    speedModifier = 0;
-    visibilityModifier = 0;
+    // Reiniciar modificadores
+    resetModifiers();
     
-    // Apply effects based on current weather and intensity
+    // Aplicar efectos según el clima actual y su intensidad
     switch (currentWeather) {
       case RAIN:
-        // Rain makes jumping harder and reduces speed slightly
+        // La lluvia dificulta saltar y reduce ligeramente la velocidad
         jumpModifier = -0.2 * intensity;
         speedModifier = -0.1 * intensity;
         visibilityModifier = -0.3 * intensity;
         break;
       case FOG:
-        // Fog significantly reduces visibility but doesn't affect movement much
+        // La niebla reduce significativamente la visibilidad pero no afecta mucho al movimiento
         visibilityModifier = -0.7 * intensity;
         break;
       case WIND:
-        // Wind affects jumping and speed
-        jumpModifier = 0.15 * intensity; // Easier to jump with wind
-        speedModifier = 0.2 * intensity; // Faster movement with wind
+        // El viento afecta al salto y a la velocidad
+        jumpModifier = 0.15 * intensity; // Más fácil saltar con viento
+        speedModifier = 0.2 * intensity; // Movimiento más rápido con viento
         break;
       case HEATWAVE:
-        // Heatwave reduces speed but jumping is unaffected
+        // La ola de calor reduce la velocidad pero no afecta al salto
         speedModifier = -0.25 * intensity;
-        visibilityModifier = -0.15 * intensity; // Slight heat distortion
+        visibilityModifier = -0.15 * intensity; // Ligera distorsión por calor
         break;
     }
   }
   
   void updateWeatherEffects() {
-    // Update weather visual effects based on current weather and intensity
+    // Actualizar efectos visuales del clima según el clima actual y su intensidad
     switch (currentWeather) {
       case RAIN:
         updateRainEffects();
@@ -280,25 +278,25 @@ class Weather {
         updateHeatwaveEffects();
         break;
       default:
-        // Clear weather - remove any remaining effects
+        // Clima despejado - eliminar cualquier efecto restante
         clearEffects();
     }
   }
   
   void updateRainEffects() {
-    // Add new raindrops based on intensity
+    // Añadir nuevas gotas de lluvia según la intensidad
     int maxRaindrops = int(map(intensity, 0, 1, 10, 80));
     
     while (raindrops.size() < maxRaindrops) {
       raindrops.add(new Raindrop());
     }
     
-    // Update existing raindrops
+    // Actualizar gotas existentes
     for (int i = raindrops.size() - 1; i >= 0; i--) {
       Raindrop drop = raindrops.get(i);
       drop.update();
       
-      // Remove finished raindrops
+      // Eliminar gotas terminadas
       if (drop.isFinished()) {
         raindrops.remove(i);
       }
@@ -306,25 +304,25 @@ class Weather {
   }
   
   void updateFogEffects() {
-    // Adjust fog opacity based on intensity
-    fogOpacity = intensity * 180; // Max opacity of 180 (semi-transparent)
+    // Ajustar opacidad de la niebla según la intensidad
+    fogOpacity = intensity * 180; // Opacidad máxima de 180 (semi-transparente)
     fogColor = color(255, 255, 255, fogOpacity);
   }
   
   void updateWindEffects() {
-    // Add new wind particles based on intensity
+    // Añadir nuevas partículas de viento según la intensidad
     int maxParticles = int(map(intensity, 0, 1, 10, 50));
     
     while (windParticles.size() < maxParticles) {
       windParticles.add(new WindParticle());
     }
     
-    // Update existing wind particles
+    // Actualizar partículas existentes
     for (int i = windParticles.size() - 1; i >= 0; i--) {
       WindParticle particle = windParticles.get(i);
       particle.update();
       
-      // Remove offscreen particles
+      // Eliminar partículas fuera de pantalla
       if (particle.isOffscreen()) {
         windParticles.remove(i);
       }
@@ -332,9 +330,9 @@ class Weather {
   }
   
   void updateHeatwaveEffects() {
-    // Update heat wave distortion values
+    // Actualizar valores de distorsión de ola de calor
     for (int i = 0; i < width; i++) {
-      // Create wavy patterns using sine function
+      // Crear patrones ondulados usando la función seno
       float waveSpeed = frameCount * 0.02;
       float waveDensity = i * 0.01;
       float waveHeight = 5 * intensity;
@@ -344,7 +342,7 @@ class Weather {
   }
   
   void clearEffects() {
-    // Clear all visual effects
+    // Eliminar todos los efectos visuales
     raindrops.clear();
     windParticles.clear();
     fogOpacity = 0;
@@ -354,26 +352,59 @@ class Weather {
     }
   }
   
+  // Método principal de visualización (ahora solo para efectos en primer plano)
   void display() {
-    // Draw weather effects based on current weather
+    // Dibujar efectos de clima en primer plano según el clima actual
     switch (currentWeather) {
       case RAIN:
         displayRain();
-        break;
-      case FOG:
-        displayFog();
         break;
       case WIND:
         displayWind();
         break;
       case HEATWAVE:
-        displayHeatwave();
+        // Solo mostrar las líneas de distorsión de ola de calor (no el tinte de fondo)
+        if (intensity > 0.5) {
+          stroke(255, 255, 255, 40 * intensity);
+          strokeWeight(1);
+          
+          for (int y = height/3; y < height * 0.8; y += 20) {
+            beginShape();
+            noFill();
+            for (int x = 0; x < width; x += 5) {
+              float distortY = y + heatwaveDistortion[min(x, width-1)];
+              vertex(x, distortY);
+            }
+            endShape();
+          }
+        }
+        break;
+    }
+  }
+  
+  // Mostrar efectos de clima de fondo (llamado antes de dibujar los elementos del juego)
+  void displayBackgroundEffects() {
+    // Solo mostrar efectos de fondo para ciertos tipos de clima
+    switch (currentWeather) {
+      case FOG:
+        // Dibujar niebla como una capa de fondo
+        noStroke();
+        fill(fogColor);
+        rect(0, 0, width, height);
+        break;
+      case HEATWAVE:
+        // Dibujar efectos de fondo de ola de calor
+        if (intensity > 0.3) {
+          // Añadir un tinte cálido sutil como capa de fondo
+          fill(255, 200, 100, 20 * intensity);
+          rect(0, 0, width, height);
+        }
         break;
     }
   }
   
   void displayRain() {
-    // Draw raindrops
+    // Dibujar gotas de lluvia
     stroke(100, 150, 255, 150);
     strokeWeight(2);
     
@@ -381,54 +412,22 @@ class Weather {
       drop.display();
     }
     
-    // Add a slight blue overlay for heavy rain
+    // Añadir una superposición azul ligera para lluvia intensa
     if (intensity > 0.7) {
       fill(100, 150, 255, 30 * intensity);
       rect(0, 0, width, height);
     }
   }
   
-  void displayFog() {
-    // Draw fog as a semi-transparent overlay
-    noStroke();
-    fill(fogColor);
-    rect(0, 0, width, height);
-  }
-  
   void displayWind() {
-    // Draw wind particles
+    // Dibujar partículas de viento
     noStroke();
     for (WindParticle particle : windParticles) {
       particle.display();
     }
   }
   
-  void displayHeatwave() {
-    // Draw heatwave distortion effect using a simplified approach
-    if (intensity > 0.3) {
-      // Add subtle warm tint
-      fill(255, 200, 100, 20 * intensity);
-      rect(0, 0, width, height);
-      
-      // Only visible with higher intensity
-      if (intensity > 0.5) {
-        stroke(255, 255, 255, 40 * intensity);
-        strokeWeight(1);
-        
-        for (int y = height/3; y < height * 0.8; y += 20) {
-          beginShape();
-          noFill();
-          for (int x = 0; x < width; x += 5) {
-            float distortY = y + heatwaveDistortion[min(x, width-1)];
-            vertex(x, distortY);
-          }
-          endShape();
-        }
-      }
-    }
-  }
-  
-  // Gameplay effect getters
+  // Captadores de efectos de jugabilidad
   float getJumpModifier() {
     return jumpModifier;
   }
@@ -448,9 +447,16 @@ class Weather {
   float getIntensity() {
     return intensity;
   }
+  
+  // Reiniciar modificadores
+  void resetModifiers() {
+    jumpModifier = 0;
+    speedModifier = 0;
+    visibilityModifier = 0;
+  }
 }
 
-// Class for rain effect
+// Clase para efecto de lluvia
 class Raindrop {
   float x, y;
   float speed;
@@ -464,7 +470,7 @@ class Raindrop {
     speed = random(5, 15);
     length = map(speed, 5, 15, 10, 20);
     alpha = random(150, 200);
-    groundLevel = height * 0.8; // Same as game ground level
+    groundLevel = height * 0.8; // Igual que el nivel del suelo del juego
   }
   
   void update() {
@@ -481,7 +487,7 @@ class Raindrop {
   }
 }
 
-// Class for wind effect
+// Clase para efecto de viento
 class WindParticle {
   float x, y;
   float speed;
