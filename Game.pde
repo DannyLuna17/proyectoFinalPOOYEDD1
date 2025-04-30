@@ -676,28 +676,62 @@ class Game {
   }
   
   void displayHealthBar() {
-    // Dibujar barra de salud
-    fill(0, 0, 0, 150);
-    rect(20, 20, 150, 20);
+    // Dibujar corazones para representar la salud
+    pushStyle();
     
-    // Color de la barra de salud basado en el valor
-    if (player.health > 2) {
-      fill(0, 255, 0);
-    } else if (player.health > 1) {
-      fill(255, 255, 0);
-    } else {
-      fill(255, 0, 0);
+    // Configuración para dibujar corazones
+    int heartSize = 30;
+    int heartSpacing = 10;
+    int startX = 20;
+    int startY = 20;
+    
+    // Color base para corazones llenos
+    color heartColor = color(255, 0, 0);
+    // Color para corazones vacíos
+    color emptyHeartColor = color(100, 0, 0);
+    
+    // Dibujar fondo para el área de los corazones
+    fill(0, 0, 0, 150);
+    // rect(startX - 5, startY - 5, (heartSize + heartSpacing) * 3 + 5, heartSize + 10);
+    
+    // Dibujar corazones
+    for (int i = 0; i < 3; i++) {
+      // Posición del corazón actual
+      int heartX = startX + i * (heartSize + heartSpacing);
+      int heartY = startY;
+      
+      // Dibujar corazón lleno o vacío según la salud del jugador
+      if (i < player.health) {
+        // Corazón lleno
+        fill(heartColor);
+      } else {
+        // Corazón vacío
+        fill(emptyHeartColor);
+      }
+      
+      // Dibujar corazón
+      drawHeart(heartX, heartY, heartSize);
     }
     
-    // Cantidad de barra de salud llena
-    float healthWidth = map(player.health, 0, 3, 0, 150);
-    rect(20, 20, healthWidth, 20);
+    popStyle();
+  }
+  
+  // Función para dibujar un corazón
+  void drawHeart(int x, int y, int size) {
+    // Dibuja un corazón centrado en (x, y) con tamaño 'size'
+    pushMatrix();
+    translate(x + size/2, y + size/2);
     
-    // Texto de salud
-    fill(255);
-    textAlign(CENTER, CENTER);
-    textSize(12);
-    text("SALUD", 20 + 150/2, 20 + 10);
+    beginShape();
+    // Un corazón hecho con vértices
+    vertex(0, size/4);
+    bezierVertex(0, 0, -size/2, 0, -size/2, -size/4);
+    bezierVertex(-size/2, -size/2, 0, -size/2, 0, -size/4);
+    bezierVertex(0, -size/2, size/2, -size/2, size/2, -size/4);
+    bezierVertex(size/2, 0, 0, 0, 0, size/4);
+    endShape(CLOSE);
+    
+    popMatrix();
   }
   
   void displayEcosystemStatus() {

@@ -7,7 +7,7 @@
 - Cámara dinámica que sigue al jugador
 - Nuevos tipos de plataformas (rebote, móviles)
 - Ítems especiales en plataformas
-- Tutorial para nuevas mecánicas
+- Intento de Tutorial para nuevas mecánicas
 
 ### v1.2.0
 - Video intro y transiciones

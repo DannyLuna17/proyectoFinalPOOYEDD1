@@ -513,33 +513,52 @@ class Player {
     fill(accessManager.getBackgroundColor(color(100)));
     rect(x, y, w, h);
     
-    // Barra de salud
-    float healthWidth = map(health, 0, 3, 0, w);
+    // Configuración para dibujar corazones
+    int maxHearts = 3;
+    float heartSize = h * 0.8;
+    float heartSpacing = (w - maxHearts * heartSize) / (maxHearts + 1);
     
-    // Color según nivel de salud
-    color healthColor;
-    if (health >= 2) {
-      healthColor = color(0, 255, 0); // Verde
-    } else if (health == 1) {
-      healthColor = color(255, 255, 0); // Amarillo
-    } else {
-      healthColor = color(255, 0, 0); // Rojo
+    // Dibujar corazones
+    for (int i = 0; i < maxHearts; i++) {
+      // Posición del corazón actual
+      float heartX = x + heartSpacing + i * (heartSize + heartSpacing);
+      float heartY = y + (h - heartSize) / 2;
+      
+      // Dibujar corazón lleno o vacío según la salud del jugador
+      if (i < health) {
+        // Corazón lleno
+        fill(accessManager.getForegroundColor(color(255, 0, 0)));
+      } else {
+        // Corazón vacío
+        fill(accessManager.getForegroundColor(color(100, 0, 0)));
+      }
+      
+      // Dibujar corazón
+      drawHeartShape(heartX, heartY, heartSize);
     }
-    
-    fill(accessManager.getForegroundColor(healthColor));
-    rect(x, y, healthWidth, h);
     
     // Borde
     stroke(accessManager.getForegroundColor(color(255)));
     noFill();
     rect(x, y, w, h);
     
-    // Texto
-    fill(accessManager.getUITextColor(color(255), accessManager.getBackgroundColor(color(100))));
-    textAlign(CENTER, CENTER);
-    textSize(accessManager.getAdjustedTextSize(14));
-    text("HP: " + health, x + w/2, y + h/2);
-    
     popStyle();
+  }
+  
+  // Dibuja la forma de un corazón
+  void drawHeartShape(float x, float y, float size) {
+    pushMatrix();
+    translate(x + size/2, y + size/2);
+    
+    beginShape();
+    // Un corazón hecho con vértices
+    vertex(0, size/4);
+    bezierVertex(0, 0, -size/2, 0, -size/2, -size/4);
+    bezierVertex(-size/2, -size/2, 0, -size/2, 0, -size/4);
+    bezierVertex(0, -size/2, size/2, -size/2, size/2, -size/4);
+    bezierVertex(size/2, 0, 0, 0, 0, size/4);
+    endShape(CLOSE);
+    
+    popMatrix();
   }
 } 
