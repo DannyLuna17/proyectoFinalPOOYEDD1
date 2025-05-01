@@ -1,7 +1,3 @@
-/**
- * Button class - Interactive UI element with hover and click functionality
- * Used for all menu screens and navigation
- */
 class Button {
   float x, y;
   float width, height;
@@ -11,27 +7,24 @@ class Button {
   boolean isHighlighted; // Para navegación por teclado
   boolean isAnimatingPress = false;
   int pressAnimationTimer = 0;
-  boolean keyboardHoverEmulation = false; // Flag for emulating hover via keyboard
+  boolean keyboardHoverEmulation = false; 
   Menu menu;
   AccessibilityManager accessManager;
   
-  // Animation properties
-  float animProgress = 0; // 0 to 1
+  float animProgress = 0; 
   float hoverGrowth = 0.05;
   float scale = 1.0; // Para efecto de escala al pasar el cursor/resaltar
   float glowIntensity = 0;
   float maxGlowIntensity = 60;
   float glowSpeed = 2;
   float targetScale = 1.0;
-  float scaleSpeed = 0.05; // How quickly the button scales
+  float scaleSpeed = 0.05; 
   
-  // Click animation properties
   boolean isPressed = false;
-  float pressScale = 0.95; // Scale when pressed
+  float pressScale = 0.95; 
   
-  // Default colors - light pastel blue with dark text
-  color defaultBaseColor = color(227, 242, 255); // Light pastel blue
-  color defaultTextColor = color(20, 20, 30);    // Dark (near-black)
+  color defaultBaseColor = color(227, 242, 255); 
+  color defaultTextColor = color(20, 20, 30);    
   
   Button(float x, float y, float w, float h, String text, AccessibilityManager accessManager) {
     this.x = x;
@@ -44,7 +37,7 @@ class Button {
     this.textColor = defaultTextColor;
     updateHoverColor();
     isHovered = false;
-    isHighlighted = false; // Initialize highlighted state
+    isHighlighted = false;
   }
   
   Button(float x, float y, float w, float h, String text, color baseColor, AccessibilityManager accessManager) {
@@ -75,9 +68,7 @@ class Button {
     isHighlighted = false;
   }
   
-  // Auto-generate hover color from base color
   void updateHoverColor() {
-    // Make hover color slightly darker for better contrast
     float r = red(baseColor);
     float g = green(baseColor);
     float b = blue(baseColor);
@@ -85,14 +76,11 @@ class Button {
   }
   
   void update() {
-    // Update hover state based on mouse position if keyboard navigation is not active
     if (!accessManager.keyboardOnly) {
       boolean wasHovered = isHovered;
       boolean newHoverState = isMouseOver();
       
-      // If this button is now being hovered and wasn't before
       if (newHoverState && !wasHovered) {
-        // Clear keyboard selection from all menu buttons when mouse hovers any button
         if (menu != null) {
           menu.clearKeyboardSelection();
         }
@@ -100,7 +88,14 @@ class Button {
       
       isHovered = newHoverState;
       
-      // Check for mouse press/release
+      // Si el ratón está sobre este botón, desactivar el efecto hover por teclado
+      // para asegurarse de que solo este botón tenga el efecto visual de selección
+      if (isHovered && keyboardHoverEmulation) {
+        // Si hay un efecto de hover por teclado activo en este botón y el ratón
+        // ahora está sobre él, mantenemos el estado visual pero por el ratón
+        keyboardHoverEmulation = false;
+      }
+      
       if (isHovered && mousePressed) {
         isPressed = true;
       } else {
@@ -113,30 +108,33 @@ class Button {
       isPressed = false;
     }
     
-    // Si keyboardHoverEmulation está activado, tratamos el botón como si tuviera hover
+    // Verificamos si cualquier botón tiene el ratón encima para determinar si mostramos
+    // el efecto de selección por teclado
     boolean effectivelyHovered = isHovered || keyboardHoverEmulation;
     
-    // Update glow animation
-    if (isHighlighted || effectivelyHovered) {
-      // Increase glow intensity if highlighted or hovered
-      glowIntensity = min(glowIntensity + glowSpeed, maxGlowIntensity);
-      targetScale = 1.1; // Scale up when hovered/highlighted
-    } else {
-      // Decrease glow intensity if not highlighted or hovered
-      glowIntensity = max(glowIntensity - glowSpeed, 0);
-      targetScale = 1.0; // Return to normal scale
+    // Si el ratón está sobre el botón, quitamos el resaltado por teclado,
+    // pero mantenemos el efecto visual de hover gracias al isHovered
+    if (isHovered && isHighlighted) {
+      // Solo cambiamos el estado interno, no el visual
+      isHighlighted = false;
     }
     
-    // Apply scaling when pressed
+    if (isHighlighted || effectivelyHovered) {
+      glowIntensity = min(glowIntensity + glowSpeed, maxGlowIntensity);
+      targetScale = 1.1; 
+    } else {
+      glowIntensity = max(glowIntensity - glowSpeed, 0);
+      targetScale = 1.0;
+    }
+    
     if (isPressed) {
       targetScale = pressScale;
     }
     
-    // Smoothly animate the scale
     if (!accessManager.reduceAnimations) {
       scale += (targetScale - scale) * scaleSpeed;
     } else {
-      scale = targetScale; // Immediate scaling if animations reduced
+      scale = targetScale; 
     }
   }
   
@@ -146,8 +144,16 @@ class Button {
   }
   
   boolean isMouseOver() {
-    // Check if mouse is over the button
-    return mouseX >= x - width/2 && mouseX <= x + width/2 && mouseY >= y - height/2 && mouseY <= y + height/2;
+    boolean overButton = mouseX >= x - width/2 && mouseX <= x + width/2 && 
+                        mouseY >= y - height/2 && mouseY <= y + height/2;
+    
+    if (overButton && pmouseX == mouseX && pmouseY == mouseY && menu != null && !mousePressed) {
+      if (menu.currentSelectedButton >= 0) {
+        return false;
+      }
+    }
+    
+    return overButton;
   }
   
   void display() {
@@ -156,12 +162,10 @@ class Button {
     pushStyle();
     rectMode(CENTER);
     
-    // Apply accessibility color adjustments - siempre usar los originales como base
     color currentBaseColor = accessManager.adjustButtonColor(baseColor);
     color currentHoverColor = accessManager.adjustButtonHoverColor(hoverColor);
     color currentTextColor = accessManager.adjustTextColor(textColor);
     
-    // Determine which color to use
     color displayColor;
     if (isHighlighted || isHovered || keyboardHoverEmulation) {
       displayColor = currentHoverColor;
@@ -169,35 +173,30 @@ class Button {
       displayColor = currentBaseColor;
     }
     
-    // Apply scaling transformation
     pushMatrix();
     translate(x, y);
     scale(scale);
     
-    // Draw drop shadow for pill-shaped button
     if (!accessManager.highContrastMode && !accessManager.reduceAnimations) {
       noStroke();
       fill(0, 60);
-      rect(2, 3, width, height, height/2); // Full rounded corners for pill shape with offset for shadow
+      rect(2, 3, width, height, height/2); 
     }
     
-    // Draw glow effect when highlighted or hovered
     if (glowIntensity > 0 && !accessManager.reduceAnimations) {
       noStroke();
-      // Draw multiple layers of semi-transparent outlines for glow effect
       for (int i = 0; i < 3; i++) {
         float alpha = glowIntensity * (3-i) / 3.0;
         float size = i * 3;
         color glowColor = accessManager.highContrastMode ? 
                          color(255, alpha) : // White glow for high contrast
-                         color(red(displayColor), green(displayColor), blue(displayColor), alpha); // Color-matched glow
+                         color(red(displayColor), green(displayColor), blue(displayColor), alpha); 
                          
         fill(glowColor);
-        rect(0, 0, width + size, height + size, (height + size)/2); // Full pill shape
+        rect(0, 0, width + size, height + size, (height + size)/2); 
       }
     }
     
-    // Draw button background with pill shape (fully rounded corners)
     if (accessManager.highContrastMode) {
       stroke(255);
       strokeWeight(3);
@@ -206,9 +205,8 @@ class Button {
       strokeWeight(1);
     }
     fill(displayColor);
-    rect(0, 0, width, height, height/2); // Use h/2 for fully rounded corners (pill shape)
+    rect(0, 0, width, height, height/2); 
     
-    // Draw white outline for highlighted/hovered buttons
     if (isHighlighted || isHovered || keyboardHoverEmulation) {
       strokeWeight(2);
       stroke(255);
@@ -216,57 +214,47 @@ class Button {
       rect(0, 0, width + 4, height + 4, (height + 4)/2);
     }
     
-    // Apply text size adjustment from accessibility manager
     float textSizeValue = accessManager.getAdjustedTextSize(20); // Default size
     textSize(textSizeValue);
     
-    // Draw the text with consistent color and enforced contrast
     textAlign(CENTER, CENTER);
     fill(currentTextColor);
     
-    // Add text shadow for better legibility
     if (!accessManager.highContrastMode) {
       fill(0, 40);
       text(text, 1, 1);
     }
     
-    // Draw main text
     fill(currentTextColor);
     text(text, 0, 0);
     
-    // Add a visual indicator for keyboard navigation when highlighted
     if (isHighlighted && accessManager.keyboardOnly) {
-      // Draw a keyboard indicator if in keyboard-only mode
-      popMatrix(); // Reset transformation for the keyboard indicator
+      popMatrix(); 
       fill(accessManager.highContrastMode ? color(255) : color(255, 220));
       textSize(12);
       textAlign(CENTER, BOTTOM);
       text("Enter/Space to select", x, y + height/2 + 20);
     } else {
-      popMatrix(); // Reset transformation
+      popMatrix(); 
     }
     
     popStyle();
   }
   
   boolean isClicked() {
-    // Check for mouse clicks only if not in keyboard-only mode
     if (accessManager.keyboardOnly) return false;
     
     return isMouseOver() && mousePressed;
   }
   
-  // Set the button as highlighted (for keyboard navigation)
   void setHighlighted(boolean highlighted) {
     isHighlighted = highlighted;
   }
   
-  // Toggle button highlight
   void toggleHighlight() {
     isHighlighted = !isHighlighted;
   }
   
-  // Also initialize the menu reference for buttons in a menu
   void setMenu(Menu menu) {
     this.menu = menu;
   }

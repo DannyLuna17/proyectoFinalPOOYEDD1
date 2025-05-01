@@ -938,12 +938,9 @@ class Menu {
   
   // Limpia selección de teclado de todos los botones
   void clearKeyboardSelection() {
-    // Solo deshabilitar selección de teclado si no estamos en modo solo-teclado
+    unhighlightAllButtons();
+    
     if (!accessManager.keyboardOnly) {
-      // Quitar resaltado de todos los botones
-      unhighlightAllButtons();
-      
-      // Resetear el índice de selección actual
       currentSelectedButton = -1;
     }
   }
