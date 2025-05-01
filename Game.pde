@@ -65,6 +65,7 @@ class Game {
   int tutorialDuration = 300; // 5 segundos
   ArrayList<String> tutorialMessages = new ArrayList<String>();
   int currentTutorialMessage = 0;
+  boolean tutorialShownInSession = false; // Variable para mantener el estado entre reinicios
   
   // Estado
   boolean gameOver = false;
@@ -97,6 +98,9 @@ class Game {
   void reset() {
     try {
       println("Iniciando reinicio del juego...");
+      
+      // Guardar estado del tutorial antes del reinicio
+      boolean tutorialAlreadyShown = tutorialShownInSession;
       
       // Configuración base
       groundLevel = height * 0.8;
@@ -215,7 +219,9 @@ class Game {
       // Tutorial
       try {
         setupTutorialMessages();
-        showTutorial = true;
+        // Solo mostrar el tutorial si no se ha mostrado anteriormente en esta sesión
+        showTutorial = !tutorialAlreadyShown;
+        tutorialShownInSession = tutorialAlreadyShown; // Mantener el valor anterior
         tutorialTimer = 0;
         currentTutorialMessage = 0;
       } catch (Exception e) {
@@ -411,9 +417,14 @@ class Game {
     if (!player.isInvincible) {
       // Aplicar escudo si el jugador tiene uno
       if (player.hasShield) {
+        // El escudo absorbe completamente el daño
         player.deactivateShield();
+        // Activar invencibilidad temporal para que el jugador pueda salir del obstáculo
+        player.isInvincible = true;
+        player.invincibilityTimer = 0;
         collectibleManager.addFloatingText("¡Escudo absorbió el impacto!", player.x, player.y - 40, color(100, 255, 100));
-    } else {
+        // No hay daño cuando hay escudo activo
+      } else {
         // Daño normal por colisión
         player.health -= obstacle.getDamage();
         player.isInvincible = true;
@@ -492,6 +503,8 @@ class Game {
         // Ocultar tutorial después de mostrar todos los mensajes
         if (currentTutorialMessage == 0) {
           showTutorial = false;
+          // Marcar que el tutorial ya se mostró en esta sesión
+          tutorialShownInSession = true;
         }
       }
     }
