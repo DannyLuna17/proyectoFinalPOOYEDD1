@@ -5,7 +5,7 @@
 GameManager gameManager;
 
 void setup() {
-  size(1920, 1080);
+  size(1920, 1080, P2D);
 
 //  fullScreen();
   
