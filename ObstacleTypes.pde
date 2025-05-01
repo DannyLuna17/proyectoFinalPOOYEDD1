@@ -26,7 +26,9 @@ class LowObstacle extends Obstacle {
   }
 }
 
-// Obstáculo móvil (oscila arriba y abajo)
+// Obstáculo móvil (oscila arriba y abajo) - Esta clase ya no se utiliza en el juego
+// Se mantiene por compatibilidad con el código existente
+// Los obstáculos circulares que se mueven verticalmente han sido eliminados
 class MovingObstacle extends Obstacle {
   MovingObstacle(float x, float y) {
     super(x, y, 50, 50, 5.0, 3, new AccessibilityManager());

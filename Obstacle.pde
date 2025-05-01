@@ -100,10 +100,13 @@ class Obstacle {
     x -= speed;
     
     // Movimiento vertical para oscilantes
+    // Ya no usamos obstáculos móviles verticales, pero dejamos este código comentado por referencia
+    /* 
     if (type == 3) {
       // Oscilación con onda sinusoidal
       y = initialY - sin((millis() * moveSpeed) + moveOffset) * moveAmplitude;
     }
+    */
     
     // Actualizar advertencia
     if (hasWarning) {
@@ -197,12 +200,9 @@ class Obstacle {
         case 2: // Alto - rectángulo más alto y delgado
           rect(x - w/4, y - h*1.5, w/2, h*1.5);
           break;
-        case 3: // Móvil - círculo o elipse
-          ellipse(x, y - h/2, w, h);
-          // Líneas indicadoras de movimiento
-          stroke(255);
-          line(x - w/4, y - h/2 - 10, x + w/4, y - h/2 - 10);
-          line(x - w/4, y - h/2 + 10, x + w/4, y - h/2 + 10);
+        case 3: // Ya no usamos obstáculos móviles circulares
+          // Si por alguna razón aparece un tipo 3, lo dibujamos como un obstáculo estándar
+          rect(x - w/2, y - h, w, h);
           break;
       }
     }
@@ -311,14 +311,17 @@ class Obstacle {
   
   // Detectar colisión con el jugador
   boolean checkCollision(Player player) {
-    // Para obstáculo tipo círculo (móvil)
+    // Para obstáculo tipo círculo (móvil) - Ya no usamos este tipo
+    // Tratamos todos los obstáculos como rectángulos ahora
+    /* 
     if (type == 3) {
       float distance = dist(x, y - h/2, player.x, player.y - player.size/2);
       float collisionThreshold = (w/2 + player.size/2) * 0.8;
       return distance < collisionThreshold;
     }
+    */
     
-    // Para otros tipos (rectángulos)
+    // Para todos los tipos (rectángulos)
     float obstacleLeft = x - w/2;
     float obstacleRight = x + w/2;
     float obstacleTop = getTop();

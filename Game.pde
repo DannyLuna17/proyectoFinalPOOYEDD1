@@ -762,24 +762,24 @@ class Game {
   }
   
   void displayTutorial() {
-    // Caja de tutorial
+    // Caja de tutorial en la parte superior
     fill(0, 0, 0, 200);
-    rect(width/2 - 200, height - 100, 400, 60);
+    rect(width/2 - 200, 40, 400, 60);
     
     // Texto de tutorial
     fill(255);
     textAlign(CENTER, CENTER);
     textSize(16);
-    text(tutorialMessages.get(currentTutorialMessage), width/2, height - 70);
+    text(tutorialMessages.get(currentTutorialMessage), width/2, 70);
     
     // Puntos de progreso
     for (int i = 0; i < tutorialMessages.size(); i++) {
       if (i == currentTutorialMessage) {
         fill(255);
-    } else {
+      } else {
         fill(150);
       }
-      ellipse(width/2 - 30 + i * 20, height - 60, 8, 8);
+      ellipse(width/2 - 30 + i * 20, 90, 8, 8);
     }
   }
   

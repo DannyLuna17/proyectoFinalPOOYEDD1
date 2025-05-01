@@ -5,6 +5,7 @@ class Platform {
   boolean isMoving;
   float moveAmplitude = 40;
   float moveSpeed = 0.03;
+  float verticalMoveSpeed = 0.015;
   float moveOffset;
   float initialY;
   color platformColor;
@@ -88,7 +89,7 @@ class Platform {
     // Movimiento según tipo
     if (type == 2) {
       // Movimiento vertical
-      y = initialY + sin((millis() * moveSpeed) + moveOffset) * moveAmplitude;
+      y = initialY + sin((millis() * verticalMoveSpeed) + moveOffset) * moveAmplitude;
     } else if (type == 3) {
       // Movimiento horizontal (oscilación adicional)
       x += sin((millis() * moveSpeed * 1.5) + moveOffset) * 2;

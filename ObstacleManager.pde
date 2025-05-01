@@ -24,9 +24,9 @@ class ObstacleManager {
     {0, 0, 1}, // Patrón básico
     {1, 2, 1}, // Salto, deslizar, salto
     {2, 2, 0, 2}, // Deslizar, deslizar, básico, deslizar
-    {3, 0, 3}, // Móvil, básico, móvil
-    {1, 3, 2, 1}, // Complejo
-    {3, 3, 2, 1, 0} // Experto
+    {0, 0, 0}, // Patrón básico (reemplazado el que tenía móviles)
+    {1, 0, 2, 1}, // Complejo (reemplazado el móvil con básico)
+    {0, 1, 2, 1, 0} // Experto (reemplazado los móviles)
   };
   
   // Integración con ecosistema
@@ -103,7 +103,8 @@ class ObstacleManager {
   }
   
   void createRandomObstacle() {
-    int obstacleType = int(random(4)); // 0: Básico, 1: Alto, 2: Bajo, 3: Móvil
+    // Eliminamos el tipo 3 (móvil) de las opciones
+    int obstacleType = int(random(3)); // 0: Básico, 1: Alto, 2: Bajo
     createObstacleByType(obstacleType);
   }
   
@@ -120,8 +121,10 @@ class ObstacleManager {
       case 2: // Obstáculo bajo (deslizar)
         obstacle = new LowObstacle(obstacleX, groundLevel, accessManager);
         break;
-      case 3: // Obstáculo móvil
-        obstacle = new MovingObstacle(obstacleX, groundLevel, accessManager);
+      case 3: // Este caso ya no se usa, pero lo dejamos por compatibilidad
+        // Si por alguna razón llega un tipo 3, creamos un obstáculo básico en su lugar
+        // Comentario explicativo en español
+        obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager);
         break;
       default: // Obstáculo básico
         obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager);
