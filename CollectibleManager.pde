@@ -18,6 +18,9 @@ class CollectibleManager {
   float collectibleChance = 0.7;   // 70% de probabilidad
   float ecoCollectibleChance = 0.3; // 30% para ambientales
   
+  // Seguimiento de corazones
+  boolean firstHeartShown = false;
+  
   // Integración con ecosistema
   EcoSystem ecoSystem;
   
@@ -47,6 +50,11 @@ class CollectibleManager {
     updatePowerUps();
     updateFloatingTexts();
     generateCollectibles(platforms);
+    
+    // Probabilidad adicional de generar corazones cada 10 segundos (600 frames)
+    if (frameCount % 600 == 0 && random(1) < 0.4) {
+      createHeartCollectible();
+    }
   }
   
   void updateCollectibles(float obstacleSpeed) {
@@ -130,6 +138,24 @@ class CollectibleManager {
     collectibles.add(collectible);
   }
   
+  void createHeartCollectible() {
+    // Crear un corazón en una posición aleatoria
+    float x = width + 50;
+    float y = random(groundLevel - 200, groundLevel - 80);
+    
+    // Crear corazón coleccionable más grande para mejor visibilidad
+    Collectible heart = new Collectible(x, y, 40, 5, Collectible.HEART);
+    collectibles.add(heart);
+    
+    // Mostrar mensaje de ayuda la primera vez que aparece un corazón
+    if (!firstHeartShown) {
+      // Mostrar mensaje en el centro de la pantalla
+      addFloatingText("¡Recoge corazones para ganar vidas extra!", width/2, height/2 - 100, color(255, 50, 50));
+      // Marcar como mostrado
+      firstHeartShown = true;
+    }
+  }
+  
   int determineCollectibleType(boolean onPlatform) {
     // Determinar tipo de coleccionable según contexto y estado del ecosistema
     if (random(1) < ecoCollectibleChance) {
@@ -143,16 +169,19 @@ class CollectibleManager {
       // Coleccionable estándar de juego
       float rand = random(1);
       
-      if (rand < 0.6) {
+      if (rand < 0.50) {
         return Collectible.COIN;
-      } else if (rand < 0.75) {
+      } else if (rand < 0.65) {
         return Collectible.GEM;
-      } else if (rand < 0.85) {
+      } else if (rand < 0.75) {
         return Collectible.SHIELD;
-      } else if (rand < 0.95) {
+      } else if (rand < 0.85) {
         return Collectible.SPEED_BOOST;
-      } else {
+      } else if (rand < 0.90) {
         return Collectible.DOUBLE_POINTS;
+      } else {
+        // Aumentamos la probabilidad de generar un corazón
+        return Collectible.HEART;
       }
     }
   }
@@ -189,6 +218,35 @@ class CollectibleManager {
         break;
       case Collectible.DOUBLE_POINTS:
         activateDoublePoints(player);
+        break;
+      case Collectible.HEART:
+        // Aumentar vida del jugador
+        player.health++;
+        
+        // Efecto visual mejorado - crear múltiples partículas en forma de círculo
+        for (int i = 0; i < 15; i++) {
+          float angle = map(i, 0, 15, 0, TWO_PI);
+          float px = collectible.x + cos(angle) * 30;
+          float py = collectible.y + sin(angle) * 30;
+          FloatingText particle = new FloatingText("♥", px, py, color(255, 50, 50), accessManager);
+          particle.setVelocity(cos(angle) * 2, sin(angle) * 2);
+          floatingTexts.add(particle);
+        }
+        
+        // Mostrar texto flotante más grande y llamativo
+        FloatingText heartText = new FloatingText("¡VIDA EXTRA!", collectible.x, collectible.y - 30, color(255, 50, 50), accessManager);
+        heartText.setSize(1.5); // Texto más grande
+        floatingTexts.add(heartText);
+        
+        // Reproducir sonido especial para recoger corazón
+        if (player.soundManager != null) {
+          // Reproducir el sonido una vez de inmediato
+          player.soundManager.playCollectSound();
+          
+          // Programar otro sonido para reproducirse más tarde sin bloquear con delay()
+          // Esto se podría implementar con un sistema de eventos temporizado
+          // Por ahora, simplemente reproducimos el sonido una vez
+        }
         break;
       case Collectible.ECO_BOOST:
         ecoSystem.boost(0.1);

@@ -513,28 +513,32 @@ class Player {
     fill(accessManager.getBackgroundColor(color(100)));
     rect(x, y, w, h);
     
-    // Configuración para dibujar corazones
-    int maxHearts = 3;
+    // Configurar para mostrar un máximo visible de corazones a la vez
+    int visibleHearts = 5; // Número máximo de corazones a mostrar en la barra
     float heartSize = h * 0.8;
-    float heartSpacing = (w - maxHearts * heartSize) / (maxHearts + 1);
+    float heartSpacing = (w - visibleHearts * heartSize) / (visibleHearts + 1);
     
-    // Dibujar corazones
-    for (int i = 0; i < maxHearts; i++) {
+    // Si el jugador tiene más corazones de los que caben, mostrar un indicador
+    boolean showMoreIndicator = health > visibleHearts;
+    int heartsToShow = min(health, visibleHearts);
+    
+    // Dibujar corazones visibles
+    for (int i = 0; i < heartsToShow; i++) {
       // Posición del corazón actual
       float heartX = x + heartSpacing + i * (heartSize + heartSpacing);
       float heartY = y + (h - heartSize) / 2;
       
-      // Dibujar corazón lleno o vacío según la salud del jugador
-      if (i < health) {
-        // Corazón lleno
-        fill(accessManager.getForegroundColor(color(255, 0, 0)));
-      } else {
-        // Corazón vacío
-        fill(accessManager.getForegroundColor(color(100, 0, 0)));
-      }
-      
-      // Dibujar corazón
+      // Dibujar corazón lleno
+      fill(accessManager.getForegroundColor(color(255, 0, 0)));
       drawHeartShape(heartX, heartY, heartSize);
+    }
+    
+    // Si hay más corazones de los que se pueden mostrar, dibujar indicador
+    if (showMoreIndicator) {
+      textAlign(LEFT, CENTER);
+      fill(accessManager.getForegroundColor(color(255, 0, 0)));
+      textSize(h * 0.6);
+      text("+" + (health - visibleHearts), x + w - 40, y + h/2);
     }
     
     // Borde

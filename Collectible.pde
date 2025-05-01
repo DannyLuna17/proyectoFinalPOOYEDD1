@@ -9,14 +9,15 @@ class Collectible {
   static final int SHIELD = 2;      // Escudo temporal
   static final int SPEED_BOOST = 3; // Aumento de velocidad
   static final int DOUBLE_POINTS = 4; // Puntos dobles
+  static final int HEART = 5;       // Corazón (vida extra)
   
   // Coleccionables ambientales
-  static final int ECO_POSITIVE = 5; // Items ecológicos 
-  static final int ECO_NEGATIVE = 6; // Items contaminantes
+  static final int ECO_POSITIVE = 6; // Items ecológicos 
+  static final int ECO_NEGATIVE = 7; // Items contaminantes
   
   // Tipos específicos de coleccionables ambientales
-  static final int ECO_BOOST = 7;    // Mejora el ecosistema
-  static final int ECO_CLEANUP = 8;  // Limpia la contaminación
+  static final int ECO_BOOST = 8;    // Mejora el ecosistema
+  static final int ECO_CLEANUP = 9;  // Limpia la contaminación
   
   // Valores por tipo
   final int[] VALUE_BY_TYPE = {
@@ -25,6 +26,7 @@ class Collectible {
     20,    // SHIELD
     15,    // SPEED_BOOST
     15,    // DOUBLE_POINTS
+    30,    // HEART
     40,    // ECO_POSITIVE
     -30,   // ECO_NEGATIVE
     50,    // ECO_BOOST
@@ -38,6 +40,7 @@ class Collectible {
     300,   // SHIELD - 5 segundos
     240,   // SPEED_BOOST - 4 segundos
     360,   // DOUBLE_POINTS - 6 segundos
+    0,     // HEART
     0,     // ECO_POSITIVE
     0,     // ECO_NEGATIVE
     0,     // ECO_BOOST
@@ -106,6 +109,9 @@ class Collectible {
       case DOUBLE_POINTS:
         itemColor = color(255, 100, 255); // Morado
         break;
+      case HEART:
+        itemColor = color(255, 50, 50); // Rojo brillante
+        break;
       case ECO_POSITIVE:
         itemColor = color(0, 200, 100); // Verde brillante
         break;
@@ -139,6 +145,9 @@ class Collectible {
         break;
       case DOUBLE_POINTS:
         ecoImpact = 3; // Ligero positivo
+        break;
+      case HEART:
+        ecoImpact = 0; // Neutral
         break;
       case ECO_POSITIVE:
         ecoImpact = 10; // Muy positivo
@@ -297,6 +306,38 @@ class Collectible {
           sy = sin(a+halfAngle) * size/4;
           vertex(sx, sy);
         }
+        endShape(CLOSE);
+        break;
+        
+      case HEART:
+        // Dibujar un corazón
+        noStroke();
+        // Color principal más saturado
+        fill(255, 30, 30);
+        beginShape();
+        // Un corazón hecho con vértices y curvas bezier
+        vertex(0, size/4);
+        bezierVertex(0, 0, -size/2, 0, -size/2, -size/4);
+        bezierVertex(-size/2, -size/2, 0, -size/2, 0, -size/4);
+        bezierVertex(0, -size/2, size/2, -size/2, size/2, -size/4);
+        bezierVertex(size/2, 0, 0, 0, 0, size/4);
+        endShape(CLOSE);
+        
+        // Efecto de brillo pulsante (usando frameCount para animación)
+        float pulse = sin(frameCount * 0.1) * 0.5 + 0.5;
+        fill(255, 150 + pulse * 100, 150 + pulse * 50);
+        ellipse(-size/5, -size/5, size/4, size/4);
+        
+        // Contorno sutil para destacarlo más
+        noFill();
+        stroke(255, 220, 220, 150);
+        strokeWeight(2);
+        beginShape();
+        vertex(0, size/4 - 2);
+        bezierVertex(0, -2, -size/2 + 2, -2, -size/2 + 2, -size/4);
+        bezierVertex(-size/2 + 2, -size/2 + 2, 0, -size/2 + 2, 0, -size/4);
+        bezierVertex(0, -size/2 + 2, size/2 - 2, -size/2 + 2, size/2 - 2, -size/4);
+        bezierVertex(size/2 - 2, -2, 0, -2, 0, size/4 - 2);
         endShape(CLOSE);
         break;
       

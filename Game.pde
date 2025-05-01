@@ -688,6 +688,10 @@ class Game {
     }
   }
   
+  // Mostrar la barra de salud con todos los corazones del jugador
+  // Ahora muestra hasta 5 corazones visibles, y si el jugador tiene más,
+  // se indica con un número como "+2". Así podemos ver todas las vidas extra
+  // que conseguimos al recoger corazones durante el juego.
   void displayHealthBar() {
     // Dibujar corazones para representar la salud
     pushStyle();
@@ -703,27 +707,38 @@ class Game {
     // Color para corazones vacíos
     color emptyHeartColor = color(100, 0, 0);
     
-    // Dibujar fondo para el área de los corazones
-    fill(0, 0, 0, 150);
-    // rect(startX - 5, startY - 5, (heartSize + heartSpacing) * 3 + 5, heartSize + 10);
+    // Configurar el número máximo de corazones a mostrar
+    int maxVisibleHearts = 5; // Máximo de corazones visibles
+    int heartsToShow = min(player.health, maxVisibleHearts);
+    boolean showMoreIndicator = player.health > maxVisibleHearts;
     
-    // Dibujar corazones
-    for (int i = 0; i < 3; i++) {
+    // Dibujar fondo para el área de los corazones (ajustar ancho según número de corazones)
+    fill(0, 0, 0, 150);
+    int backgroundWidth = (heartSize + heartSpacing) * heartsToShow + 5;
+    // Hacer espacio para el indicador "+X" si es necesario
+    if (showMoreIndicator) backgroundWidth += 30;
+    
+    // Dibujar corazones visibles
+    for (int i = 0; i < heartsToShow; i++) {
       // Posición del corazón actual
       int heartX = startX + i * (heartSize + heartSpacing);
       int heartY = startY;
       
-      // Dibujar corazón lleno o vacío según la salud del jugador
-      if (i < player.health) {
-        // Corazón lleno
-        fill(heartColor);
-      } else {
-        // Corazón vacío
-        fill(emptyHeartColor);
-      }
+      // Todos son corazones llenos porque estamos mostrando solo los que tiene el jugador
+      fill(heartColor);
       
       // Dibujar corazón
       drawHeart(heartX, heartY, heartSize);
+    }
+    
+    // Si hay más corazones de los que podemos mostrar, añadir un indicador
+    if (showMoreIndicator) {
+      textAlign(LEFT, CENTER);
+      fill(255);
+      textSize(20);
+      text("+" + (player.health - maxVisibleHearts), 
+           startX + (heartSize + heartSpacing) * maxVisibleHearts, 
+           startY + heartSize/2);
     }
     
     popStyle();

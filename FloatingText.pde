@@ -4,10 +4,12 @@ class FloatingText {
   color textColor;
   float alpha;
   float vSpeed;
+  float hSpeed = 0; // Velocidad horizontal
   int lifetime;
   int maxLifetime;
   int textStyle = 0; // 0 = normal, 1 = educativo
   boolean isEcoMessage = false;
+  float textSizeMultiplier = 1.0; // Multiplicador de tamaño de texto
   
   // Referencia al gestor de accesibilidad
   AccessibilityManager accessManager;
@@ -51,8 +53,9 @@ class FloatingText {
   }
   
   void update() {
-    // Mover hacia arriba
+    // Mover según velocidades
     y += vSpeed;
+    x += hSpeed;
     
     // Desvanecer
     lifetime++;
@@ -78,6 +81,8 @@ class FloatingText {
     float textSizeValue = isEcoMessage ? 
                            accessManager.getAdjustedTextSize(20) : 
                            accessManager.getAdjustedTextSize(16);
+    // Aplicar multiplicador de tamaño
+    textSizeValue *= textSizeMultiplier;
     textSize(textSizeValue);
     
     // Aplicar alfa al color del texto
@@ -122,5 +127,21 @@ class FloatingText {
   boolean isExpired() {
     // Alias para isDead() para coincidir con la llamada al método en CollectibleManager
     return isDead();
+  }
+  
+  // Configura la velocidad de movimiento del texto
+  void setVelocity(float hSpeed, float vSpeed) {
+    this.hSpeed = hSpeed;
+    this.vSpeed = vSpeed;
+  }
+  
+  // Configura el tamaño del texto mediante un multiplicador
+  void setSize(float sizeMultiplier) {
+    this.textSizeMultiplier = sizeMultiplier;
+  }
+  
+  // Aumenta la duración del texto en pantalla
+  void setDuration(int frames) {
+    this.maxLifetime = frames;
   }
 } 
