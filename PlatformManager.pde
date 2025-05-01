@@ -74,65 +74,86 @@ class PlatformManager {
   }
   
   void createRandomPlatform() {
-    // Parámetros básicos de la plataforma
-    float platformX = width + 50;
-    float platformY = random(groundLevel - 200, groundLevel - 100);
-    float platformWidth = random(80, 200);
-    int platformType = int(random(4)); // 0: Normal, 1: Rebote, 2: Móvil, 3: Desapareciendo
+    // Número máximo de intentos para encontrar una posición válida
+    int maxAttempts = 5;
+    int attempts = 0;
+    boolean validPosition = false;
+    Platform platform = null;
     
-    Platform platform;
-    
-    switch (platformType) {
-      case 1: // Plataforma de rebote
-        platform = new BouncePlatform(platformX, platformY, platformWidth, accessManager);
-        break;
-      case 2: // Plataforma móvil
-        platform = new MovingPlatform(platformX, platformY, platformWidth, accessManager);
-        break;
-      case 3: // Plataforma que desaparece
-        platform = new DisappearingPlatform(platformX, platformY, platformWidth, accessManager);
-        break;
-      default: // Plataforma normal
-        platform = new Platform(platformX, platformY, platformWidth, accessManager);
-    }
-    
-    // Verificar si hay solapamiento con plataformas existentes
-    boolean overlapsWithPlatform = false;
-    for (Platform existingPlatform : platforms) {
-      if (platform.overlapsWith(existingPlatform)) {
-        overlapsWithPlatform = true;
-        break;
+    // Intentamos varias veces hasta encontrar una posición sin solapamientos
+    // o hasta agotar los intentos máximos
+    while (!validPosition && attempts < maxAttempts) {
+      // Parámetros básicos de la plataforma
+      float platformX = width + 50;
+      // Variar la altura para evitar colisiones
+      float platformY = random(groundLevel - 200, groundLevel - 100);
+      float platformWidth = random(80, 200);
+      int platformType = int(random(4)); // 0: Normal, 1: Rebote, 2: Móvil, 3: Desapareciendo
+      
+      switch (platformType) {
+        case 1: // Plataforma de rebote
+          platform = new BouncePlatform(platformX, platformY, platformWidth, accessManager);
+          break;
+        case 2: // Plataforma móvil
+          platform = new MovingPlatform(platformX, platformY, platformWidth, accessManager);
+          break;
+        case 3: // Plataforma que desaparece
+          platform = new DisappearingPlatform(platformX, platformY, platformWidth, accessManager);
+          break;
+        default: // Plataforma normal
+          platform = new Platform(platformX, platformY, platformWidth, accessManager);
+      }
+      
+      // Verificar si hay solapamiento con plataformas existentes
+      boolean overlapsWithPlatform = false;
+      for (Platform existingPlatform : platforms) {
+        if (platform.overlapsWith(existingPlatform)) {
+          overlapsWithPlatform = true;
+          break;
+        }
+      }
+      
+      // Verificar si hay solapamiento con obstáculos
+      boolean overlapsWithObstacle = false;
+      if (obstacleManager != null) {
+        overlapsWithObstacle = overlapsWithObstacle(platform, obstacleManager.getObstacles());
+      }
+      
+      // Si no hay solapamientos, tenemos una posición válida
+      if (!overlapsWithPlatform && !overlapsWithObstacle) {
+        validPosition = true;
+      } else {
+        // Intentar de nuevo con una nueva posición
+        attempts++;
       }
     }
     
-    // Verificar si hay solapamiento con obstáculos
-    boolean overlapsWithObstacle = false;
-    if (obstacleManager != null) {
-      overlapsWithObstacle = overlapsWithObstacle(platform, obstacleManager.getObstacles());
-    }
-    
-    // Añadir solo si no hay solapamientos
-    if (!overlapsWithPlatform && !overlapsWithObstacle) {
+    // Añadir solo si encontramos una posición válida
+    if (validPosition && platform != null) {
       platforms.add(platform);
     }
   }
   
   // Verificar si una plataforma se solapa con algún obstáculo
   boolean overlapsWithObstacle(Platform platform, ArrayList<Obstacle> obstacles) {
+    // Márgenes de seguridad para evitar colocaciones demasiado cercanas
+    float xSafetyMargin = 30; // Margen horizontal adicional
+    float ySafetyMargin = 40; // Margen vertical adicional
+    
     for (Obstacle obstacle : obstacles) {
-      // Verificar superposición horizontal
-      boolean xOverlap = (platform.x + platform.width > obstacle.x - obstacle.w/2) && 
-                         (platform.x < obstacle.x + obstacle.w/2);
+      // Verificar superposición horizontal con margen de seguridad
+      boolean xOverlap = (platform.x + platform.width + xSafetyMargin > obstacle.x - obstacle.w/2) && 
+                         (platform.x - xSafetyMargin < obstacle.x + obstacle.w/2);
       
-      // Verificar superposición vertical
-      boolean yOverlap = (platform.y + platform.height > obstacle.y - obstacle.h) && 
-                         (platform.y < obstacle.y);
+      // Verificar superposición vertical con margen de seguridad
+      boolean yOverlap = (platform.y + platform.height + ySafetyMargin > obstacle.y - obstacle.h) && 
+                         (platform.y - ySafetyMargin < obstacle.y);
       
       if (xOverlap && yOverlap) {
-        return true;
+        return true; // Hay solapamiento con este obstáculo
       }
     }
-    return false;
+    return false; // No hay solapamiento con ningún obstáculo
   }
   
   void setObstacleSpeed(float speed) {

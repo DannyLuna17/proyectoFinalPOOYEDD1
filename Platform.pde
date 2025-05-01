@@ -240,11 +240,16 @@ class Platform {
   
   // Comprobar si esta plataforma se superpone con otra
   boolean overlapsWith(Platform other) {
-    // Comprobar superposición horizontal
-    boolean xOverlap = (this.x + this.width > other.x) && (this.x < other.x + other.width);
+    // Margen de seguridad horizontal para evitar plataformas demasiado juntas
+    float xMargin = 20; // Espacio mínimo horizontal entre plataformas
     
-    // Comprobar superposición vertical (con un pequeño margen de variación)
-    float yBuffer = 40; // Permitir que las plataformas estén al menos a esta distancia verticalmente
+    // Comprobamos superposición horizontal con margen adicional 
+    // para asegurar que haya suficiente espacio entre plataformas
+    boolean xOverlap = (this.x + this.width + xMargin > other.x) && (this.x < other.x + other.width + xMargin);
+    
+    // Comprobamos superposición vertical con un margen mayor
+    // para permitir plataformas a diferentes alturas pero no demasiado cercanas
+    float yBuffer = 50; // Permitir que las plataformas estén al menos a esta distancia verticalmente
     boolean yOverlap = (this.y + this.height + yBuffer > other.y) && (this.y < other.y + other.height + yBuffer);
     
     return xOverlap && yOverlap;

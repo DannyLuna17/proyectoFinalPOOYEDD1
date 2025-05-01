@@ -23,6 +23,12 @@ class Game {
   // Soporte de sonido
   SoundManager soundManager;
   
+  // Imagen de fondo
+  PImage backgroundImage;
+  PImage scaledBackground; // Imagen redimensionada
+  float bgX = 0; // Posición de desplazamiento
+  int scaledBgWidth; // Ancho redimensionado
+  
   // Parámetros del juego
   float scrollSpeed = 5;
   float baseObstacleSpeed = 5;
@@ -34,6 +40,7 @@ class Game {
   float cameraY = 0;
   float targetCameraY = 0;
   float cameraLerpFactor = 0.05; // Factor de suavizado de la cámara
+  float cameraMaxDelta = 0.0;   // Máxima distancia de movimiento por frame
   
   // Dificultad
   int difficultyLevel = 1;
@@ -104,6 +111,11 @@ class Game {
       
       // Configuración base
       groundLevel = height * 0.8;
+
+      // Inicializar imagen de fondo optimizada (solo si no está ya inicializada)
+      if (scaledBackground == null) {
+        initBackground();
+      }
       
       // Inicializar jugador con manejo de errores
       try {
@@ -272,6 +284,52 @@ class Game {
     }
   }
   
+  // Método para inicializar el fondo de manera optimizada
+  void initBackground() {
+    try {
+      // Cargar la imagen original
+      backgroundImage = loadImage("assets/fondo1.png");
+      
+      if (backgroundImage != null) {
+        println("Cargando imagen de fondo...");
+        
+        // Reducir la resolución para mejor rendimiento
+        float scale = height / 1920.0; // La altura original es 1920
+        int targetWidth = round(8000 * scale); // El ancho original es 8000
+        
+        // Redimensionar la imagen original para usar menos memoria
+        backgroundImage.resize(targetWidth, height);
+        
+        // Guardamos el ancho para cálculos de desplazamiento
+        scaledBgWidth = targetWidth;
+        
+        // Asignamos directamente sin crear una nueva imagen
+        scaledBackground = backgroundImage;
+        
+        println("Imagen de fondo optimizada correctamente: " + targetWidth + "x" + height);
+      } else {
+        println("No se pudo cargar la imagen de fondo");
+      }
+    } catch (Exception e) {
+      println("ERROR al optimizar la imagen de fondo: " + e.getMessage());
+      e.printStackTrace();
+      // En caso de error, intentamos crear un fondo simple
+      try {
+        scaledBackground = createImage(width*2, height, RGB);
+        scaledBackground.loadPixels();
+        // Llenar con color de cielo
+        for (int i = 0; i < scaledBackground.pixels.length; i++) {
+          scaledBackground.pixels[i] = color(135, 206, 235);
+        }
+        scaledBackground.updatePixels();
+        scaledBgWidth = width*2;
+        println("Creado fondo alternativo por error en carga de imagen");
+      } catch (Exception ex) {
+        println("ERROR al crear fondo alternativo: " + ex.getMessage());
+      }
+    }
+  }
+  
   void setupTutorialMessages() {
     tutorialMessages = new ArrayList<String>();
     tutorialMessages.add("¡Usa ESPACIO para SALTAR entre plataformas!");
@@ -386,22 +444,28 @@ class Game {
       targetCameraY = 0;
     }
     
-    // Suavizar posición de la cámara con lerp
-    cameraY = lerp(cameraY, targetCameraY, cameraLerpFactor);
+    // Calcular la distancia actual a la posición objetivo
+    float cameraDistance = abs(targetCameraY - cameraY);
+    
+    // Usar lerp adaptativo: más rápido para distancias grandes, más suave para ajustes pequeños
+    float adaptiveLerpFactor = min(0.2, cameraLerpFactor * (1 + cameraDistance * 0.01));
+    
+    // Aplicar el lerp con el factor adaptativo
+    float newCameraY = lerp(cameraY, targetCameraY, adaptiveLerpFactor);
+    
+    // Limitar el cambio máximo de posición de la cámara por frame
+    float deltaY = newCameraY - cameraY;
+    if (abs(deltaY) > cameraMaxDelta) {
+      deltaY = cameraMaxDelta * (deltaY > 0 ? 1 : -1);
+      newCameraY = cameraY + deltaY;
+    }
+    
+    cameraY = newCameraY;
   }
   
   void scrollBackground() {
-    // Actualizar posiciones de fondo
-    backgroundX[0] -= scrollSpeed * 0.5;
-    backgroundX[1] -= scrollSpeed * 0.5;
-    
-    // Ciclar fondos para desplazamiento continuo
-    if (backgroundX[0] <= -width) {
-      backgroundX[0] = width;
-    }
-    if (backgroundX[1] <= -width) {
-      backgroundX[1] = width;
-    }
+    // Actualizar posición de desplazamiento
+    bgX = (bgX + scrollSpeed * 0.5) % scaledBgWidth;
   }
   
   void checkCollisions() {
@@ -617,11 +681,26 @@ class Game {
   }
   
   void displayBackground() {
-    // Dibujar fondo desplazable
-    PImage bg = getBackgroundImage();
-    if (bg != null) {
-      image(bg, backgroundX[0], 0, width, height);
-      image(bg, backgroundX[1], 0, width, height);
+    // Dibujar fondo desplazable optimizado con máxima eficiencia
+    if (scaledBackground != null) {
+      // Solo dibujamos las partes visibles de la imagen
+      // Primera parte: desde bgX hasta el borde
+      int visibleWidth = min(width, scaledBgWidth - int(bgX));
+      
+      if (visibleWidth > 0) {
+        // Solo copiamos la parte visible de la imagen
+        copy(scaledBackground, 
+             int(bgX), 0, visibleWidth, height, 
+             0, 0, visibleWidth, height);
+      }
+      
+      // Si necesitamos mostrar más contenido (cuando la posición está cerca del final)
+      if (visibleWidth < width) {
+        // Segunda parte: desde el inicio hasta completar la pantalla
+        copy(scaledBackground, 
+             0, 0, width - visibleWidth, height, 
+             visibleWidth, 0, width - visibleWidth, height);
+      }
     } else {
       // Fondo de respaldo cuando la imagen no está disponible
       fill(135, 206, 235); // Azul cielo
@@ -633,8 +712,8 @@ class Game {
   }
   
   PImage getBackgroundImage() {
-    // Por ahora, devolveremos null pero lo manejaremos correctamente en displayBackground
-    return null;
+    // Ya no necesitamos cargar la imagen cada vez
+    return scaledBackground;
   }
   
   void displayGround() {
@@ -686,6 +765,9 @@ class Game {
     if (showTutorial) {
       displayTutorial();
     }
+    
+    // Mostrar framerate en esquina superior izquierda
+    displayFramerate();
   }
   
   // Mostrar la barra de salud con todos los corazones del jugador
@@ -816,6 +898,19 @@ class Game {
     for (PowerUp powerUp : collectibleManager.getActivePowerUps()) {
       powerUp.display();
     }
+  }
+  
+  // Mostrar el framerate actual en la esquina superior izquierda
+  void displayFramerate() {
+    pushStyle();
+    fill(0, 0, 0, 200);
+    rect(10, 75, 60, 25);
+    
+    textAlign(LEFT, CENTER);
+    fill(255);
+    textSize(14);
+    text("FPS: " + round(frameRate), 15, 88);
+    popStyle();
   }
   
   // Getters de puntuación para acceso externo
