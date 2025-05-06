@@ -5,7 +5,8 @@
 GameManager gameManager;
 
 void setup() {
-  size(1920, 1080, P2D);
+  // size(1920, 1080, P2D);
+  fullScreen(P2D);
 
 //  fullScreen();
   
@@ -14,8 +15,8 @@ void setup() {
     gameManager = new GameManager();
   } catch (Exception e) {
     println("ERROR en setup: " + e.getMessage());
-    e.printStackTrace();
-  }
+    e.printStackTrace(); 
+  } 
 }
 
 void draw() {

@@ -11,6 +11,7 @@ class AssetManager {
   private PImage scaledBackground;
   private PImage menuBackground;
   private PImage finalBackground;
+  private PImage instructionsImage; // Imagen para la pantalla de instrucciones
   
   // Imágenes de coleccionables
   private PImage heartImage;       // corazon.png
@@ -40,6 +41,9 @@ class AssetManager {
     backgroundImage = loadImage("assets/fondo1.png");
     menuBackground = loadImage("assets/menuFinal.png");
     finalBackground = loadImage("assets/menuFinal.png");
+    
+    // Cargar imagen de instrucciones
+    instructionsImage = loadImage("assets/instrucciones.png");
     
     // Cargar imágenes de coleccionables
     heartImage = loadImage("assets/corazon.png");
@@ -113,6 +117,10 @@ class AssetManager {
   
   PImage getFinalBackground() {
     return finalBackground;
+  }
+  
+  PImage getInstructionsImage() {
+    return instructionsImage;
   }
   
   PImage getHeartImage() {

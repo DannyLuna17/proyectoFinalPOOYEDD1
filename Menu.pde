@@ -327,58 +327,52 @@ class Menu {
     pushStyle();
     rectMode(CORNER);
     
-    // Obtener el color de fondo apropiado
-    color bgColor = accessManager.getBackgroundColor(backgroundColor);
-    background(bgColor);
+    // Limpiar pantalla con fondo negro para evitar residuos visuales
+    background(0);
     
-    // Título
-    textAlign(CENTER, CENTER);
-    textSize(accessManager.getAdjustedTextSize(40));
-    fill(accessManager.getTextColor(color(0, 100, 0)));
-    text("Instrucciones", width/2, 50);
-    
-    // Texto de instrucciones
-    textAlign(LEFT);
-    textSize(accessManager.getAdjustedTextSize(16));
-    fill(accessManager.getTextColor(color(50, 50, 50)));
-    float textX = width/6;
-    float textY = 100;
-    float lineHeight = accessManager.getAdjustedTextSize(30);
-    
-    text("CONTROLES:", textX, textY);
-    textY += lineHeight;
-    
-    // Mostrar instrucciones de control apropiadas según configuración
-    if (accessManager.alternativeControls) {
-      text("• J KEY - Saltar obstáculos", textX, textY);
-      textY += lineHeight;
-      text("• S KEY - Deslizarse bajo obstáculos altos", textX, textY);
+    // Mostrar imagen de instrucciones a pantalla completa
+    if (assetManager != null && assetManager.getInstructionsImage() != null) {
+      // Obtener la imagen de instrucciones
+      PImage instrImg = assetManager.getInstructionsImage();
+      
+      // Calcular escalado para llenar toda la pantalla manteniendo proporciones
+      float imgRatio = (float)instrImg.width / instrImg.height;
+      float screenRatio = (float)width / height;
+      
+      float displayWidth, displayHeight;
+      
+      // Si la imagen es más ancha que la pantalla proporcionalmente
+      if (imgRatio > screenRatio) {
+        displayHeight = height;
+        displayWidth = height * imgRatio;
+      } else {
+        // Si la imagen es más alta que la pantalla proporcionalmente
+        displayWidth = width;
+        displayHeight = width / imgRatio;
+      }
+      
+      // Dibujar imagen centrada cubriendo toda la pantalla
+      imageMode(CENTER);
+      image(instrImg, width/2, height/2, displayWidth, displayHeight);
     } else {
-      text("• SPACEBAR - Saltar obstáculos", textX, textY);
-      textY += lineHeight;
-      text("• DOWN ARROW - Deslizarse bajo obstáculos altos", textX, textY);
+      // Mensaje de error si no se encuentra la imagen
+      textAlign(CENTER, CENTER);
+      textSize(accessManager.getAdjustedTextSize(20));
+      fill(accessManager.getTextColor(color(255, 50, 50)));
+      text("Error: No se pudo cargar la imagen de instrucciones", width/2, height/2);
     }
-    textY += lineHeight;
-    text("• P - Pausar juego", textX, textY);
-    textY += lineHeight * 1.5;
     
-    text("OBJETIVOS:", textX, textY);
-    textY += lineHeight;
-    text("• Recoge los objetos ecológicos (verdes) para mejorar la salud ambiental", textX, textY);
-    textY += lineHeight;
-    text("• Evita los objetos contaminantes (rojo oscuro) para mantener el estado ambiental", textX, textY);
-    textY += lineHeight;
-    text("• ¡El estado del medio ambiente afecta la dificultad y la puntuación del juego!", textX, textY);
-    textY += lineHeight * 1.5;
-
-    // Dibujar ilustraciones simples
-    drawControlsIllustration(width * 3/4, 150);
-    drawItemsIllustration(width * 3/4, 300);
-    
-    // Dibujar botón de regreso con ajustes de accesibilidad
-    for (Button button : instructionsButtons) {
-      applyAccessibilityToButton(button);
-      button.display();
+    // Posicionar el botón Back en la parte inferior para integrarlo con el diseño
+    // Solo hay un botón en instructionsButtons (el botón Back)
+    if (instructionsButtons.size() > 0) {
+      Button backButton = instructionsButtons.get(0);
+      
+      // Reposicionar el botón para que quede en la parte inferior de la pantalla
+      backButton.y = height - 120; // 40 píxeles desde el borde inferior
+      
+      // Dibujar botón con ajustes de accesibilidad
+      applyAccessibilityToButton(backButton);
+      backButton.display();
     }
     
     popStyle();
