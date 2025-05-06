@@ -303,7 +303,7 @@ class Menu {
       fill(255);
       textAlign(CENTER, CENTER);
       textSize(accessManager.getAdjustedTextSize(60));
-      text("EcoRunner", width/2, height * 0.25);
+      // text("EcoRunner", width/2, height * 0.25);
     }
     
     // Dibujar botones del menú principal
