@@ -90,7 +90,7 @@ class Player {
     this.x = x;
     this.groundY = groundY;
     this.y = groundY;
-    this.size = 60;
+    this.size = 100;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
     this.accessManager = accessManager;
@@ -102,7 +102,7 @@ class Player {
     this.x = x;
     this.groundY = groundY;
     this.y = groundY;
-    this.size = 60;
+    this.size = 90;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
     this.accessManager = accessManager;
