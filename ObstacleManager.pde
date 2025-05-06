@@ -35,12 +35,21 @@ class ObstacleManager {
   // Referencia de accesibilidad
   AccessibilityManager accessManager;
   
+  // Referencia al gestor de assets
+  AssetManager assetManager;
+  
   ObstacleManager(float groundLevel, float obstacleSpeed, EcoSystem ecoSystem) {
     this.groundLevel = groundLevel;
     this.obstacleSpeed = obstacleSpeed;
     this.ecoSystem = ecoSystem;
     this.accessManager = ecoSystem.accessManager; // Obtener gestor de accesibilidad del ecosistema
     obstacles = new ArrayList<Obstacle>();
+  }
+  
+  // Constructor con AssetManager
+  ObstacleManager(float groundLevel, float obstacleSpeed, EcoSystem ecoSystem, AssetManager assetManager) {
+    this(groundLevel, obstacleSpeed, ecoSystem);
+    this.assetManager = assetManager;
   }
   
   void update() {
@@ -116,18 +125,34 @@ class ObstacleManager {
     // Crear obstáculo según el tipo
     switch (type) {
       case 1: // Obstáculo alto (saltar)
-        obstacle = new TallObstacle(obstacleX, groundLevel, accessManager);
+        if (assetManager != null) {
+          obstacle = new TallObstacle(obstacleX, groundLevel, accessManager, assetManager);
+        } else {
+          obstacle = new TallObstacle(obstacleX, groundLevel, accessManager);
+        }
         break;
       case 2: // Obstáculo bajo (deslizar)
-        obstacle = new LowObstacle(obstacleX, groundLevel, accessManager);
+        if (assetManager != null) {
+          obstacle = new LowObstacle(obstacleX, groundLevel, accessManager, assetManager);
+        } else {
+          obstacle = new LowObstacle(obstacleX, groundLevel, accessManager);
+        }
         break;
       case 3: // Este caso ya no se usa, pero lo dejamos por compatibilidad
         // Si por alguna razón llega un tipo 3, creamos un obstáculo básico en su lugar
         // Comentario explicativo en español
-        obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager);
+        if (assetManager != null) {
+          obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager, assetManager);
+        } else {
+          obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager);
+        }
         break;
       default: // Obstáculo básico
-        obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager);
+        if (assetManager != null) {
+          obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager, assetManager);
+        } else {
+          obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager);
+        }
     }
     
     // Aplicar efectos ambientales
@@ -167,5 +192,10 @@ class ObstacleManager {
     patternStep = 0;
     currentPattern = 0;
     patternsCompleted = 0;
+  }
+  
+  // Alias para limpiar todos los obstáculos
+  void clearAll() {
+    reset();
   }
 } 

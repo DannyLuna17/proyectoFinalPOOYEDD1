@@ -12,6 +12,7 @@ class GameInitializer {
   SoundManager soundManager;
   AccessibilityManager accessManager;
   VideoIntroMenu videoIntroMenu;
+  AssetManager assetManager;
   
   GameInitializer() {
     // El constructor está vacío porque la inicialización se hace en initializeComponents
@@ -19,6 +20,9 @@ class GameInitializer {
   
   void initializeComponents() {
     try {
+      // Inicializar primero el gestor de assets
+      initializeAssetManager();
+      
       // Inicializar componentes principales, pero no el Menú todavía
       initializeCoreComponents();
       
@@ -42,17 +46,22 @@ class GameInitializer {
     }
   }
   
+  void initializeAssetManager() {
+    // Inicializar el gestor de assets
+    assetManager = new AssetManager();
+  }
+  
   void initializeCoreComponents() {
     // Inicializar en orden correcto: primero accesibilidad, luego sonido, luego juego
     accessManager = new AccessibilityManager();
     soundManager = new SoundManager(accessManager);
-    game = new Game(accessManager, soundManager);
+    game = new Game(accessManager, soundManager, assetManager);
   }
   
   void initializeVideoIntro() {
     try {
       println("Inicializando intro de video...");
-      videoIntroMenu = new VideoIntroMenu(accessManager, soundManager);
+      videoIntroMenu = new VideoIntroMenu(accessManager, soundManager, assetManager);
       videoIntroMenu.startVideo();
       println("Intro de video inicializado");
     } catch (Exception e) {
@@ -61,7 +70,7 @@ class GameInitializer {
       
       // Inicialización alternativa
       if (videoIntroMenu == null) {
-        videoIntroMenu = new VideoIntroMenu(accessManager, soundManager);
+        videoIntroMenu = new VideoIntroMenu(accessManager, soundManager, assetManager);
         videoIntroMenu.videoFinished = true;
         videoIntroMenu.videoSkipped = true;
         videoIntroMenu.buttonsRevealed = true;
@@ -71,7 +80,7 @@ class GameInitializer {
   
   void initializeMenu() {
     // Crear menú con referencia a la intro de video y referencias adicionales al juego y soundManager
-    menu = new Menu(accessManager, videoIntroMenu, game, soundManager);
+    menu = new Menu(accessManager, videoIntroMenu, game, soundManager, assetManager);
   }
   
   void printGameInstructions() {
@@ -87,4 +96,5 @@ class GameInitializer {
   SoundManager getSoundManager() { return soundManager; }
   AccessibilityManager getAccessibilityManager() { return accessManager; }
   VideoIntroMenu getVideoIntroMenu() { return videoIntroMenu; }
+  AssetManager getAssetManager() { return assetManager; }
 } 

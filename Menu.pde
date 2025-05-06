@@ -14,11 +14,11 @@ class Menu {
   color backgroundColor;
   color overlayColor;
   PImage menuBackground;
-  PImage logo;
+  PImage menuLogo;
   
   // Propiedades de animación
-  float titleScale = 1.0;
-  float titleScaleDirection = 0.0005;
+  float logoScale = 1.0;
+  float logoScaleDirection = 0.0005;
   
   // Navegación del menú
   ArrayList<Button> currentActiveButtons; // Referencia a la lista de botones actualmente activa
@@ -34,6 +34,7 @@ class Menu {
   GameStateManager stateManager; // Referencia al gestor de estado del juego
   Game game; // Referencia a la instancia de Game
   SoundManager soundManager; // Referencia al SoundManager
+  AssetManager assetManager; // Referencia al gestor de assets
   
   // Configuración
   boolean optionsSoundEnabled = true;
@@ -83,6 +84,38 @@ class Menu {
     // Establecer colores predeterminados
     backgroundColor = color(80, 150, 200);
     overlayColor = color(0, 0, 0, 150);
+    
+    // Establecer los botones activos como menú principal inicialmente
+    currentActiveButtons = mainMenuButtons;
+    
+    // Actualizar texto de botones de configuración según ajustes de accesibilidad actuales
+    updateSettingsButtonText();
+  }
+  
+  // Constructor con AssetManager
+  Menu(AccessibilityManager accessManager, VideoIntroMenu videoIntroMenu, Game game, SoundManager soundManager, AssetManager assetManager) {
+    this.accessManager = accessManager;
+    this.videoIntroMenu = videoIntroMenu;
+    this.game = game;
+    this.soundManager = soundManager;
+    this.assetManager = assetManager; // Guardar referencia al AssetManager
+    
+    // Inicializar la referencia al gestor de estado desde el juego
+    if (game != null) {
+      this.stateManager = game.gameStateManager;
+    }
+    
+    // Inicializar listas de botones
+    initializeButtons();
+    
+    // Establecer colores predeterminados
+    backgroundColor = color(80, 150, 200);
+    overlayColor = color(0, 0, 0, 150);
+    
+    // Cargar fondo desde AssetManager si está disponible
+    if (assetManager != null) {
+      menuBackground = assetManager.getMenuBackground();
+    }
     
     // Establecer los botones activos como menú principal inicialmente
     currentActiveButtons = mainMenuButtons;
@@ -238,95 +271,46 @@ class Menu {
     pushStyle();
     rectMode(CENTER);
     
-    // Mostrar la imagen de fondo del menú desde videoIntroMenu (sin dibujo de título)
+    // Verificar que no haya elementos residuales de otros estados
+    // Forzar una limpieza del fondo antes de dibujar
+    clear();
+    
+    // Mostrar la imagen de fondo del menú desde videoIntroMenu
     if (videoIntroMenu != null && videoIntroMenu.finalBackground != null) {
-      // Mostrar el fondo final del menú (que ya contiene el título)
-      image(videoIntroMenu.finalBackground, 0, 0, width, height);
+      // Verificar que la imagen tenga las dimensiones correctas
+      PImage bgImg = videoIntroMenu.finalBackground;
+      imageMode(CORNER);
+      // Asegurar que la imagen de fondo cubra toda la pantalla
+      image(bgImg, 0, 0, width, height);
     } else {
-      // Fondo alternativo de color si la imagen no está disponible
+      // Fondo alternativo si la imagen no está disponible
       color bgColor = accessManager.getBackgroundColor(backgroundColor);
       background(bgColor);
     }
     
-    // Dibujar botones con animación apropiada si se están revelando
-    if (videoIntroMenu != null && videoIntroMenu.isComplete()) {
-      // Si la intro de video está completa, mostrar botones normalmente
-      for (Button button : mainMenuButtons) {
-        button.display();
-      }
-    } else if (videoIntroMenu != null) {
-      // Dejar que la intro de video maneje las animaciones de botones
-      videoIntroMenu.displayAnimatedButtons();
+    // Restaurar modo de imagen para los elementos del menú
+    imageMode(CENTER);
+    
+    // Dibujar logo del juego
+    if (menuLogo != null) {
+      pushMatrix();
+      translate(width/2, height * 0.25);
+      scale(logoScale);
+      image(menuLogo, 0, 0);
+      popMatrix();
     } else {
-      // Alternativa para cuando videoIntroMenu es null - fade in simple
-      float fadeInProgress = min(frameCount / 60.0, 1.0); // Fade in simple de 1 segundo
-      for (int i = 0; i < mainMenuButtons.size(); i++) {
-        Button button = mainMenuButtons.get(i);
-        // Añadir un ligero retraso para cada botón
-        float buttonDelay = i * 0.035;
-        float buttonProgress = constrain(fadeInProgress - buttonDelay, 0, 1);
-        
-        if (buttonProgress > 0) {
-          // Aplicar efectos de fade-in y escala similares a VideoIntroMenu
-          pushMatrix();
-          translate(button.x, button.y);
-          
-          // Aplicar animación de escala
-          float scale = buttonProgress;
-          scale(scale);
-          
-          // Obtener los colores del botón con ajustes de accesibilidad
-          color baseColor = accessManager.adjustButtonColor(button.baseColor);
-          color hoverColor = accessManager.adjustButtonHoverColor(button.hoverColor);
-          color textColor = accessManager.adjustTextColor(button.textColor);
-          
-          // Establecer opacidad según progreso
-          float opacity = buttonProgress * 255;
-          
-          // Dibujar sombra
-          if (!accessManager.highContrastMode && !accessManager.reduceAnimations) {
-            noStroke();
-            fill(0, opacity * 0.3);
-            rect(2, 3, button.width, button.height, button.height/2);
-          }
-          
-          // Dibujar fondo del botón con forma de píldora
-          if (accessManager.highContrastMode) {
-            stroke(255, opacity);
-            strokeWeight(3);
-          } else {
-            stroke(80, 100, 120, opacity);
-            strokeWeight(1);
-          }
-          
-          // Establecer color de relleno con opacidad de animación
-          fill(red(baseColor), green(baseColor), blue(baseColor), opacity);
-          rect(0, 0, button.width, button.height, button.height/2);
-          
-          // Dibujar texto con sombra
-          textAlign(CENTER, CENTER);
-          textSize(accessManager.getAdjustedTextSize(20));
-          
-          // Añadir sombra de texto
-          if (!accessManager.highContrastMode && opacity > 150) {
-            fill(0, opacity * 0.2);
-            text(button.text, 1, 1);
-          }
-          
-          // Dibujar texto principal
-          fill(red(textColor), green(textColor), blue(textColor), opacity);
-          text(button.text, 0, 0);
-          
-          popMatrix();
-        }
-      }
+      // Título alternativo si no hay logo
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(accessManager.getAdjustedTextSize(60));
+      text("EcoRunner", width/2, height * 0.25);
     }
     
-    // Aviso de copyright en la parte inferior
-    textSize(accessManager.getAdjustedTextSize(12));
-    fill(accessManager.getTextColor(color(50, 50, 50)));
-    textAlign(CENTER, BOTTOM);
-    text("© 2025 EcoRunner Team", width/2, height - 20);
+    // Dibujar botones del menú principal
+    drawButtons();
+    
+    // Dibujar versión del juego
+    displayVersionInfo();
     
     popStyle();
   }
@@ -823,8 +807,20 @@ class Menu {
       game.reset();
       stateManager.setState(STATE_GAME);
     } else if (buttonText.equals("Main Menu")) {
-      stateManager.setState(STATE_MAIN_MENU);
+      // Realizar una limpieza completa de todos los elementos del juego
+      game.cleanupForMenuTransition();
+      
+      // Forzar una limpieza gráfica completa para evitar problemas visuales residuales
+      pushStyle();
+      clear();
+      background(0);
+      popStyle();
+      
+      // Asegurar que no queden elementos de la interfaz de pausa visibles
       selectedMenuItem = 0;
+      
+      // Cambiar el estado del juego al menú principal
+      stateManager.setState(STATE_MAIN_MENU);
     }
     
     // Reproducir efecto de sonido para activación de botón
@@ -983,5 +979,91 @@ class Menu {
         this.activateGameOverItem(selectedMenuItem);
         break;
     }
+  }
+  
+  // Método para dibujar los botones del menú principal
+  void drawButtons() {
+    // Dibujar botones con animación apropiada si se están revelando
+    if (videoIntroMenu != null && videoIntroMenu.isComplete()) {
+      // Si la intro de video está completa, mostrar botones normalmente
+      for (Button button : mainMenuButtons) {
+        button.display();
+      }
+    } else if (videoIntroMenu != null) {
+      // Dejar que la intro de video maneje las animaciones de botones
+      videoIntroMenu.displayAnimatedButtons();
+    } else {
+      // Alternativa para cuando videoIntroMenu es null - fade in simple
+      float fadeInProgress = min(frameCount / 60.0, 1.0); // Fade in simple de 1 segundo
+      for (int i = 0; i < mainMenuButtons.size(); i++) {
+        Button button = mainMenuButtons.get(i);
+        // Añadir un ligero retraso para cada botón
+        float buttonDelay = i * 0.035;
+        float buttonProgress = constrain(fadeInProgress - buttonDelay, 0, 1);
+        
+        if (buttonProgress > 0) {
+          // Aplicar efectos de fade-in y escala similares a VideoIntroMenu
+          pushMatrix();
+          translate(button.x, button.y);
+          
+          // Aplicar animación de escala
+          float scale = buttonProgress;
+          scale(scale);
+          
+          // Obtener los colores del botón con ajustes de accesibilidad
+          color baseColor = accessManager.adjustButtonColor(button.baseColor);
+          color hoverColor = accessManager.adjustButtonHoverColor(button.hoverColor);
+          color textColor = accessManager.adjustTextColor(button.textColor);
+          
+          // Establecer opacidad según progreso
+          float opacity = buttonProgress * 255;
+          
+          // Dibujar sombra
+          if (!accessManager.highContrastMode && !accessManager.reduceAnimations) {
+            noStroke();
+            fill(0, opacity * 0.3);
+            rect(2, 3, button.width, button.height, button.height/2);
+          }
+          
+          // Dibujar fondo del botón con forma de píldora
+          if (accessManager.highContrastMode) {
+            stroke(255, opacity);
+            strokeWeight(3);
+          } else {
+            stroke(80, 100, 120, opacity);
+            strokeWeight(1);
+          }
+          
+          // Establecer color de relleno con opacidad de animación
+          fill(red(baseColor), green(baseColor), blue(baseColor), opacity);
+          rect(0, 0, button.width, button.height, button.height/2);
+          
+          // Dibujar texto con sombra
+          textAlign(CENTER, CENTER);
+          textSize(accessManager.getAdjustedTextSize(20));
+          
+          // Añadir sombra de texto
+          if (!accessManager.highContrastMode && opacity > 150) {
+            fill(0, opacity * 0.2);
+            text(button.text, 1, 1);
+          }
+          
+          // Dibujar texto principal
+          fill(red(textColor), green(textColor), blue(textColor), opacity);
+          text(button.text, 0, 0);
+          
+          popMatrix();
+        }
+      }
+    }
+  }
+  
+  // Método para mostrar información de versión
+  void displayVersionInfo() {
+    // Aviso de copyright en la parte inferior
+    textSize(accessManager.getAdjustedTextSize(12));
+    fill(accessManager.getTextColor(color(50, 50, 50)));
+    textAlign(CENTER, BOTTOM);
+    text("© 2025 EcoRunner Team", width/2, height - 20);
   }
 }  

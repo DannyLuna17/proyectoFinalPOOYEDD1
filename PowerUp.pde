@@ -25,6 +25,9 @@ class PowerUp {
   // Accesibilidad
   AccessibilityManager accessManager;
   
+  // Gestor de assets
+  AssetManager assetManager;
+  
   PowerUp(int type, int duration) {
     this.type = type;
     this.duration = duration;
@@ -50,6 +53,21 @@ class PowerUp {
     
     // Guardar el gestor de accesibilidad proporcionado
     this.accessManager = accessManager;
+  }
+  
+  // Constructor con gestor de accesibilidad y assetManager
+  PowerUp(int type, int duration, AccessibilityManager accessManager, AssetManager assetManager) {
+    this.type = type;
+    this.duration = duration;
+    this.timeRemaining = duration;
+    this.isActive = true;
+    
+    // Color predeterminado según el tipo
+    setEffectProperties();
+    
+    // Guardar los gestores proporcionados
+    this.accessManager = accessManager;
+    this.assetManager = assetManager;
   }
   
   void setEffectProperties() {
@@ -125,25 +143,37 @@ class PowerUp {
     rectMode(CENTER);
     rect(position.x, position.y, iconSize, iconSize, borderRadius);
     
-    // Desplegar ícono
-    fill(textColor);
-    textAlign(CENTER, CENTER);
-    textSize(accessManager.getAdjustedTextSize(16));
-    
-    String iconText = "";
-    switch(type) {
-      case SHIELD:
-        iconText = "🛡️";
-        break;
-      case SPEED_BOOST:
-        iconText = "⚡";
-        break;
-      case DOUBLE_POINTS:
-        iconText = "2x";
-        break;
+    // Si tenemos acceso al AssetManager y no estamos en modo de alto contraste, usar imágenes
+    if (assetManager != null && !isHighContrast && !accessManager.colorBlindMode) {
+      // Intentar obtener la imagen correspondiente
+      PImage powerUpImage = null;
+      
+      switch(type) {
+        case SHIELD:
+          powerUpImage = assetManager.getShieldImage();
+          break;
+        case SPEED_BOOST:
+          powerUpImage = assetManager.getSpeedBoostImage();
+          break;
+        case DOUBLE_POINTS:
+          powerUpImage = assetManager.getDoublePointsImage();
+          break;
+      }
+      
+      // Si tenemos una imagen válida, mostrarla
+      if (powerUpImage != null) {
+        imageMode(CENTER);
+        tint(255, 230); // Aplicar transparencia
+        image(powerUpImage, position.x, position.y, iconSize * 0.8, iconSize * 0.8);
+        noTint();
+      } else {
+        // Sin imagen, usar el texto de respaldo
+        displayFallbackIcon(textColor, iconSize);
+      }
+    } else {
+      // Sin asset manager o en modo accesible, usar el texto de respaldo
+      displayFallbackIcon(textColor, iconSize);
     }
-    
-    text(iconText, position.x, position.y);
     
     // Indicador de tiempo restante
     float barWidth = iconSize * 0.8;
@@ -172,6 +202,28 @@ class PowerUp {
     
     popMatrix();
     popStyle();
+  }
+  
+  // Método para mostrar ícono de respaldo (texto)
+  void displayFallbackIcon(color textColor, float iconSize) {
+    fill(textColor);
+    textAlign(CENTER, CENTER);
+    textSize(accessManager.getAdjustedTextSize(16));
+    
+    String iconText = "";
+    switch(type) {
+      case SHIELD:
+        iconText = "🛡️";
+        break;
+      case SPEED_BOOST:
+        iconText = "⚡";
+        break;
+      case DOUBLE_POINTS:
+        iconText = "2x";
+        break;
+    }
+    
+    text(iconText, position.x, position.y);
   }
   
   void setPosition(float x, float y) {

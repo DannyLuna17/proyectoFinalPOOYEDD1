@@ -13,16 +13,24 @@ class TallObstacle extends Obstacle {
   TallObstacle(float x, float y, AccessibilityManager accessManager) {
     super(x, y, 30, 120, 5.0, 2, accessManager);
   }
+  
+  TallObstacle(float x, float y, AccessibilityManager accessManager, AssetManager assetManager) {
+    super(x, y, 30, 120, 5.0, 2, accessManager, assetManager);
+  }
 }
 
-// Obstáculo bajo (requiere deslizarse)
+// Obstáculo bajo (requiere deslizarse) - usando basura.png
 class LowObstacle extends Obstacle {
   LowObstacle(float x, float y) {
-    super(x, y, 70, 40, 5.0, 1, new AccessibilityManager());
+    super(x, y, 60, 50, 5.0, 1, new AccessibilityManager());
   }
   
   LowObstacle(float x, float y, AccessibilityManager accessManager) {
-    super(x, y, 70, 40, 5.0, 1, accessManager);
+    super(x, y, 60, 50, 5.0, 1, accessManager);
+  }
+  
+  LowObstacle(float x, float y, AccessibilityManager accessManager, AssetManager assetManager) {
+    super(x, y, 60, 50, 5.0, 1, accessManager, assetManager);
   }
 }
 
@@ -36,5 +44,9 @@ class MovingObstacle extends Obstacle {
   
   MovingObstacle(float x, float y, AccessibilityManager accessManager) {
     super(x, y, 50, 50, 5.0, 3, accessManager);
+  }
+  
+  MovingObstacle(float x, float y, AccessibilityManager accessManager, AssetManager assetManager) {
+    super(x, y, 50, 50, 5.0, 3, accessManager, assetManager);
   }
 } 

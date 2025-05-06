@@ -127,6 +127,74 @@ class VideoIntroMenu {
     this.soundManager = soundManager;
   }
   
+  // Constructor con AccessibilityManager, SoundManager y AssetManager
+  VideoIntroMenu(AccessibilityManager accessManager, SoundManager soundManager, AssetManager assetManager) {
+    this.accessManager = accessManager;
+    this.soundManager = soundManager;
+    
+    try {
+      // Primero, intentar cargar la imagen de fondo final usando AssetManager
+      if (assetManager != null) {
+        finalBackground = assetManager.getFinalBackground();
+        if (finalBackground == null) {
+          println("ADVERTENCIA: No se pudo obtener la imagen de fondo del menú desde AssetManager");
+          
+          // Intentar cargar directamente si no está disponible en AssetManager
+          finalBackground = loadImage("assets/menuFinal.png");
+        } else {
+          println("Fondo del menú cargado correctamente desde AssetManager");
+        }
+      } else {
+        try {
+          finalBackground = loadImage("assets/menuFinal.png");
+          if (finalBackground == null) {
+            println("ADVERTENCIA: No se pudo cargar la imagen de fondo del menú");
+          } else {
+            println("Fondo del menú cargado correctamente");
+          }
+        } catch (Exception e) {
+          println("ERROR al cargar la imagen de fondo: " + e.getMessage());
+        }
+      }
+      
+      // Intentar cargar y configurar el video
+      String videoPath = sketchPath("assets/menuVideo.mp4");
+      println("Intentando cargar video desde: " + videoPath);
+      
+      // Comprobar si el archivo existe antes de intentar cargarlo
+      File videoFile = new File(videoPath);
+      if (!videoFile.exists()) {
+        println("ADVERTENCIA: Archivo de video no encontrado en: " + videoPath);
+        throw new FileNotFoundException("Archivo de video no encontrado: " + videoPath);
+      }
+      
+      try {
+        introVideo = new Movie(proyFinalPOO.this, videoPath);
+        println("Video cargado correctamente");
+      } catch (Exception e) {
+        println("ERROR al cargar el video: " + e.getMessage());
+        throw e;
+      }
+      
+      // Inicializar con arrays vacíos predeterminados hasta que se establezca el menú
+      buttonScales = new float[0];
+      buttonOpacities = new float[0];
+      
+    } catch (FileNotFoundException e) {
+      // Archivo de video no encontrado - configurar alternativa de imagen
+      setupImageFallback();
+    } catch (NoClassDefFoundError e) {
+      // La biblioteca de video no está instalada - configurar alternativa de imagen
+      println("ADVERTENCIA: Biblioteca de Video de Processing no instalada. Usando alternativa de imagen en su lugar.");
+      setupImageFallback();
+    } catch (Exception e) {
+      // Otros errores - configurar alternativa de imagen
+      println("ERROR al inicializar la introducción de video: " + e.getMessage());
+      e.printStackTrace();
+      setupImageFallback();
+    }
+  }
+  
   // Método para establecer la referencia del menú e inicializar arrays de botones
   void setMenu(Menu menu) {
     this.menu = menu;

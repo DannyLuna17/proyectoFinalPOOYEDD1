@@ -23,6 +23,9 @@ class Game {
   // Soporte de sonido
   SoundManager soundManager;
   
+  // Soporte de assets
+  AssetManager assetManager;
+  
   // Imagen de fondo
   PImage backgroundImage;
   PImage scaledBackground; // Imagen redimensionada
@@ -102,6 +105,20 @@ class Game {
     reset();
   }
   
+  // Constructor con gestores externos accessManager, soundManager y assetManager
+  Game(AccessibilityManager accessManager, SoundManager soundManager, AssetManager assetManager) {
+    // Usar los gestores proporcionados
+    this.accessManager = accessManager;
+    this.soundManager = soundManager;
+    
+    // Usar el gestor de assets
+    this.assetManager = assetManager;
+    
+    // Inicializar gestor de estado del juego
+    gameStateManager = new GameStateManager();
+    reset();
+  }
+  
   void reset() {
     try {
       println("Iniciando reinicio del juego...");
@@ -119,7 +136,11 @@ class Game {
       
       // Inicializar jugador con manejo de errores
       try {
-        player = new Player(width * 0.2, groundLevel, accessManager, soundManager);
+        if (assetManager != null) {
+          player = new Player(width * 0.2, groundLevel, accessManager, soundManager, assetManager);
+        } else {
+          player = new Player(width * 0.2, groundLevel, accessManager, soundManager);
+        }
         println("Jugador inicializado con éxito");
       } catch (Exception e) {
         println("ERROR al inicializar jugador: " + e.getMessage());
@@ -162,13 +183,21 @@ class Game {
       }
       
       try {
-        obstacleManager = new ObstacleManager(groundLevel, baseObstacleSpeed, ecoSystem);
+        if (assetManager != null) {
+          obstacleManager = new ObstacleManager(groundLevel, baseObstacleSpeed, ecoSystem, assetManager);
+        } else {
+          obstacleManager = new ObstacleManager(groundLevel, baseObstacleSpeed, ecoSystem);
+        }
         println("Gestor de obstáculos inicializado con éxito");
       } catch (Exception e) {
         println("ERROR al inicializar gestor de obstáculos: " + e.getMessage());
         e.printStackTrace();
         // Crear gestor de obstáculos por defecto
-        obstacleManager = new ObstacleManager(groundLevel, baseObstacleSpeed, null);
+        if (assetManager != null) {
+          obstacleManager = new ObstacleManager(groundLevel, baseObstacleSpeed, null, assetManager);
+        } else {
+          obstacleManager = new ObstacleManager(groundLevel, baseObstacleSpeed, null);
+        }
       }
       
       // Conectar el ObstacleManager con el PlatformManager para evitar solapamientos
@@ -181,7 +210,7 @@ class Game {
       }
       
       try {
-        collectibleManager = new CollectibleManager(groundLevel, ecoSystem, accessManager);
+        collectibleManager = new CollectibleManager(groundLevel, ecoSystem, accessManager, assetManager);
         println("Gestor de coleccionables inicializado con éxito");
       } catch (Exception e) {
         println("ERROR al inicializar gestor de coleccionables: " + e.getMessage());
@@ -257,12 +286,30 @@ class Game {
       // Respaldo de emergencia - crear estado mínimo del juego
       try {
         // Inicialización básica para prevenir excepciones de puntero nulo
-        if (player == null) player = new Player(width * 0.2, height * 0.8, null, null);
+        if (player == null) {
+          if (assetManager != null) {
+            player = new Player(width * 0.2, height * 0.8, null, null, assetManager);
+          } else {
+            player = new Player(width * 0.2, height * 0.8, null, null);
+          }
+        }
         if (ecoSystem == null) ecoSystem = new EcoSystem(null);
         if (weatherSystem == null) weatherSystem = new Weather();
         if (platformManager == null) platformManager = new PlatformManager(height * 0.8, 5, null);
-        if (obstacleManager == null) obstacleManager = new ObstacleManager(height * 0.8, 5, null);
-        if (collectibleManager == null) collectibleManager = new CollectibleManager(height * 0.8, null, null);
+        if (obstacleManager == null) {
+          if (assetManager != null) {
+            obstacleManager = new ObstacleManager(height * 0.8, 5, null, assetManager);
+          } else {
+            obstacleManager = new ObstacleManager(height * 0.8, 5, null);
+          }
+        }
+        if (collectibleManager == null) {
+          if (assetManager != null) {
+            collectibleManager = new CollectibleManager(height * 0.8, null, null, assetManager);
+          } else {
+            collectibleManager = new CollectibleManager(height * 0.8, null, null);
+          }
+        }
         
         // Conectar gestores incluso en el respaldo de emergencia
         try {
@@ -287,28 +334,46 @@ class Game {
   // Método para inicializar el fondo de manera optimizada
   void initBackground() {
     try {
-      // Cargar la imagen original
-      backgroundImage = loadImage("assets/fondo1.png");
-      
-      if (backgroundImage != null) {
-        println("Cargando imagen de fondo...");
+      // Usar el AssetManager si está disponible, de lo contrario cargar directamente
+      if (assetManager != null) {
+        // Obtener la imagen desde el AssetManager
+        backgroundImage = assetManager.getBackgroundImage();
         
-        // Reducir la resolución para mejor rendimiento
-        float scale = height / 1920.0; // La altura original es 1920
-        int targetWidth = round(8000 * scale); // El ancho original es 8000
+        // Escalar el fondo a través del AssetManager
+        assetManager.scaleBackground(round(8000 * (height / 1920.0)), height);
         
-        // Redimensionar la imagen original para usar menos memoria
-        backgroundImage.resize(targetWidth, height);
+        // Obtener la versión escalada
+        scaledBackground = assetManager.getScaledBackground();
         
-        // Guardamos el ancho para cálculos de desplazamiento
-        scaledBgWidth = targetWidth;
-        
-        // Asignamos directamente sin crear una nueva imagen
-        scaledBackground = backgroundImage;
-        
-        println("Imagen de fondo optimizada correctamente: " + targetWidth + "x" + height);
+        // Guardar ancho escalado
+        if (scaledBackground != null) {
+          scaledBgWidth = scaledBackground.width;
+          println("Fondo cargado desde AssetManager y escalado: " + scaledBgWidth + "x" + height);
+        }
       } else {
-        println("No se pudo cargar la imagen de fondo");
+        // Cargar la imagen original
+        backgroundImage = loadImage("assets/fondo1.png");
+        
+        if (backgroundImage != null) {
+          println("Cargando imagen de fondo...");
+          
+          // Reducir la resolución para mejor rendimiento
+          float scale = height / 1920.0; // La altura original es 1920
+          int targetWidth = round(8000 * scale); // El ancho original es 8000
+          
+          // Redimensionar la imagen original para usar menos memoria
+          backgroundImage.resize(targetWidth, height);
+          
+          // Guardamos el ancho para cálculos de desplazamiento
+          scaledBgWidth = targetWidth;
+          
+          // Asignamos directamente sin crear una nueva imagen
+          scaledBackground = backgroundImage;
+          
+          println("Imagen de fondo optimizada correctamente: " + targetWidth + "x" + height);
+        } else {
+          println("No se pudo cargar la imagen de fondo");
+        }
       }
     } catch (Exception e) {
       println("ERROR al optimizar la imagen de fondo: " + e.getMessage());
@@ -930,6 +995,39 @@ class Game {
   boolean isPaused() {
     // Comprobar si el juego está pausado
     return gameStateManager != null && gameStateManager.getState() == STATE_PAUSED;
+  }
+  
+  // Método para limpiar el estado del juego cuando se vuelve al menú
+  void cleanupForMenuTransition() {
+    // Asegurarse de que el estado del juego sea apropiado para el menú principal
+    gameOver = false;
+    gameStarted = false;
+    
+    // Limpiar coleccionables y obstáculos activos
+    if (collectibleManager != null) {
+      collectibleManager.clearAll();
+    }
+    
+    if (obstacleManager != null) {
+      obstacleManager.clearAll();
+    }
+    
+    if (platformManager != null) {
+      platformManager.clearAllPlatforms();
+    }
+    
+    // Asegurarse de que el jugador esté en posición inicial
+    if (player != null) {
+      player.reset();
+    }
+    
+    // Restaurar cámara a posición inicial
+    cameraY = 0;
+    targetCameraY = 0;
+    
+    // Restaurar variables de dificultad
+    difficultyLevel = 1;
+    ddaMultiplier = 1.0;
   }
 }
 

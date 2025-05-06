@@ -48,12 +48,31 @@ class GameRenderer {
   }
   
   void render() {
+    // Limpiar completamente el canvas antes de renderizar para evitar superposiciones
+    if (getGameState() == STATE_MAIN_MENU) {
+      // Si estamos en el menú principal, asegurar que no quede ningún elemento del juego
+      // Forzar una limpieza completa del canvas
+      pushStyle();
+      // Usar el reset completo de Processing 
+      background(0);
+      clear();
+      popStyle();
+    }
+    
     renderCurrentGameState();
     displayAccessibilityHelpers();
   }
   
   void renderCurrentGameState() {
     int currentState = getGameState();
+    
+    // Añadir una capa de protección adicional
+    if (currentState == STATE_MAIN_MENU) {
+      // Asegurarse de que no se rendericen otros estados cuando estamos en el menú principal
+      renderMainMenu();
+      return;
+    }
+    
     switch(currentState) {
       case STATE_INTRO_VIDEO:
         renderIntroVideo();
@@ -84,11 +103,17 @@ class GameRenderer {
   }
   
   void renderMainMenu() {
-    // Animación de botones
-    if (!videoIntroMenu.buttonsRevealed) {
-      videoIntroMenu.display();
-    } else {
-      menu.displayMainMenu();
+    // Asegurarse de que estamos en el menú principal
+    if (getGameState() == STATE_MAIN_MENU) {
+      // No usamos una limpieza negra aquí, permitimos que el menú
+      // maneje completamente su fondo para evitar problemas visuales
+      
+      // Animación de botones
+      if (!videoIntroMenu.buttonsRevealed) {
+        videoIntroMenu.display();
+      } else {
+        menu.displayMainMenu();
+      }
     }
   }
   

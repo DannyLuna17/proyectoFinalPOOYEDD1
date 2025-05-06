@@ -168,4 +168,9 @@ class PlatformManager {
     platforms.clear();
     platformTimer = 0;
   }
+  
+  // Método para limpiar todas las plataformas
+  void clearAllPlatforms() {
+    reset();
+  }
 } 

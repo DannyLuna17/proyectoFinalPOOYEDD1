@@ -64,6 +64,11 @@ class Player {
   // Referencias externas
   AccessibilityManager accessManager;
   SoundManager soundManager;
+  AssetManager assetManager; // Referencia al gestor de assets
+  
+  // Imágenes del jugador
+  PImage characterImage;
+  PImage shadowImage;
   
   // Constructor simplificado
   Player(float x, float groundY) {
@@ -73,7 +78,7 @@ class Player {
     this.x = x;
     this.groundY = groundY;
     this.y = groundY;
-    this.size = 50;
+    this.size = 60;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
     this.accessManager = am;
@@ -85,11 +90,30 @@ class Player {
     this.x = x;
     this.groundY = groundY;
     this.y = groundY;
-    this.size = 50;
+    this.size = 60;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
     this.accessManager = accessManager;
     this.soundManager = soundManager;
+  }
+  
+  // Constructor con AssetManager
+  Player(float x, float groundY, AccessibilityManager accessManager, SoundManager soundManager, AssetManager assetManager) {
+    this.x = x;
+    this.groundY = groundY;
+    this.y = groundY;
+    this.size = 60;
+    this.currentColor = normalColor;
+    this.baseSpeed = 0;
+    this.accessManager = accessManager;
+    this.soundManager = soundManager;
+    this.assetManager = assetManager;
+    
+    // Cargar imágenes del jugador desde AssetManager
+    if (assetManager != null) {
+      characterImage = assetManager.getCharacterImage();
+      shadowImage = assetManager.getShadowImage();
+    }
   }
   
   void update() {
@@ -117,7 +141,7 @@ class Player {
     // Efecto escudo
     if (hasShield) {
       shieldPulse = (shieldPulse + 0.05) % TWO_PI;
-      shieldSize = size * 1.5 + sin(shieldPulse) * 5;
+      shieldSize = size * 1.5 + sin(shieldPulse) * 7;
     }
     
     // Actualizar timers de power-ups
@@ -284,6 +308,7 @@ class Player {
   void display() {
     ellipseMode(CENTER);
     rectMode(CORNER);
+    imageMode(CENTER);
     
     color adjustedCurrentColor = accessManager.getForegroundColor(currentColor);
     
@@ -296,15 +321,107 @@ class Player {
       popStyle();
     }
     
-    // Dibujar jugador
-    fill(adjustedCurrentColor);
+    // Determinar si usar imágenes o formas geométricas basado en accesibilidad y disponibilidad
+    boolean useImages = assetManager != null && 
+                       characterImage != null && 
+                       shadowImage != null && 
+                       !accessManager.highContrastMode;
     
-    if (isSliding) {
-      // Forma deslizamiento
-      ellipse(x, y + size/4, size * 1.2, size/2);
+    if (useImages) {
+      // Dibujar sombra mejorada
+      pushStyle();
+      tint(0, 180); // Sombra un poco más oscura
+      
+      // Calcular tamaño y posición de la sombra
+      float shadowY;
+      float shadowWidth;
+      float shadowHeight;
+      
+      // La sombra se proyecta en el suelo o plataforma donde está el jugador
+      if (isSliding) {
+        // Sombra en posición de deslizamiento
+        shadowY = y + 2;
+        shadowWidth = size * 1.4;
+        shadowHeight = size * 0.35;
+      } else {
+        // Sombra en posición normal
+        shadowY = y + 2;
+        shadowWidth = size * 1.1;
+        shadowHeight = size * 0.35;
+      }
+      
+      // La sombra se achata más cuando el personaje está más alto (efecto perspectiva)
+      float heightFromGround = groundY - y;
+      if (isJumping && heightFromGround > 0) {
+        // Reducir tamaño de sombra proporcionalmente a la altura
+        float reductionFactor = map(heightFromGround, 0, 200, 1.0, 0.5);
+        shadowWidth *= reductionFactor;
+        shadowHeight *= reductionFactor;
+        
+        // Aplicar ligero desplazamiento para simular perspectiva
+        float shadowOffset = map(heightFromGround, 0, 200, 0, size/2);
+        shadowY = groundY - 2; // La sombra siempre está en el suelo/plataforma
+      }
+      
+      // Dibujar la sombra en la posición calculada
+      image(shadowImage, x, shadowY, shadowWidth, shadowHeight);
+      noTint();
+      
+      // Dibujar personaje
+      pushMatrix();
+      if (isSliding) {
+        // Personaje en posición de deslizamiento (más horizontal)
+        translate(x, y - size * 0.2);
+        // Rotar ligeramente el personaje al deslizarse
+        rotate(PI/2); // 90 grados
+        
+        // Aplicar efecto de parpadeo si es invencible
+        if (isInvincible && invincibilityTimer % 10 < 5) {
+          tint(255, 255, 100);
+        }
+        
+        image(characterImage, 0, 0, size * 0.8, size * 1.2);
+      } else {
+        // Personaje en posición normal
+        
+        // Aplicar efecto de parpadeo si es invencible
+        if (isInvincible && invincibilityTimer % 10 < 5) {
+          tint(255, 255, 100);
+        }
+        
+        image(characterImage, x, y - size/2, size, size);
+      }
+      noTint();
+      popMatrix();
     } else {
-      // Forma normal
-      ellipse(x, y - size/2, size, size);
+      // Dibujar sombra para modo accesibilidad
+      pushStyle();
+      fill(0, 100);
+      float shadowY = groundY - 2;
+      float shadowWidth = size * (isSliding ? 1.3 : 1.0);
+      float shadowHeight = size * 0.2;
+      
+      // Si está saltando, ajustar tamaño de sombra
+      if (isJumping) {
+        float heightFromGround = groundY - y;
+        float reductionFactor = map(heightFromGround, 0, 200, 1.0, 0.5);
+        shadowWidth *= reductionFactor;
+        shadowHeight *= reductionFactor;
+      }
+      
+      ellipse(x, shadowY, shadowWidth, shadowHeight);
+      popStyle();
+      
+      // Dibujar jugador con formas geométricas (para accesibilidad)
+      fill(adjustedCurrentColor);
+      
+      if (isSliding) {
+        // Forma deslizamiento
+        ellipse(x, y + size/4, size * 1.2, size/2);
+      } else {
+        // Forma normal
+        ellipse(x, y - size/2, size, size);
+      }
     }
     
     // Efecto de velocidad
@@ -472,6 +589,13 @@ class Player {
     // Obtener dimensiones del jugador
     float playerWidth = isSliding ? size * 1.2 : size;
     float playerHeight = isSliding ? size/2 : size;
+    
+    // Ajustar el hitbox para ser un poco más pequeño que el sprite visual
+    // para una mejor experiencia de juego
+    float hitboxReduction = 0.85; // 85% del tamaño visual
+    playerWidth *= hitboxReduction;
+    playerHeight *= hitboxReduction;
+    
     float playerBottom = y;
     float playerTop = isSliding ? playerBottom - playerHeight/2 : playerBottom - playerHeight;
     float playerLeft = x - playerWidth/2;
@@ -499,7 +623,8 @@ class Player {
     float distance = dist(x, y - size/2, collectible.x, collectible.y);
     
     // Considerar colisión si la distancia es menor que la suma de los radios
-    float collectionRadius = (size/2 + collectible.size/2) * 0.8;
+    // Hacemos el radio de colección un poco más grande para mejorar la experiencia
+    float collectionRadius = (size/2 + collectible.size/2) * 0.9;
     
     return distance < collectionRadius;
   }
@@ -547,6 +672,38 @@ class Player {
     rect(x, y, w, h);
     
     popStyle();
+  }
+  
+  // Método para reiniciar el jugador a su estado inicial
+  void reset() {
+    // Reiniciar posición
+    y = groundY;
+    
+    // Reiniciar estados
+    isJumping = false;
+    isSliding = false;
+    spacePressed = false;
+    vSpeed = 0;
+    jumpHoldTime = 0;
+    slideDuration = 0;
+    
+    // Reiniciar plataformas
+    isOnPlatform = false;
+    currentPlatform = null;
+    lastPlatformY = 0;
+    isPlatformJump = false;
+    
+    // Reiniciar power-ups
+    deactivateShield();
+    deactivateSpeedBoost();
+    deactivateDoublePoints();
+    
+    // Reiniciar estado de invencibilidad
+    isInvincible = false;
+    invincibilityTimer = 0;
+    
+    // Restaurar color
+    currentColor = normalColor;
   }
   
   // Dibuja la forma de un corazón

@@ -324,6 +324,19 @@ class InputHandler {
     if (selectedMenuItem == 0) {
       stateManager.setState(STATE_GAME);
     } else if (selectedMenuItem == 1) {
+      // Limpiar completamente el estado del juego antes de ir al menú principal
+      game.cleanupForMenuTransition();
+      
+      // Forzar una limpieza completa del canvas para asegurar que no queden elementos residuales
+      pushStyle();
+      clear();
+      background(0);
+      popStyle();
+      
+      // Asegurar que el cursor del menú vuelva a su posición inicial
+      selectedMenuItem = 0;
+      
+      // Cambiar al estado del menú principal
       stateManager.setState(STATE_MAIN_MENU);
     }
   }
@@ -333,6 +346,7 @@ class InputHandler {
       stateManager.setState(STATE_GAME);
       game.reset();
     } else if (selectedMenuItem == 1) {
+      game.cleanupForMenuTransition();
       stateManager.setState(STATE_MAIN_MENU);
     }
   }
@@ -345,6 +359,21 @@ class InputHandler {
       pauseGame();
     } else if (getGameState() != STATE_MAIN_MENU) {
       // Volver al menú anterior
+      if (getGameState() == STATE_PAUSED) {
+        // Si estamos en el menú de pausa, necesitamos limpiar los elementos del juego
+        game.cleanupForMenuTransition();
+        
+        // Forzar una limpieza completa del canvas para evitar elementos residuales
+        pushStyle();
+        clear();
+        background(0);
+        popStyle();
+        
+        // Asegurar que el cursor del menú vuelva a su posición inicial
+        selectedMenuItem = 0;
+      }
+      
+      // Cambiar al estado del menú principal
       stateManager.setState(STATE_MAIN_MENU);
     }
   }

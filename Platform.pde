@@ -217,6 +217,7 @@ class Platform {
   boolean isPlayerOn(Player player) {
     float playerBottom = player.y;
     float playerX = player.x;
+    float playerSize = player.size;
     
     // El jugador está sobre la plataforma si:
     // 1. La base del jugador está cerca del tope de la plataforma
@@ -225,14 +226,14 @@ class Platform {
     
     // Ampliamos el rango de detección vertical para mejorar la colisión
     // y aseguramos que detecte plataformas con movimiento rápido
-    boolean verticalMatch = (playerBottom >= y - 10 && playerBottom <= y + 10);
-    boolean horizontalMatch = (playerX >= x && playerX <= x + width);
+    boolean verticalMatch = (playerBottom >= y - 12 && playerBottom <= y + 12);
+    boolean horizontalMatch = (playerX >= x - playerSize * 0.1 && playerX <= x + width + playerSize * 0.1);
     boolean isFalling = (player.vSpeed >= 0);
     
     // Para plataformas móviles verticales, aumentamos aún más el rango de detección
     if (type == 2 && isMoving) {
         // Incrementamos la tolerancia vertical para plataformas móviles
-        verticalMatch = (playerBottom >= y - 15 && playerBottom <= y + 15);
+        verticalMatch = (playerBottom >= y - 18 && playerBottom <= y + 18);
     }
     
     return verticalMatch && horizontalMatch && isFalling;

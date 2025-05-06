@@ -31,6 +31,9 @@ class Obstacle {
   // Referencia de accesibilidad
   AccessibilityManager accessManager;
   
+  // Referencia al gestor de assets
+  AssetManager assetManager;
+  
   // Propiedades para apariencia tóxica y daño
   boolean isToxic = false;
   float damageMultiplier = 1.0;
@@ -61,6 +64,12 @@ class Obstacle {
     this(x, y, w, h, 5.0, type, new AccessibilityManager()); // Velocidad por defecto 5.0, accessibility manager default
   }
   
+  // Constructor con AssetManager
+  Obstacle(float x, float y, float w, float h, float speed, int type, AccessibilityManager accessManager, AssetManager assetManager) {
+    this(x, y, w, h, speed, type, accessManager);
+    this.assetManager = assetManager;
+  }
+  
   void setupVisuals() {
     // Asignar colores según tipo
     switch(type) {
@@ -68,8 +77,8 @@ class Obstacle {
         obstacleColor = color(0, 0, 255);
         hintText = "";
         break;
-      case 1: // Bajo (saltar)
-        obstacleColor = color(255, 0, 0);
+      case 1: // Bajo (saltar) - basura
+        obstacleColor = color(100, 50, 0); // Color marrón para la basura
         hintText = "¡SALTA!";
         break;
       case 2: // Alto (deslizar)
@@ -146,6 +155,11 @@ class Obstacle {
                x - w/2, y - h - 10);
     }
     
+    // Determinar si usar imágenes o formas geométricas basado en accesibilidad y disponibilidad
+    boolean useImages = assetManager != null && 
+                       assetManager.getFactoryObstacleImage() != null && 
+                       !accessManager.highContrastMode;
+    
     // Ajustar color para modo daltónico si está activo
     color displayColor = obstacleColor;
     if (accessManager.colorBlindMode) {
@@ -185,7 +199,33 @@ class Obstacle {
           drawPatternedCircle(x, y - h/2, w, 3);
           break;
       }
-    } else {
+    } 
+    else if (useImages) {
+      // Usar imágenes para obstáculos si están disponibles
+      imageMode(CENTER);
+      PImage obstacleImage = assetManager.getObstacleImage(type);
+      
+      // Dibujar imagen apropiada según tipo con tint para mantener feedback visual
+      tint(255); // Reset tint
+      
+      switch(type) {
+        case 0: // Estándar
+          image(obstacleImage, x, y - h/2, w, h);
+          break;
+        case 1: // Bajo - más ancho y corto - usar imagen de basura
+          // Ajustar posición y tamaño para la imagen de basura
+          image(obstacleImage, x, y - h/3, w * 1.3, h * 0.8);
+          break;
+        case 2: // Alto - más alto y delgado
+          image(obstacleImage, x, y - h*0.75, w * 0.8, h * 1.5);
+          break;
+        case 3: // Móvil
+          image(obstacleImage, x, y - h/2, w, h);
+          break;
+      }
+      noTint(); // Reset tint
+    } 
+    else {
       // Dibujar el obstáculo con color adecuado
       fill(displayColor);
       

@@ -27,6 +27,9 @@ class CollectibleManager {
   // Soporte de accesibilidad
   AccessibilityManager accessManager;
   
+  // Gestor de assets
+  AssetManager assetManager;
+  
   CollectibleManager(float groundLevel, EcoSystem ecoSystem) {
     this.groundLevel = groundLevel;
     this.ecoSystem = ecoSystem;
@@ -43,6 +46,12 @@ class CollectibleManager {
   CollectibleManager(float groundLevel, EcoSystem ecoSystem, AccessibilityManager accessManager) {
     this(groundLevel, ecoSystem);
     this.accessManager = accessManager;
+  }
+  
+  // Constructor con gestor de accesibilidad y assetManager
+  CollectibleManager(float groundLevel, EcoSystem ecoSystem, AccessibilityManager accessManager, AssetManager assetManager) {
+    this(groundLevel, ecoSystem, accessManager);
+    this.assetManager = assetManager;
   }
   
   void update(float obstacleSpeed, ArrayList<Platform> platforms) {
@@ -122,7 +131,13 @@ class CollectibleManager {
         float x = platform.x + platform.width / 2;
         float y = platform.y - 30;
         
-        Collectible collectible = new Collectible(x, y, collectibleType);
+        Collectible collectible;
+        if (assetManager != null) {
+          collectible = new Collectible(x, y, 40, 5, collectibleType, assetManager);
+        } else {
+          collectible = new Collectible(x, y, collectibleType);
+        }
+        
         collectible.setPlatformBound(true, platform);
         collectibles.add(collectible);
       }
@@ -134,7 +149,13 @@ class CollectibleManager {
     float x = width + 50;
     float y = random(groundLevel - 200, groundLevel - 50);
     
-    Collectible collectible = new Collectible(x, y, collectibleType);
+    Collectible collectible;
+    if (assetManager != null) {
+      collectible = new Collectible(x, y, 40, 5, collectibleType, assetManager);
+    } else {
+      collectible = new Collectible(x, y, collectibleType);
+    }
+    
     collectibles.add(collectible);
   }
   
@@ -144,7 +165,13 @@ class CollectibleManager {
     float y = random(groundLevel - 200, groundLevel - 80);
     
     // Crear corazón coleccionable más grande para mejor visibilidad
-    Collectible heart = new Collectible(x, y, 40, 5, Collectible.HEART);
+    Collectible heart;
+    if (assetManager != null) {
+      heart = new Collectible(x, y, 40, 5, Collectible.HEART, assetManager);
+    } else {
+      heart = new Collectible(x, y, 40, 5, Collectible.HEART);
+    }
+    
     collectibles.add(heart);
     
     // Mostrar mensaje de ayuda la primera vez que aparece un corazón
@@ -262,7 +289,14 @@ class CollectibleManager {
   void activateShield(Player player) {
     // Apply shield power-up to player
     player.activateShield(300); // 5 seconds
-    PowerUp powerUp = new PowerUp(PowerUp.SHIELD, 300, accessManager);
+    
+    PowerUp powerUp;
+    if (assetManager != null) {
+      powerUp = new PowerUp(PowerUp.SHIELD, 300, accessManager, assetManager);
+    } else {
+      powerUp = new PowerUp(PowerUp.SHIELD, 300, accessManager);
+    }
+    
     powerUp.setPosition(width - 40, 60); // Position in top-right corner of HUD
     activePowerUps.add(powerUp);
     
@@ -273,7 +307,14 @@ class CollectibleManager {
   void activateSpeedBoost(Player player) {
     // Apply speed boost power-up to player
     player.activateSpeedBoost(300, 1.5); // 5 seconds, 50% boost
-    PowerUp powerUp = new PowerUp(PowerUp.SPEED_BOOST, 300, accessManager);
+    
+    PowerUp powerUp;
+    if (assetManager != null) {
+      powerUp = new PowerUp(PowerUp.SPEED_BOOST, 300, accessManager, assetManager);
+    } else {
+      powerUp = new PowerUp(PowerUp.SPEED_BOOST, 300, accessManager);
+    }
+    
     powerUp.setPosition(width - 40, 100); // Position below shield in HUD
     activePowerUps.add(powerUp);
     
@@ -284,7 +325,14 @@ class CollectibleManager {
   void activateDoublePoints(Player player) {
     // Apply double points power-up to player
     player.activateDoublePoints(300); // 5 seconds
-    PowerUp powerUp = new PowerUp(PowerUp.DOUBLE_POINTS, 300, accessManager);
+    
+    PowerUp powerUp;
+    if (assetManager != null) {
+      powerUp = new PowerUp(PowerUp.DOUBLE_POINTS, 300, accessManager, assetManager);
+    } else {
+      powerUp = new PowerUp(PowerUp.DOUBLE_POINTS, 300, accessManager);
+    }
+    
     powerUp.setPosition(width - 40, 140); // Position below speed boost in HUD
     activePowerUps.add(powerUp);
     
@@ -319,5 +367,10 @@ class CollectibleManager {
     activePowerUps.clear();
     floatingTexts.clear();
     collectibleTimer = 0;
+  }
+  
+  // Método para limpiar todos los coleccionables y power-ups
+  void clearAll() {
+    reset();
   }
 } 

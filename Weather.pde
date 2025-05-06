@@ -1,10 +1,9 @@
 class Weather {
   // Tipos de clima
   static final int CLEAR = 0;
-  static final int RAIN = 1;
-  static final int FOG = 2;
-  static final int WIND = 3;
-  static final int HEATWAVE = 4;
+  static final int FOG = 1;
+  static final int WIND = 2;
+  static final int HEATWAVE = 3;
   
   // Estado actual
   int currentWeather = CLEAR;
@@ -20,7 +19,6 @@ class Weather {
   int clearDuration = 1200; // Duración base para períodos de clima despejado (20 segundos a 60fps)
   
   // Probabilidades del clima - pueden ser influenciadas por la salud del ecosistema
-  float rainProbability = 0.3; 
   float fogProbability = 0.2;
   float windProbability = 0.2;
   float heatwaveProbability = 0.1;
@@ -31,7 +29,6 @@ class Weather {
   float visibilityModifier = 0; // -0.7 a 0
   
   // Elementos de efectos visuales
-  ArrayList<Raindrop> raindrops;
   ArrayList<WindParticle> windParticles;
   color fogColor = color(255, 255, 255, 0);
   float fogOpacity = 0;
@@ -41,7 +38,6 @@ class Weather {
   String weatherName = "Clear";
   
   Weather() {
-    raindrops = new ArrayList<Raindrop>();
     windParticles = new ArrayList<WindParticle>();
     heatwaveDistortion = new float[width];
     
@@ -121,11 +117,10 @@ class Weather {
     weatherTimer = 0;
     
     // Determinar clima objetivo basado en probabilidades y estado del ecosistema
-    float[] probabilities = new float[5]; // probabilidad para cada tipo de clima
+    float[] probabilities = new float[4]; // reducido de 5 a 4 por la eliminación de RAIN
     
     // Comenzar con probabilidades base
     probabilities[CLEAR] = 0.4; // 40% de probabilidad para clima despejado
-    probabilities[RAIN] = rainProbability;
     probabilities[FOG] = fogProbability;
     probabilities[WIND] = windProbability;
     probabilities[HEATWAVE] = heatwaveProbability;
@@ -134,14 +129,12 @@ class Weather {
     if (ecoSystem.isInCriticalState()) {
       // El estado crítico tiene clima más extremo, menos clima despejado
       probabilities[CLEAR] *= 0.5; // 50% menos probabilidad de clima despejado
-      probabilities[RAIN] *= 1.5; // 50% más lluvia
       probabilities[FOG] *= 1.5; // 50% más niebla
       probabilities[WIND] *= 1.3; // 30% más viento
       probabilities[HEATWAVE] *= 2.0; // El doble de olas de calor
     } else if (ecoSystem.isInWarningState()) {
       // El estado de advertencia tiene clima ligeramente más extremo
       probabilities[CLEAR] *= 0.8; // 20% menos probabilidad de clima despejado
-      probabilities[RAIN] *= 1.2; // 20% más lluvia
       probabilities[FOG] *= 1.2; // 20% más niebla
       probabilities[WIND] *= 1.1; // 10% más viento
       probabilities[HEATWAVE] *= 1.3; // 30% más olas de calor
@@ -210,11 +203,6 @@ class Weather {
       case CLEAR:
         weatherName = "Despejado";
         break;
-      case RAIN:
-        if (intensity > 0.8) weatherName = "Lluvia Intensa";
-        else if (intensity > 0.5) weatherName = "Lluvia";
-        else weatherName = "Llovizna";
-        break;
       case FOG:
         if (intensity > 0.8) weatherName = "Niebla Densa";
         else if (intensity > 0.5) weatherName = "Niebla";
@@ -239,12 +227,6 @@ class Weather {
     
     // Aplicar efectos según el clima actual y su intensidad
     switch (currentWeather) {
-      case RAIN:
-        // La lluvia dificulta saltar y reduce ligeramente la velocidad
-        jumpModifier = -0.2 * intensity;
-        speedModifier = -0.1 * intensity;
-        visibilityModifier = -0.3 * intensity;
-        break;
       case FOG:
         // La niebla reduce significativamente la visibilidad pero no afecta mucho al movimiento
         visibilityModifier = -0.7 * intensity;
@@ -265,9 +247,6 @@ class Weather {
   void updateWeatherEffects() {
     // Actualizar efectos visuales del clima según el clima actual y su intensidad
     switch (currentWeather) {
-      case RAIN:
-        updateRainEffects();
-        break;
       case FOG:
         updateFogEffects();
         break;
@@ -280,26 +259,6 @@ class Weather {
       default:
         // Clima despejado - eliminar cualquier efecto restante
         clearEffects();
-    }
-  }
-  
-  void updateRainEffects() {
-    // Añadir nuevas gotas de lluvia según la intensidad
-    int maxRaindrops = int(map(intensity, 0, 1, 10, 80));
-    
-    while (raindrops.size() < maxRaindrops) {
-      raindrops.add(new Raindrop());
-    }
-    
-    // Actualizar gotas existentes
-    for (int i = raindrops.size() - 1; i >= 0; i--) {
-      Raindrop drop = raindrops.get(i);
-      drop.update();
-      
-      // Eliminar gotas terminadas
-      if (drop.isFinished()) {
-        raindrops.remove(i);
-      }
     }
   }
   
@@ -343,7 +302,6 @@ class Weather {
   
   void clearEffects() {
     // Eliminar todos los efectos visuales
-    raindrops.clear();
     windParticles.clear();
     fogOpacity = 0;
     
@@ -356,9 +314,6 @@ class Weather {
   void display() {
     // Dibujar efectos de clima en primer plano según el clima actual
     switch (currentWeather) {
-      case RAIN:
-        displayRain();
-        break;
       case WIND:
         displayWind();
         break;
@@ -403,22 +358,6 @@ class Weather {
     }
   }
   
-  void displayRain() {
-    // Dibujar gotas de lluvia
-    stroke(100, 150, 255, 150);
-    strokeWeight(2);
-    
-    for (Raindrop drop : raindrops) {
-      drop.display();
-    }
-    
-    // Añadir una superposición azul ligera para lluvia intensa
-    if (intensity > 0.7) {
-      fill(100, 150, 255, 30 * intensity);
-      rect(0, 0, width, height);
-    }
-  }
-  
   void displayWind() {
     // Dibujar partículas de viento
     noStroke();
@@ -453,37 +392,6 @@ class Weather {
     jumpModifier = 0;
     speedModifier = 0;
     visibilityModifier = 0;
-  }
-}
-
-// Clase para efecto de lluvia
-class Raindrop {
-  float x, y;
-  float speed;
-  float length;
-  float alpha;
-  float groundLevel;
-  
-  Raindrop() {
-    x = random(width);
-    y = random(-20, 0);
-    speed = random(5, 15);
-    length = map(speed, 5, 15, 10, 20);
-    alpha = random(150, 200);
-    groundLevel = height * 0.8; // Igual que el nivel del suelo del juego
-  }
-  
-  void update() {
-    y += speed;
-  }
-  
-  void display() {
-    stroke(100, 150, 255, alpha);
-    line(x, y, x - 1, y + length);
-  }
-  
-  boolean isFinished() {
-    return y > groundLevel;
   }
 }
 

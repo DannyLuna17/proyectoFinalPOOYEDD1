@@ -67,6 +67,9 @@ class Collectible {
   // Efectos de partículas
   ArrayList<Particle> particles;
   
+  // Referencia al gestor de assets
+  AssetManager assetManager;
+  
   // Constructor with default size and speed
   Collectible(float x, float y, int type) {
     // Default size of 30 and speed of 5
@@ -80,6 +83,20 @@ class Collectible {
     this.speed = speed;
     this.type = type;
     this.particles = new ArrayList<Particle>();
+    
+    setupVisuals();
+    setupEcoImpact();
+  }
+  
+  // Constructor con AssetManager
+  Collectible(float x, float y, float size, float speed, int type, AssetManager assetManager) {
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.speed = speed;
+    this.type = type;
+    this.particles = new ArrayList<Particle>();
+    this.assetManager = assetManager;
     
     setupVisuals();
     setupEcoImpact();
@@ -247,6 +264,30 @@ class Collectible {
     translate(x, y);
     rotate(rotation);
     
+    // Si tenemos acceso al AssetManager y hay una imagen disponible, usarla
+    if (assetManager != null) {
+      PImage img = assetManager.getCollectibleImage(type);
+      
+      if (img != null) {
+        // Centrar la imagen
+        imageMode(CENTER);
+        // Dibujar la imagen rotada
+        image(img, 0, 0, size, size);
+      } else {
+        // Si no hay imagen, usar el dibujo original
+        drawOriginalVisuals();
+      }
+    } else {
+      // Sin asset manager, usar el dibujo original
+      drawOriginalVisuals();
+    }
+    
+    popStyle();
+    popMatrix();
+  }
+  
+  // Método para dibujar los gráficos originales 
+  void drawOriginalVisuals() {
     fill(itemColor);
     noStroke();
     
@@ -380,9 +421,6 @@ class Collectible {
         ellipse(0, 0, size * 0.8, size * 0.8);
         break;
     }
-    
-    popStyle();
-    popMatrix();
   }
   
   void collect() {

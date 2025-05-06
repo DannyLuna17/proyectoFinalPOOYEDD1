@@ -1,0 +1,36 @@
+Date : 2025-05-02 13:57:25
+Directory : d:\proyFinalPOO
+Total : 12 files,  172 codes, 60 comments, 45 blanks, all 277 lines
+
+Languages
++------------+------------+------------+------------+------------+------------+
+| language   | files      | code       | comment    | blank      | total      |
++------------+------------+------------+------------+------------+------------+
+| Processing |         12 |        172 |         60 |         45 |        277 |
++------------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------+------------+------------+------------+------------+------------+
+| path                                   | files      | code       | comment    | blank      | total      |
++----------------------------------------+------------+------------+------------+------------+------------+
+| .                                      |         12 |        172 |         60 |         45 |        277 |
++----------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------+------------+------------+------------+------------+------------+
+| filename                               | language   | code       | comment    | blank      | total      |
++----------------------------------------+------------+------------+------------+------------+------------+
+| d:\proyFinalPOO\Button.pde             | Processing |         13 |        -29 |          4 |        -12 |
+| d:\proyFinalPOO\Collectible.pde        | Processing |         33 |          5 |          3 |         41 |
+| d:\proyFinalPOO\CollectibleManager.pde | Processing |         33 |         16 |          9 |         58 |
+| d:\proyFinalPOO\FloatingText.pde       | Processing |         14 |          4 |          3 |         21 |
+| d:\proyFinalPOO\Game.pde               | Processing |         58 |         32 |         18 |        108 |
+| d:\proyFinalPOO\Menu.pde               | Processing |          4 |         -2 |          1 |          3 |
+| d:\proyFinalPOO\Obstacle.pde           | Processing |        -11 |         14 |          0 |          3 |
+| d:\proyFinalPOO\ObstacleManager.pde    | Processing |          0 |          3 |          0 |          3 |
+| d:\proyFinalPOO\ObstacleTypes.pde      | Processing |          0 |          2 |          0 |          2 |
+| d:\proyFinalPOO\Platform.pde           | Processing |          2 |          3 |          1 |          6 |
+| d:\proyFinalPOO\PlatformManager.pde    | Processing |         12 |          7 |          2 |         21 |
+| d:\proyFinalPOO\Player.pde             | Processing |         14 |          5 |          4 |         23 |
+| Total                                  |            |        172 |         60 |         45 |        277 |
++----------------------------------------+------------+------------+------------+------------+------------+
