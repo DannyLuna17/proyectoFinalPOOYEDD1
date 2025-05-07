@@ -5,6 +5,10 @@
  * del juego para optimizar memoria y rendimiento.
  */
  
+// Importamos biblioteca para GIFs animados
+import gifAnimation.*;
+import java.io.File;
+
 class AssetManager {
   // Imágenes del juego
   private PImage backgroundImage;
@@ -12,13 +16,15 @@ class AssetManager {
   private PImage menuBackground;
   private PImage finalBackground;
   private PImage instructionsImage; // Imagen para la pantalla de instrucciones
+  private PImage floorImage;        // Imagen para el suelo
   
   // Imágenes de coleccionables
   private PImage heartImage;       // corazon.png
   private PImage shieldImage;      // escudo.png
   private PImage trashImage;       // basura.png 
   private PImage doublePointsImage;// doblepunto.png
-  private PImage speedBoostImage;  // dobleVelocidad2.png
+  private Gif speedBoostGif;       // velocidad.gif (animado)
+  private PImage speedBoostFallbackImage; // Imagen de respaldo para cuando el GIF falla
   private PImage coinImage;        // imagen de moneda
   private PImage characterImage;   // personaje
   private PImage shadowImage;      // sombra
@@ -30,8 +36,19 @@ class AssetManager {
   // Dimensiones escaladas estándar para coleccionables
   private final int STD_SIZE = 40;
   
+  // Referencia a la aplicación principal
+  private PApplet app;
+  
   // Constructor
+  AssetManager(PApplet app) {
+    this.app = app;
+    loadAllAssets();
+  }
+  
+  // Constructor sin parámetros para compatibilidad
   AssetManager() {
+    // Se usará cuando no se necesiten GIFs animados
+    this.app = null;
     loadAllAssets();
   }
   
@@ -45,12 +62,48 @@ class AssetManager {
     // Cargar imagen de instrucciones
     instructionsImage = loadImage("assets/instrucciones.png");
     
+    // Cargar imagen del suelo
+    floorImage = loadImage("assets/piso.png");
+    
     // Cargar imágenes de coleccionables
     heartImage = loadImage("assets/corazon.png");
     shieldImage = loadImage("assets/escudo.png");
     trashImage = loadImage("assets/basura.png");
     doublePointsImage = loadImage("assets/doblepunto.png");
-    speedBoostImage = loadImage("assets/dobleVelocidad2.png");
+    
+    // Cargar imagen de respaldo para velocidad - SIEMPRE cargar esta imagen primero
+    speedBoostFallbackImage = loadImage("assets/dobleVelocidad2.png");
+    
+    // Cargar GIF animado para velocidad
+    // Para tener acceso a Processing directamente
+    PApplet p = applet;  // Usamos la variable global
+    if (p != null) {
+      try {
+        // Construir ruta absoluta para asegurar que se encuentre el archivo
+        String gifPath = p.sketchPath("assets/velocidad.gif");
+        println("Intentando cargar velocidad.gif desde: " + gifPath);
+        
+        // Comprobar si el archivo existe
+        File gifFile = new File(gifPath);
+        if (gifFile.exists()) {
+          speedBoostGif = new Gif(p, gifPath);
+          speedBoostGif.loop(); // GIF en reproducción continua
+          println("GIF de velocidad cargado exitosamente");
+        } else {
+          println("ERROR: No se encontró el archivo GIF en: " + gifPath);
+          speedBoostGif = null;
+        }
+      } catch (Exception e) {
+        // Si falla, cargar una imagen estática de respaldo
+        println("Error cargando GIF: " + e.getMessage());
+        e.printStackTrace();
+        speedBoostGif = null;
+      }
+    } else {
+      // Si no tenemos acceso a PApplet, no podemos cargar GIFs
+      println("No se puede cargar GIF: falta referencia a PApplet");
+      speedBoostGif = null;
+    }
     
     // Cargar otras imágenes
     characterImage = loadImage("assets/personaje.png");
@@ -71,7 +124,13 @@ class AssetManager {
     shieldImage.resize(STD_SIZE, 0);
     trashImage.resize(STD_SIZE, 0);
     doublePointsImage.resize(STD_SIZE, 0);
-    speedBoostImage.resize(STD_SIZE, 0);
+    
+    // Redimensionar la imagen de respaldo para velocidad
+    if (speedBoostFallbackImage != null) {
+      speedBoostFallbackImage.resize(STD_SIZE, 0);
+    }
+    
+    // No podemos usar resize en Gif, pero podemos mostrar a escala
     
     // Redimensionar imágenes de personaje
     if (characterImage != null) {
@@ -91,6 +150,9 @@ class AssetManager {
     if (trashObstacleImage != null) {
       trashObstacleImage.resize(0, int(STD_SIZE * 1.5));
     }
+    
+    // No redimensionamos el piso para mantener su calidad original
+    // y asegurar que se vea bien cuando se escale dinámicamente
   }
   
   // Escalar fondo a tamaño específico
@@ -123,6 +185,10 @@ class AssetManager {
     return instructionsImage;
   }
   
+  PImage getFloorImage() {
+    return floorImage;
+  }
+  
   PImage getHeartImage() {
     return heartImage;
   }
@@ -139,8 +205,25 @@ class AssetManager {
     return doublePointsImage;
   }
   
+  // Método para obtener el GIF de velocidad o la imagen de respaldo
   PImage getSpeedBoostImage() {
-    return speedBoostImage;
+    if (speedBoostGif != null && speedBoostGif.width > 0) {
+      // Verificamos que el GIF esté correctamente cargado
+      return speedBoostGif;
+    } else {
+      // Devolver la imagen de respaldo precargada si el GIF no está disponible
+      return speedBoostFallbackImage;
+    }
+  }
+  
+  // Getter para acceder al objeto Gif directamente
+  Gif getSpeedBoostGif() {
+    return speedBoostGif;
+  }
+  
+  // Método para verificar si el GIF está activo
+  boolean isSpeedBoostGifActive() {
+    return speedBoostGif != null && speedBoostGif.width > 0;
   }
   
   PImage getCharacterImage() {
@@ -187,7 +270,7 @@ class AssetManager {
       case Collectible.DOUBLE_POINTS:
         return doublePointsImage;
       case Collectible.SPEED_BOOST:
-        return speedBoostImage;
+        return getSpeedBoostImage();
       default:
         return null; // Para otros tipos que no tienen imagen
     }

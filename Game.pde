@@ -782,11 +782,33 @@ class Game {
   }
   
   void displayGround() {
-    // Dibujar suelo con apariencia apropiada al entorno
-    fill(100, 70, 40);
-    rect(0, groundLevel, width, height - groundLevel);
-    
-    // Opcional: Dibujar detalles del suelo
+    // Dibujar suelo usando la imagen de piso
+    PImage pisoImg = assetManager.getFloorImage();
+    if (pisoImg != null) {
+      // Calcular cuántas veces necesitamos repetir la imagen para cubrir el ancho de la pantalla
+      int numTiles = ceil(width / (float)pisoImg.width) + 1;
+      
+      // Desplazamiento para efecto de movimiento
+      int offsetX = (int)(bgX % pisoImg.width);
+      
+      // Ajuste final: posicionamos la imagen para que el césped coincida exactamente con groundLevel
+      float pisoY = groundLevel + 150;
+      
+      // Altura suficiente para cubrir toda la pantalla más extra
+      int floorHeight = height - (int)pisoY + 230;
+      
+      // Dibujar las baldosas necesarias para cubrir toda la pantalla
+      for (int i = 0; i < numTiles; i++) {
+        // Dibujar la imagen del piso
+        image(pisoImg, 
+              i * pisoImg.width - offsetX, pisoY, 
+              pisoImg.width, floorHeight);
+      }
+    } else {
+      // Como respaldo, usar el rectángulo si la imagen no está disponible
+      fill(100, 70, 40);
+      rect(0, groundLevel, width, height - groundLevel + 300);
+    }
   }
   
   void displayPlatforms() {

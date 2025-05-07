@@ -1,10 +1,19 @@
 // EcoRunner - juego endless runner sobre cambio climático
 // Versión 1.3
 
+// Importación para GIFs animados
+import gifAnimation.*;
+
+// Variable global para almacenar la referencia a PApplet
+public static PApplet applet;
+
 // Gestor principal del juego
 GameManager gameManager;
 
 void setup() {
+  // Guardar referencia a this (PApplet)
+  applet = this;
+  
   // size(1920, 1080, P2D);
   fullScreen(P2D);
 

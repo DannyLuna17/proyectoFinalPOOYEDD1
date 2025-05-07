@@ -47,8 +47,8 @@ class GameInitializer {
   }
   
   void initializeAssetManager() {
-    // Inicializar el gestor de assets
-    assetManager = new AssetManager();
+    // Inicializar el gestor de assets con la referencia a PApplet
+    assetManager = new AssetManager(applet);
   }
   
   void initializeCoreComponents() {
@@ -58,43 +58,46 @@ class GameInitializer {
     game = new Game(accessManager, soundManager, assetManager);
   }
   
+  // Inicializar video intro
   void initializeVideoIntro() {
-    try {
-      println("Inicializando intro de video...");
-      videoIntroMenu = new VideoIntroMenu(accessManager, soundManager, assetManager);
-      videoIntroMenu.startVideo();
-      println("Intro de video inicializado");
-    } catch (Exception e) {
-      println("ERROR inicializando intro: " + e.getMessage());
-      e.printStackTrace();
-      
-      // Inicialización alternativa
-      if (videoIntroMenu == null) {
-        videoIntroMenu = new VideoIntroMenu(accessManager, soundManager, assetManager);
-        videoIntroMenu.videoFinished = true;
-        videoIntroMenu.videoSkipped = true;
-        videoIntroMenu.buttonsRevealed = true;
-      }
-    }
+    videoIntroMenu = new VideoIntroMenu(accessManager, soundManager, assetManager);
+    // No necesita establecer una referencia al juego
   }
   
+  // Inicializar el menú principal
   void initializeMenu() {
-    // Crear menú con referencia a la intro de video y referencias adicionales al juego y soundManager
     menu = new Menu(accessManager, videoIntroMenu, game, soundManager, assetManager);
   }
   
-  void printGameInstructions() {
-    println("EcoRunner - Juego sobre Cambio Climático");
-    println("Controles: ESPACIO para saltar, FLECHA ABAJO para deslizarse, P para pausa");
-    println("Accesibilidad: Tecla A o menú principal");
-    println("ESC durante intro para saltar al menú");
+  // Métodos getter para recuperar componentes inicializados
+  Game getGame() {
+    return game;
   }
   
-  // Getters para los componentes inicializados
-  Game getGame() { return game; }
-  Menu getMenu() { return menu; }
-  SoundManager getSoundManager() { return soundManager; }
-  AccessibilityManager getAccessibilityManager() { return accessManager; }
-  VideoIntroMenu getVideoIntroMenu() { return videoIntroMenu; }
-  AssetManager getAssetManager() { return assetManager; }
+  Menu getMenu() {
+    return menu;
+  }
+  
+  SoundManager getSoundManager() {
+    return soundManager;
+  }
+  
+  AccessibilityManager getAccessibilityManager() {
+    return accessManager;
+  }
+  
+  VideoIntroMenu getVideoIntroMenu() {
+    return videoIntroMenu;
+  }
+  
+  // Mostrar instrucciones del juego
+  void printGameInstructions() {
+    println("\n====== INSTRUCCIONES DEL JUEGO ======");
+    println("- Presiona ARRIBA o ESPACIO para saltar");
+    println("- Presiona ABAJO para deslizarte");
+    println("- Presiona P para pausar");
+    println("- Presiona M para silenciar");
+    println("- Recoge items buenos y evita obstáculos");
+    println("===================================\n");
+  }
 } 
