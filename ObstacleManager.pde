@@ -145,9 +145,9 @@ class ObstacleManager {
         // Si por alguna razón llega un tipo 3, creamos un obstáculo básico en su lugar
         // Comentario explicativo en español
         if (assetManager != null) {
-          obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager, assetManager);
+          obstacle = new Obstacle(obstacleX, groundLevel, 60, 120, obstacleSpeed, 0, accessManager, assetManager);
         } else {
-          obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager);
+          obstacle = new Obstacle(obstacleX, groundLevel, 60, 120, obstacleSpeed, 0, accessManager);
         }
         break;
       case 4: // Obstáculo de nube tóxica
@@ -159,9 +159,10 @@ class ObstacleManager {
         break;
       default: // Obstáculo básico
         if (assetManager != null) {
-          obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager, assetManager);
+          // Aumentamos el tamaño del obstáculo básico para mantener la proporción
+          obstacle = new Obstacle(obstacleX, groundLevel, 60, 120, obstacleSpeed, 0, accessManager, assetManager);
         } else {
-          obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager);
+          obstacle = new Obstacle(obstacleX, groundLevel, 60, 120, obstacleSpeed, 0, accessManager);
         }
     }
     

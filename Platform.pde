@@ -49,12 +49,12 @@ class Platform {
   
   // Constructor simplificado con valores predeterminados
   Platform(float x, float y, float w) {
-    this(x, y, w, 15, 5.0, 0, new AccessibilityManager());
+    this(x, y, w, 22, 5.0, 0, new AccessibilityManager());
   }
   
   // Constructor usado en PlatformManager
   Platform(float x, float y, float w, AccessibilityManager accessManager) {
-    this(x, y, w, 15, 5.0, 0, accessManager);
+    this(x, y, w, 22, 5.0, 0, accessManager);
   }
   
   // Otro constructor con altura
@@ -163,7 +163,7 @@ class Platform {
     
     // Indicador de coleccionable o power-up
     if (hasCollectible || hasPowerUp) {
-      float indicatorSize = 8;
+      float indicatorSize = 12;
       
       if (hasCollectible && hasPowerUp) {
         // Si hay ambos, mostrar coleccionable a la izquierda

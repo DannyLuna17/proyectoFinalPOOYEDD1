@@ -4,8 +4,8 @@ class Player {
   float groundY;
   float vSpeed = 0;
   float gravity = 0.5;
-  float jumpForce = -12;
-  float maxJumpForce = -12;
+  float jumpForce = -14.5;
+  float maxJumpForce = -16;
   boolean isJumping = false;
   boolean isSliding = false;
   boolean spacePressed = false;
@@ -78,7 +78,7 @@ class Player {
     this.x = x;
     this.groundY = groundY;
     this.y = groundY;
-    this.size = 60;
+    this.size = 90;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
     this.accessManager = am;
@@ -90,7 +90,7 @@ class Player {
     this.x = x;
     this.groundY = groundY;
     this.y = groundY;
-    this.size = 100;
+    this.size = 150;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
     this.accessManager = accessManager;
@@ -102,7 +102,7 @@ class Player {
     this.x = x;
     this.groundY = groundY;
     this.y = groundY;
-    this.size = 90;
+    this.size = 135;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
     this.accessManager = accessManager;

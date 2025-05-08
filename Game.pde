@@ -210,13 +210,17 @@ class Game {
       }
       
       try {
-        collectibleManager = new CollectibleManager(groundLevel, ecoSystem, accessManager, assetManager);
+        if (assetManager != null) {
+          collectibleManager = new CollectibleManager(height * 0.8, obstacleSpeed, ecoSystem, accessManager, assetManager);
+        } else {
+          collectibleManager = new CollectibleManager(height * 0.8, obstacleSpeed, ecoSystem, accessManager);
+        }
         println("Gestor de coleccionables inicializado con éxito");
       } catch (Exception e) {
         println("ERROR al inicializar gestor de coleccionables: " + e.getMessage());
         e.printStackTrace();
         // Crear gestor de coleccionables por defecto
-        collectibleManager = new CollectibleManager(groundLevel, null, null);
+        collectibleManager = new CollectibleManager(height * 0.8, obstacleSpeed, ecoSystem, accessManager);
       }
       
       try {
@@ -305,9 +309,9 @@ class Game {
         }
         if (collectibleManager == null) {
           if (assetManager != null) {
-            collectibleManager = new CollectibleManager(height * 0.8, null, null, assetManager);
+            collectibleManager = new CollectibleManager(height * 0.8, obstacleSpeed, ecoSystem, accessManager, assetManager);
           } else {
-            collectibleManager = new CollectibleManager(height * 0.8, null, null);
+            collectibleManager = new CollectibleManager(height * 0.8, obstacleSpeed, ecoSystem, accessManager);
           }
         }
         

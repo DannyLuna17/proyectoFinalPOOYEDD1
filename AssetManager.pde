@@ -36,7 +36,8 @@ class AssetManager {
   private PImage toxicCloudImage;      // nube.png para obstáculo de nube tóxica
   
   // Dimensiones escaladas estándar para coleccionables
-  private final int STD_SIZE = 40;
+  // Aumentamos el tamaño estándar de los elementos para que todo se vea más grande
+  private final int STD_SIZE = 60; // Antes era 40, ahora es 50% más grande
   
   // Referencia a la aplicación principal
   private PApplet app;
@@ -172,7 +173,7 @@ class AssetManager {
     
     // Redimensionar imágenes de personaje
     if (characterImage != null) {
-      // Personaje con un tamaño mayor ahora (60px)
+      // Personaje con un tamaño mayor ahora (90px)
       characterImage.resize(0, int(STD_SIZE * 1.5));
     }
     
@@ -183,13 +184,13 @@ class AssetManager {
     
     // Redimensionar obstáculos
     if (factoryObstacleImage != null) {
-      factoryObstacleImage.resize(0, int(STD_SIZE * 2));
+      factoryObstacleImage.resize(0, int(STD_SIZE * 2.2));
     }
     if (trashObstacleImage != null) {
-      trashObstacleImage.resize(0, int(STD_SIZE * 1.5));
+      trashObstacleImage.resize(0, int(STD_SIZE * 1.7));
     }
     if (toxicCloudImage != null) {
-      toxicCloudImage.resize(0, int(STD_SIZE * 1.8));
+      toxicCloudImage.resize(0, int(STD_SIZE * 2.0));
     }
     
     // No redimensionamos el piso para mantener su calidad original

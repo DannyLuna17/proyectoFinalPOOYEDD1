@@ -14,9 +14,12 @@ class CollectibleManager {
   
   // Generación de coleccionables
   float collectibleTimer = 0;
-  float collectibleInterval = 120; // Frames entre intentos
+  float collectibleInterval = 180; // 3 seconds at 60fps
   float collectibleChance = 0.7;   // 70% de probabilidad
   float ecoCollectibleChance = 0.3; // 30% para ambientales
+  float lastPlatformY = 0;
+  float baseCollectibleSpeed = 5;
+  float collectibleSpeed;
   
   // Seguimiento de corazones
   boolean firstHeartShown = false;
@@ -30,27 +33,23 @@ class CollectibleManager {
   // Gestor de assets
   AssetManager assetManager;
   
-  CollectibleManager(float groundLevel, EcoSystem ecoSystem) {
+  // Control de equilibrio
+  int consecutiveCoins = 0;
+  int consecutivePowerUps = 0;
+  
+  CollectibleManager(float groundLevel, float collectibleSpeed, EcoSystem ecoSystem, AccessibilityManager accessManager) {
     this.groundLevel = groundLevel;
+    this.collectibleSpeed = collectibleSpeed;
     this.ecoSystem = ecoSystem;
-    
+    this.accessManager = accessManager;
     collectibles = new ArrayList<Collectible>();
     activePowerUps = new ArrayList<PowerUp>();
     floatingTexts = new ArrayList<FloatingText>();
-    
-    // Gestor de accesibilidad por defecto
-    this.accessManager = new AccessibilityManager();
   }
   
   // Constructor con gestor de accesibilidad
-  CollectibleManager(float groundLevel, EcoSystem ecoSystem, AccessibilityManager accessManager) {
-    this(groundLevel, ecoSystem);
-    this.accessManager = accessManager;
-  }
-  
-  // Constructor con gestor de accesibilidad y assetManager
-  CollectibleManager(float groundLevel, EcoSystem ecoSystem, AccessibilityManager accessManager, AssetManager assetManager) {
-    this(groundLevel, ecoSystem, accessManager);
+  CollectibleManager(float groundLevel, float collectibleSpeed, EcoSystem ecoSystem, AccessibilityManager accessManager, AssetManager assetManager) {
+    this(groundLevel, collectibleSpeed, ecoSystem, accessManager);
     this.assetManager = assetManager;
   }
   
@@ -107,22 +106,44 @@ class CollectibleManager {
     
     if (collectibleTimer >= collectibleInterval) {
       collectibleTimer = 0;
-      
-      if (random(1) < collectibleChance) {
-        // Chance de generar un grupo de monedas
-        if (random(1) < 0.3) {  // 30% de probabilidad de crear un grupo
-          createCoinGroup();
-        } else {
-          boolean onPlatform = random(1) < 0.6 && platforms.size() > 0;
-          
-          if (onPlatform) {
-            createPlatformCollectible(platforms);
-          } else {
-            createAirCollectible();
-          }
-        }
-      }
+      createRandomCollectible();
     }
+  }
+  
+  void createRandomCollectible() {
+    float collectibleX = width + 50;
+    float collectibleY;
+    int collectibleType;
+    float collectibleSize = 45; // Aumentado de 30 a 45 para mantener la proporción
+    
+    // Decidir si el coleccionable estará arriba de una plataforma o al nivel normal
+    boolean isOnPlatform = random(1) < 0.3;
+    
+    if (isOnPlatform) {
+      // Si hay una Y de plataforma registrada, usarla
+      if (lastPlatformY > 0) {
+        collectibleY = lastPlatformY - collectibleSize;
+      } else {
+        // Si no, ponerlo en una altura aleatoria
+        collectibleY = groundLevel - random(100, 250);
+      }
+    } else {
+      // Altura normal
+      collectibleY = groundLevel - random(150, 300);
+    }
+    
+    // Seleccionar tipo según probabilidad y estado del ecosistema
+    collectibleType = getWeightedCollectibleType();
+    
+    // Crear objeto Collectible
+    Collectible c;
+    if (assetManager != null) {
+      c = new Collectible(collectibleX, collectibleY, collectibleSize, collectibleSpeed, collectibleType, assetManager);
+    } else {
+      c = new Collectible(collectibleX, collectibleY, collectibleSize, collectibleSpeed, collectibleType);
+    }
+    
+    collectibles.add(c);
   }
   
   void createPlatformCollectible(ArrayList<Platform> platforms) {
@@ -434,5 +455,62 @@ class CollectibleManager {
   // Método para limpiar todos los coleccionables y power-ups
   void clearAll() {
     reset();
+  }
+  
+  int getWeightedCollectibleType() {
+    // Ajusta las probabilidades basándose en varios factores
+    
+    // Probabilidad para coleccionables ambientales según el nivel de contaminación
+    float envFactor = ecoSystem.getPollutionLevel();
+    float ecoProb = 0.3 + envFactor * 0.2; // Aumenta si hay más contaminación
+    
+    // Menos probabilidad de power-ups consecutivos
+    if (consecutivePowerUps >= 2) {
+      ecoProb *= 0.5;
+    }
+    
+    // Decidir si crear un coleccionable ambiental
+    if (random(1) < ecoProb) {
+      consecutivePowerUps = 0; // Reiniciar contador
+      
+      // Si hay mucha contaminación, mayor chance de objetos de limpieza
+      if (envFactor > 0.6 && random(1) < 0.7) {
+        return Collectible.ECO_CLEANUP;
+      } else {
+        return Collectible.ECO_POSITIVE;
+      }
+    }
+    
+    // Distribución balanceada para el resto de coleccionables
+    float rand = random(1);
+    
+    // Si ya tuvimos muchas monedas seguidas, reducir probabilidad
+    float coinProb = (consecutiveCoins > 5) ? 0.4 : 0.65;
+    
+    if (rand < coinProb) {
+      consecutiveCoins++;
+      consecutivePowerUps = 0;
+      return Collectible.COIN;
+    } else if (rand < 0.75) {
+      consecutiveCoins = 0;
+      consecutivePowerUps = 0;
+      return Collectible.GEM;
+    } else {
+      // Es un power-up, aumentar contador
+      consecutiveCoins = 0;
+      consecutivePowerUps++;
+      
+      // Seleccionar el tipo de power-up
+      float powerRand = random(1);
+      if (powerRand < 0.35) {
+        return Collectible.SHIELD;
+      } else if (powerRand < 0.70) {
+        return Collectible.SPEED_BOOST;
+      } else if (powerRand < 0.95) {
+        return Collectible.DOUBLE_POINTS;
+      } else {
+        return Collectible.HEART;
+      }
+    }
   }
 } 

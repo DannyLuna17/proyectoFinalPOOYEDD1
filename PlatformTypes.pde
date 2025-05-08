@@ -7,22 +7,22 @@
 // Bounce platform - player bounces up when landing on it
 class BouncePlatform extends Platform {
   BouncePlatform(float x, float y, float w) {
-    super(x, y, w, 15, 5.0, 1, new AccessibilityManager());
+    super(x, y, w, 22, 5.0, 1, new AccessibilityManager());
   }
   
   BouncePlatform(float x, float y, float w, AccessibilityManager accessManager) {
-    super(x, y, w, 15, 5.0, 1, accessManager);
+    super(x, y, w, 22, 5.0, 1, accessManager);
   }
 }
 
 // Moving platform - moves up and down vertically
 class MovingPlatform extends Platform {
   MovingPlatform(float x, float y, float w) {
-    super(x, y, w, 15, 5.0, 2, new AccessibilityManager());
+    super(x, y, w, 22, 5.0, 2, new AccessibilityManager());
   }
   
   MovingPlatform(float x, float y, float w, AccessibilityManager accessManager) {
-    super(x, y, w, 15, 5.0, 2, accessManager);
+    super(x, y, w, 22, 5.0, 2, accessManager);
   }
 }
 
@@ -33,11 +33,11 @@ class DisappearingPlatform extends Platform {
   int disappearDuration = 60; // 1 second to disappear
   
   DisappearingPlatform(float x, float y, float w) {
-    super(x, y, w, 15, 5.0, 3, new AccessibilityManager());
+    super(x, y, w, 22, 5.0, 3, new AccessibilityManager());
   }
   
   DisappearingPlatform(float x, float y, float w, AccessibilityManager accessManager) {
-    super(x, y, w, 15, 5.0, 3, accessManager);
+    super(x, y, w, 22, 5.0, 3, accessManager);
   }
   
   @Override
@@ -66,7 +66,7 @@ class DisappearingPlatform extends Platform {
       fill(red(displayColor), green(displayColor), blue(displayColor), alpha);
       
       // Base platform shape
-      rect(x, y, width, height, 4); // Slightly rounded corners
+      rect(x, y, width, height, 5); // Slightly rounded corners
       
       // Add flicker effect when disappearing
       if (activated) {
