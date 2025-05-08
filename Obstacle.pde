@@ -4,7 +4,7 @@ class Obstacle {
   float speed;
   
   // Propiedades de comportamiento
-  int type; // 0 = estándar, 1 = bajo (saltar), 2 = alto (deslizar), 3 = móvil (oscilante)
+  int type; // 0 = estándar, 1 = bajo (saltar), 2 = alto (deslizar), 3 = móvil (oscilante), 4 = nube tóxica
   float initialY; // Posición Y inicial para obstáculos móviles
   float moveAmplitude = 50; // Rango de movimiento
   float moveSpeed = 0.05; // Velocidad de oscilación
@@ -89,13 +89,17 @@ class Obstacle {
         obstacleColor = color(255, 180, 0);
         hintText = "¡CUIDADO!";
         break;
+      case 4: // Nube tóxica
+        obstacleColor = color(120, 200, 50); // Color verde tóxico
+        hintText = "¡TÓXICO!";
+        break;
       default:
         obstacleColor = color(0, 0, 255);
         hintText = "";
     }
     
     // Advertencia para obstáculos difíciles
-    if (type == 3 || speed > 7) {
+    if (type == 3 || type == 4 || speed > 7) {
       hasWarning = true;
     }
     
@@ -177,6 +181,9 @@ class Obstacle {
         case 3: // Móvil - naranja intenso
           displayColor = color(255, 140, 0);
           break;
+        case 4: // Nube tóxica
+          displayColor = color(120, 200, 50); // Color verde tóxico
+          break;
       }
     }
     
@@ -197,6 +204,10 @@ class Obstacle {
         case 3: // Móvil - puntos
           displayColor = color(255);
           drawPatternedCircle(x, y - h/2, w, 3);
+          break;
+        case 4: // Nube tóxica
+          displayColor = color(255);
+          drawPatternedCircle(x, y - h/2, w, 4);
           break;
       }
     } 
@@ -222,6 +233,15 @@ class Obstacle {
         case 3: // Móvil
           image(obstacleImage, x, y - h/2, w, h);
           break;
+        case 4: // Nube tóxica
+          // La nube flota un poco más arriba del suelo
+          image(obstacleImage, x, y - h*1.2, w * 1.4, h);
+          
+          // Añadir un efecto de advertencia visual para la nube tóxica
+          noStroke();
+          fill(120, 255, 50, 30 + 20 * sin(millis() * 0.01));
+          ellipse(x, y - h*1.2, w * 1.1, h * 0.7);
+          break;
       }
       noTint(); // Reset tint
     } 
@@ -243,6 +263,16 @@ class Obstacle {
         case 3: // Ya no usamos obstáculos móviles circulares
           // Si por alguna razón aparece un tipo 3, lo dibujamos como un obstáculo estándar
           rect(x - w/2, y - h, w, h);
+          break;
+        case 4: // Nube tóxica
+          // La nube tóxica está más arriba, así que ajustamos el área de colisión
+          float obstacleLeft = x - w*0.7;
+          float obstacleRight = x + w*0.7;
+          float obstacleTop = y - h*1.6; // Más arriba
+          float obstacleBottom = obstacleTop + h*0.8; // Más pequeña verticalmente
+          
+          // Dibujar la nube tóxica
+          rect(obstacleLeft, obstacleTop, obstacleRight - obstacleLeft, obstacleBottom - obstacleTop);
           break;
       }
     }
@@ -299,6 +329,16 @@ class Obstacle {
           }
         }
       }
+    } else if (patternType == 4) {
+      // Puntos para la nube tóxica
+      float radius = diameter / 2;
+      for (int i = -int(radius*0.7); i < int(radius*0.7); i += 10) {
+        for (int j = -int(radius*0.7); j < int(radius*0.7); j += 10) {
+          if (i*i + j*j < radius*radius*0.5) {
+            point(x + i, y + j);
+          }
+        }
+      }
     }
   }
   
@@ -334,6 +374,7 @@ class Obstacle {
       case 1: return y - h/2;
       case 2: return y - h*1.5;
       case 3: return y - h/2 - h/2;
+      case 4: return y - h*1.6; // Más arriba para la nube tóxica
       default: return y - h;
     }
   }
@@ -345,6 +386,7 @@ class Obstacle {
       case 1: return h/2;
       case 2: return h*1.5;
       case 3: return h;
+      case 4: return h*0.8; // Más pequeña para la nube tóxica
       default: return h;
     }
   }
@@ -361,7 +403,31 @@ class Obstacle {
     }
     */
     
-    // Para todos los tipos (rectángulos)
+    // Ajuste especial para la nube tóxica (tipo 4)
+    if (type == 4) {
+      // La nube tóxica está más arriba, así que ajustamos el área de colisión
+      float obstacleLeft = x - w*0.7;
+      float obstacleRight = x + w*0.7;
+      float obstacleTop = y - h*1.6; // Más arriba
+      float obstacleBottom = obstacleTop + h*0.8; // Más pequeña verticalmente
+      
+      float playerLeft = player.x - player.size/2;
+      float playerRight = player.x + player.size/2;
+      float playerTop = player.isSliding ? 
+                        player.y - player.size/4 : 
+                        player.y - player.size;
+      float playerBottom = player.isSliding ? 
+                         player.y + player.size/4 : 
+                         player.y;
+                         
+      // Verificar si los rectángulos se superponen
+      return (playerLeft < obstacleRight && 
+              playerRight > obstacleLeft && 
+              playerTop < obstacleBottom && 
+              playerBottom > obstacleTop);
+    }
+    
+    // Para todos los demás tipos (rectángulos)
     float obstacleLeft = x - w/2;
     float obstacleRight = x + w/2;
     float obstacleTop = getTop();
@@ -385,6 +451,10 @@ class Obstacle {
   
   // Obtener daño del obstáculo (puede ser sobreescrito en subclases)
   int getDamage() {
+    // La nube tóxica hace más daño que un obstáculo normal
+    // if (type == 4) {
+    //   return 2; // Daño mayor para la nube tóxica
+    // }
     return 1; // Valor de daño por defecto
   }
   

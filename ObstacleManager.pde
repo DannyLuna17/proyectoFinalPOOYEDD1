@@ -24,9 +24,9 @@ class ObstacleManager {
     {0, 0, 1}, // Patrón básico
     {1, 2, 1}, // Salto, deslizar, salto
     {2, 2, 0, 2}, // Deslizar, deslizar, básico, deslizar
-    {0, 0, 0}, // Patrón básico (reemplazado el que tenía móviles)
-    {1, 0, 2, 1}, // Complejo (reemplazado el móvil con básico)
-    {0, 1, 2, 1, 0} // Experto (reemplazado los móviles)
+    {0, 4, 0}, // Patrón con nube tóxica (reemplazando tipo 3)
+    {1, 0, 4, 1}, // Complejo con nube tóxica (reemplazando tipo 3)
+    {0, 1, 4, 1, 0} // Experto con nube tóxica (reemplazando tipo 3)
   };
   
   // Integración con ecosistema
@@ -112,8 +112,11 @@ class ObstacleManager {
   }
   
   void createRandomObstacle() {
-    // Eliminamos el tipo 3 (móvil) de las opciones
-    int obstacleType = int(random(3)); // 0: Básico, 1: Alto, 2: Bajo
+    // Ahora incluimos tipo 4 (nube tóxica) en las opciones
+    // y eliminamos completamente el tipo 3 (móvil) que ya no se usa
+    int[] availableTypes = {0, 1, 2, 4}; // Básico, Alto, Bajo, Nube tóxica
+    int randomIndex = int(random(availableTypes.length));
+    int obstacleType = availableTypes[randomIndex];
     createObstacleByType(obstacleType);
   }
   
@@ -145,6 +148,13 @@ class ObstacleManager {
           obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager, assetManager);
         } else {
           obstacle = new Obstacle(obstacleX, groundLevel, 40, 80, obstacleSpeed, 0, accessManager);
+        }
+        break;
+      case 4: // Obstáculo de nube tóxica
+        if (assetManager != null) {
+          obstacle = new ToxicCloudObstacle(obstacleX, groundLevel, accessManager, assetManager);
+        } else {
+          obstacle = new ToxicCloudObstacle(obstacleX, groundLevel, accessManager);
         }
         break;
       default: // Obstáculo básico

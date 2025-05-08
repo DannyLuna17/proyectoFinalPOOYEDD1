@@ -49,4 +49,31 @@ class MovingObstacle extends Obstacle {
   MovingObstacle(float x, float y, AccessibilityManager accessManager, AssetManager assetManager) {
     super(x, y, 50, 50, 5.0, 3, accessManager, assetManager);
   }
+}
+
+// Obstáculo de nube tóxica (usando nube.png)
+class ToxicCloudObstacle extends Obstacle {
+  ToxicCloudObstacle(float x, float y) {
+    super(x, y, 70, 60, 5.0, 4, new AccessibilityManager());
+    // Configurar como tóxico por defecto
+    setToxicAppearance(true);
+    // Aumentar el multiplicador de daño
+    setDamageMultiplier(1.3);
+  }
+  
+  ToxicCloudObstacle(float x, float y, AccessibilityManager accessManager) {
+    super(x, y, 70, 60, 5.0, 4, accessManager);
+    // Configurar como tóxico por defecto
+    setToxicAppearance(true);
+    // Aumentar el multiplicador de daño
+    setDamageMultiplier(1.3);
+  }
+  
+  ToxicCloudObstacle(float x, float y, AccessibilityManager accessManager, AssetManager assetManager) {
+    super(x, y, 70, 60, 5.0, 4, accessManager, assetManager);
+    // Configurar como tóxico por defecto
+    setToxicAppearance(true);
+    // Aumentar el multiplicador de daño
+    setDamageMultiplier(1.3);
+  }
 } 

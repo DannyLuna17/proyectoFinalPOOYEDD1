@@ -33,6 +33,7 @@ class AssetManager {
   // Imágenes de obstáculos
   private PImage factoryObstacleImage; // fabricaContaminante.png
   private PImage trashObstacleImage;   // basura.png para obstáculos
+  private PImage toxicCloudImage;      // nube.png para obstáculo de nube tóxica
   
   // Dimensiones escaladas estándar para coleccionables
   private final int STD_SIZE = 40;
@@ -133,6 +134,7 @@ class AssetManager {
     // Cargar imágenes de obstáculos
     factoryObstacleImage = loadImage("assets/fabricaContaminante.png");
     trashObstacleImage = loadImage("assets/basura.png");  // Cargar basura.png como obstáculo
+    toxicCloudImage = loadImage("assets/nube.png");       // Cargar nube.png para la nube tóxica
     
     // Pre-redimensionar para mejor rendimiento
     resizeAssets();
@@ -185,6 +187,9 @@ class AssetManager {
     }
     if (trashObstacleImage != null) {
       trashObstacleImage.resize(0, int(STD_SIZE * 1.5));
+    }
+    if (toxicCloudImage != null) {
+      toxicCloudImage.resize(0, int(STD_SIZE * 1.8));
     }
     
     // No redimensionamos el piso para mantener su calidad original
@@ -299,6 +304,10 @@ class AssetManager {
     return trashObstacleImage;
   }
   
+  PImage getToxicCloudImage() {
+    return toxicCloudImage;
+  }
+  
   // Obtener la imagen de obstáculo según el tipo
   PImage getObstacleImage(int obstacleType) {
     switch (obstacleType) {
@@ -310,6 +319,8 @@ class AssetManager {
         return factoryObstacleImage;
       case 3: // Móvil
         return factoryObstacleImage;
+      case 4: // Nube tóxica
+        return toxicCloudImage;
       default:
         return factoryObstacleImage;
     }
