@@ -1,0 +1,43 @@
+Date : 2025-05-07 16:17:18
+Directory : d:\proyFinalPOO
+Total : 19 files,  587 codes, 199 comments, 161 blanks, all 947 lines
+
+Languages
++------------+------------+------------+------------+------------+------------+
+| language   | files      | code       | comment    | blank      | total      |
++------------+------------+------------+------------+------------+------------+
+| Processing |         19 |        587 |        199 |        161 |        947 |
++------------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------+------------+------------+------------+------------+------------+
+| path                                   | files      | code       | comment    | blank      | total      |
++----------------------------------------+------------+------------+------------+------------+------------+
+| .                                      |         19 |        587 |        199 |        161 |        947 |
++----------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------+------------+------------+------------+------------+------------+
+| filename                               | language   | code       | comment    | blank      | total      |
++----------------------------------------+------------+------------+------------+------------+------------+
+| d:\proyFinalPOO\AssetManager.pde       | Processing |        183 |         49 |         46 |        278 |
+| d:\proyFinalPOO\Collectible.pde        | Processing |         25 |          8 |          5 |         38 |
+| d:\proyFinalPOO\CollectibleManager.pde | Processing |         38 |          3 |         12 |         53 |
+| d:\proyFinalPOO\Game.pde               | Processing |         81 |         22 |         17 |        120 |
+| d:\proyFinalPOO\GameInitializer.pde    | Processing |          4 |          4 |          5 |         13 |
+| d:\proyFinalPOO\GameRenderer.pde       | Processing |         12 |          9 |          4 |         25 |
+| d:\proyFinalPOO\GameStateManager.pde   | Processing |         13 |         12 |          7 |         32 |
+| d:\proyFinalPOO\InputHandler.pde       | Processing |         15 |          8 |          6 |         29 |
+| d:\proyFinalPOO\Menu.pde               | Processing |         32 |         28 |         16 |         76 |
+| d:\proyFinalPOO\Obstacle.pde           | Processing |         29 |          6 |          5 |         40 |
+| d:\proyFinalPOO\ObstacleManager.pde    | Processing |         24 |          3 |          3 |         30 |
+| d:\proyFinalPOO\ObstacleTypes.pde      | Processing |          9 |          0 |          3 |         12 |
+| d:\proyFinalPOO\Platform.pde           | Processing |          1 |          0 |          0 |          1 |
+| d:\proyFinalPOO\PlatformManager.pde    | Processing |          3 |          1 |          1 |          5 |
+| d:\proyFinalPOO\Player.pde             | Processing |        101 |         31 |         25 |        157 |
+| d:\proyFinalPOO\PowerUp.pde            | Processing |         36 |          9 |          7 |         52 |
+| d:\proyFinalPOO\VideoIntroMenu.pde     | Processing |         51 |          9 |          8 |         68 |
+| d:\proyFinalPOO\Weather.pde            | Processing |        -73 |         -7 |        -12 |        -92 |
+| d:\proyFinalPOO\proyFinalPOO.pde       | Processing |          3 |          4 |          3 |         10 |
+| Total                                  |            |        587 |        199 |        161 |        947 |
++----------------------------------------+------------+------------+------------+------------+------------+

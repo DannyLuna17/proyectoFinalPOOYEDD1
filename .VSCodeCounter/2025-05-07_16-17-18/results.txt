@@ -1,0 +1,56 @@
+Date : 2025-05-07 16:17:18
+Directory : d:\proyFinalPOO
+Total : 31 files,  6810 codes, 1570 comments, 1545 blanks, all 9925 lines
+
+Languages
++------------+------------+------------+------------+------------+------------+
+| language   | files      | code       | comment    | blank      | total      |
++------------+------------+------------+------------+------------+------------+
+| Processing |         30 |      6,760 |      1,570 |      1,522 |      9,852 |
+| Markdown   |          1 |         50 |          0 |         23 |         73 |
++------------+------------+------------+------------+------------+------------+
+
+Directories
++------------------------------------------+------------+------------+------------+------------+------------+
+| path                                     | files      | code       | comment    | blank      | total      |
++------------------------------------------+------------+------------+------------+------------+------------+
+| .                                        |         31 |      6,810 |      1,570 |      1,545 |      9,925 |
++------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++------------------------------------------+------------+------------+------------+------------+------------+
+| filename                                 | language   | code       | comment    | blank      | total      |
++------------------------------------------+------------+------------+------------+------------+------------+
+| d:\proyFinalPOO\AccessibilityManager.pde | Processing |        354 |         18 |         63 |        435 |
+| d:\proyFinalPOO\AssetManager.pde         | Processing |        183 |         49 |         46 |        278 |
+| d:\proyFinalPOO\Button.pde               | Processing |        207 |         12 |         42 |        261 |
+| d:\proyFinalPOO\CleanupManager.pde       | Processing |         18 |          9 |          6 |         33 |
+| d:\proyFinalPOO\Collectible.pde          | Processing |        412 |         42 |         71 |        525 |
+| d:\proyFinalPOO\CollectibleManager.pde   | Processing |        263 |         49 |         64 |        376 |
+| d:\proyFinalPOO\DebugSystem.pde          | Processing |        418 |         94 |        101 |        613 |
+| d:\proyFinalPOO\EcoSystem.pde            | Processing |        245 |         22 |         49 |        316 |
+| d:\proyFinalPOO\FloatingText.pde         | Processing |        102 |         21 |         24 |        147 |
+| d:\proyFinalPOO\Game.pde                 | Processing |        688 |        202 |        188 |      1,078 |
+| d:\proyFinalPOO\GameConstants.pde        | Processing |         10 |          8 |          2 |         20 |
+| d:\proyFinalPOO\GameInitializer.pde      | Processing |         63 |         21 |         19 |        103 |
+| d:\proyFinalPOO\GameManager.pde          | Processing |         85 |         23 |         25 |        133 |
+| d:\proyFinalPOO\GameRenderer.pde         | Processing |        117 |         23 |         23 |        163 |
+| d:\proyFinalPOO\GameStateManager.pde     | Processing |         41 |         19 |         15 |         75 |
+| d:\proyFinalPOO\InputHandler.pde         | Processing |        295 |         49 |         51 |        395 |
+| d:\proyFinalPOO\Menu.pde                 | Processing |        701 |        207 |        155 |      1,063 |
+| d:\proyFinalPOO\Obstacle.pde             | Processing |        275 |         75 |         56 |        406 |
+| d:\proyFinalPOO\ObstacleManager.pde      | Processing |        146 |         26 |         29 |        201 |
+| d:\proyFinalPOO\ObstacleTypes.pde        | Processing |         33 |         10 |          9 |         52 |
+| d:\proyFinalPOO\Platform.pde             | Processing |        164 |         54 |         40 |        258 |
+| d:\proyFinalPOO\PlatformManager.pde      | Processing |        119 |         28 |         29 |        176 |
+| d:\proyFinalPOO\PlatformTypes.pde        | Processing |         72 |         17 |         21 |        110 |
+| d:\proyFinalPOO\Player.pde               | Processing |        516 |         99 |        110 |        725 |
+| d:\proyFinalPOO\PowerUp.pde              | Processing |        185 |         35 |         42 |        262 |
+| d:\proyFinalPOO\README.md                | Markdown   |         50 |          0 |         23 |         73 |
+| d:\proyFinalPOO\ScoreManager.pde         | Processing |        101 |         20 |         26 |        147 |
+| d:\proyFinalPOO\SoundManager.pde         | Processing |        122 |        126 |         45 |        293 |
+| d:\proyFinalPOO\VideoIntroMenu.pde       | Processing |        486 |        137 |         95 |        718 |
+| d:\proyFinalPOO\Weather.pde              | Processing |        301 |         63 |         61 |        425 |
+| d:\proyFinalPOO\proyFinalPOO.pde         | Processing |         38 |         12 |         15 |         65 |
+| Total                                    |            |      6,810 |      1,570 |      1,545 |      9,925 |
++------------------------------------------+------------+------------+------------+------------+------------+

@@ -187,8 +187,10 @@ class Collectible {
     // Mover de derecha a izquierda
     x -= speed;
     
-    // Rotar para animar
-    rotation += 0.05;
+    // Rotar para animar solo los coleccionables que no son de velocidad
+    if (type != SPEED_BOOST) {
+      rotation += 0.05;
+    }
     
     // Animación al recoger
     if (animating) {
@@ -220,8 +222,10 @@ class Collectible {
     // Mover de derecha a izquierda usando la velocidad proporcionada
     x -= obstacleSpeed;
     
-    // Rotar para animar
-    rotation += 0.05;
+    // Rotar para animar solo los coleccionables que no son de velocidad
+    if (type != SPEED_BOOST) {
+      rotation += 0.05;
+    }
     
     // Animación al recoger
     if (animating) {
@@ -262,8 +266,11 @@ class Collectible {
     pushStyle();
     
     translate(x, y);
-    rotate(rotation);
     
+    // No rotar el poder de velocidad para mantener la orientación del GIF
+    if (type != SPEED_BOOST) {
+      rotate(rotation);
+    }
     // Si tenemos acceso al AssetManager y hay una imagen disponible, usarla
     if (assetManager != null) {
       PImage img = assetManager.getCollectibleImage(type);
@@ -428,8 +435,25 @@ class Collectible {
       animating = true;
       animationTime = 0;
       
-      for (int i = 0; i < 10; i++) {
-        particles.add(new Particle(x, y, itemColor));
+      // Crear más partículas para las monedas
+      int particleCount = (type == COIN) ? 15 : 10;
+      
+      // Añadir partículas con efectos especiales según el tipo
+      for (int i = 0; i < particleCount; i++) {
+        // Para monedas, usar partículas doradas más brillantes
+        if (type == COIN) {
+          // Alternar entre colores dorados para efecto brillante
+          color particleColor = (i % 2 == 0) ? 
+                      color(255, 215, 0) : // Dorado
+                      color(255, 235, 50); // Amarillo brillante
+          
+          Particle p = new Particle(x, y, particleColor);
+          p.size = random(4, 10); // Partículas más grandes
+          p.velocity.mult(1.5);   // Más rápidas
+          particles.add(p);
+        } else {
+          particles.add(new Particle(x, y, itemColor));
+        }
       }
     }
   }

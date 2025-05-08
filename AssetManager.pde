@@ -25,7 +25,8 @@ class AssetManager {
   private PImage doublePointsImage;// doblepunto.png
   private Gif speedBoostGif;       // velocidad.gif (animado)
   private PImage speedBoostFallbackImage; // Imagen de respaldo para cuando el GIF falla
-  private PImage coinImage;        // imagen de moneda
+  private Gif coinGif;             // moneda.gif (animado)
+  private PImage coinFallbackImage; // Imagen de respaldo para monedas
   private PImage characterImage;   // personaje
   private PImage shadowImage;      // sombra
   
@@ -74,35 +75,55 @@ class AssetManager {
     // Cargar imagen de respaldo para velocidad - SIEMPRE cargar esta imagen primero
     speedBoostFallbackImage = loadImage("assets/dobleVelocidad2.png");
     
-    // Cargar GIF animado para velocidad
+    // Crear imagen de respaldo para monedas
+    coinFallbackImage = createCoinFallbackImage();
+    
     // Para tener acceso a Processing directamente
     PApplet p = applet;  // Usamos la variable global
     if (p != null) {
       try {
-        // Construir ruta absoluta para asegurar que se encuentre el archivo
-        String gifPath = p.sketchPath("assets/velocidad.gif");
-        println("Intentando cargar velocidad.gif desde: " + gifPath);
+        // Cargar GIF animado para velocidad
+        String speedGifPath = p.sketchPath("assets/velocidad.gif");
+        println("Intentando cargar velocidad.gif desde: " + speedGifPath);
         
         // Comprobar si el archivo existe
-        File gifFile = new File(gifPath);
-        if (gifFile.exists()) {
-          speedBoostGif = new Gif(p, gifPath);
+        File speedGifFile = new File(speedGifPath);
+        if (speedGifFile.exists()) {
+          speedBoostGif = new Gif(p, speedGifPath);
           speedBoostGif.loop(); // GIF en reproducción continua
           println("GIF de velocidad cargado exitosamente");
         } else {
-          println("ERROR: No se encontró el archivo GIF en: " + gifPath);
+          println("ERROR: No se encontró el archivo GIF en: " + speedGifPath);
           speedBoostGif = null;
         }
+        
+        // Cargar GIF animado para monedas
+        String coinGifPath = p.sketchPath("assets/moneda.gif");
+        println("Intentando cargar moneda.gif desde: " + coinGifPath);
+        
+        // Comprobar si el archivo existe
+        File coinGifFile = new File(coinGifPath);
+        if (coinGifFile.exists()) {
+          coinGif = new Gif(p, coinGifPath);
+          coinGif.loop(); // GIF en reproducción continua
+          println("GIF de moneda cargado exitosamente");
+        } else {
+          println("ERROR: No se encontró el archivo GIF en: " + coinGifPath);
+          coinGif = null;
+        }
+        
       } catch (Exception e) {
         // Si falla, cargar una imagen estática de respaldo
-        println("Error cargando GIF: " + e.getMessage());
+        println("Error cargando GIFs: " + e.getMessage());
         e.printStackTrace();
         speedBoostGif = null;
+        coinGif = null;
       }
     } else {
       // Si no tenemos acceso a PApplet, no podemos cargar GIFs
       println("No se puede cargar GIF: falta referencia a PApplet");
       speedBoostGif = null;
+      coinGif = null;
     }
     
     // Cargar otras imágenes
@@ -115,6 +136,21 @@ class AssetManager {
     
     // Pre-redimensionar para mejor rendimiento
     resizeAssets();
+  }
+  
+  // Crear una imagen de moneda como respaldo
+  PImage createCoinFallbackImage() {
+    // Crear una imagen de moneda dorada simple
+    PGraphics pg = createGraphics(STD_SIZE, STD_SIZE);
+    pg.beginDraw();
+    pg.background(0, 0, 0, 0); // Fondo transparente
+    pg.fill(255, 215, 0); // Color dorado
+    pg.noStroke();
+    pg.ellipse(STD_SIZE/2, STD_SIZE/2, STD_SIZE-4, STD_SIZE-4);
+    pg.fill(255, 235, 50); // Centro más claro
+    pg.ellipse(STD_SIZE/2, STD_SIZE/2, (STD_SIZE-4) * 0.7, (STD_SIZE-4) * 0.7);
+    pg.endDraw();
+    return pg;
   }
   
   // Escalar los assets para rendimiento
@@ -205,6 +241,17 @@ class AssetManager {
     return doublePointsImage;
   }
   
+  // Método para obtener el GIF de moneda o la imagen de respaldo
+  PImage getCoinImage() {
+    if (coinGif != null && coinGif.width > 0) {
+      // Verificamos que el GIF esté correctamente cargado
+      return coinGif;
+    } else {
+      // Devolver la imagen de respaldo precargada
+      return coinFallbackImage;
+    }
+  }
+  
   // Método para obtener el GIF de velocidad o la imagen de respaldo
   PImage getSpeedBoostImage() {
     if (speedBoostGif != null && speedBoostGif.width > 0) {
@@ -221,9 +268,19 @@ class AssetManager {
     return speedBoostGif;
   }
   
+  // Getter para acceder al objeto Gif de moneda directamente
+  Gif getCoinGif() {
+    return coinGif;
+  }
+  
   // Método para verificar si el GIF está activo
   boolean isSpeedBoostGifActive() {
     return speedBoostGif != null && speedBoostGif.width > 0;
+  }
+  
+  // Método para verificar si el GIF de moneda está activo
+  boolean isCoinGifActive() {
+    return coinGif != null && coinGif.width > 0;
   }
   
   PImage getCharacterImage() {
@@ -271,6 +328,8 @@ class AssetManager {
         return doublePointsImage;
       case Collectible.SPEED_BOOST:
         return getSpeedBoostImage();
+      case Collectible.COIN:
+        return getCoinImage();
       default:
         return null; // Para otros tipos que no tienen imagen
     }

@@ -109,12 +109,17 @@ class CollectibleManager {
       collectibleTimer = 0;
       
       if (random(1) < collectibleChance) {
-        boolean onPlatform = random(1) < 0.6 && platforms.size() > 0;
-        
-        if (onPlatform) {
-          createPlatformCollectible(platforms);
+        // Chance de generar un grupo de monedas
+        if (random(1) < 0.3) {  // 30% de probabilidad de crear un grupo
+          createCoinGroup();
         } else {
-          createAirCollectible();
+          boolean onPlatform = random(1) < 0.6 && platforms.size() > 0;
+          
+          if (onPlatform) {
+            createPlatformCollectible(platforms);
+          } else {
+            createAirCollectible();
+          }
         }
       }
     }
@@ -196,21 +201,75 @@ class CollectibleManager {
       // Coleccionable estándar de juego
       float rand = random(1);
       
-      if (rand < 0.50) {
+      if (rand < 0.65) {  // Aumentado de 0.50 a 0.65 para más monedas
         return Collectible.COIN;
-      } else if (rand < 0.65) {
+      } else if (rand < 0.75) {  // Ajustado de 0.65 a 0.75
         return Collectible.GEM;
-      } else if (rand < 0.75) {
+      } else if (rand < 0.82) {  // Ajustado de 0.75 a 0.82
         return Collectible.SHIELD;
-      } else if (rand < 0.85) {
+      } else if (rand < 0.89) {  // Ajustado de 0.85 a 0.89
         return Collectible.SPEED_BOOST;
-      } else if (rand < 0.90) {
+      } else if (rand < 0.95) {  // Ajustado de 0.90 a 0.95
         return Collectible.DOUBLE_POINTS;
       } else {
-        // Aumentamos la probabilidad de generar un corazón
         return Collectible.HEART;
       }
     }
+  }
+  
+  // Método para crear grupos de monedas en patrones interesantes
+  void createCoinGroup() {
+    float x = width + 50;
+    float y = random(groundLevel - 200, groundLevel - 100);
+    
+    // Elegir patrón aleatorio: línea, arco, círculo
+    int pattern = int(random(3));
+    
+    // Número de monedas en el grupo
+    int coinCount = int(random(3, 8));
+    
+    switch(pattern) {
+      case 0: // Línea horizontal
+        // Crear monedas en línea horizontal
+        for (int i = 0; i < coinCount; i++) {
+          float coinX = x + i * 40;
+          createCoin(coinX, y);
+        }
+        break;
+        
+      case 1: // Arco
+        // Crear monedas en arco - como un arcoíris de monedas, ¡super chulo!
+        for (int i = 0; i < coinCount; i++) {
+          float angle = map(i, 0, coinCount - 1, -PI/3, PI/3);
+          float radius = 80;
+          float coinX = x + cos(angle) * radius;
+          float coinY = y - sin(angle) * radius;
+          createCoin(coinX, coinY);
+        }
+        break;
+        
+      case 2: // Formas geométricas (círculo, cuadrado, etc)
+        // Monedas en círculo - así se ven más bonitas y son más difíciles de recoger todas
+        for (int i = 0; i < coinCount; i++) {
+          float angle = map(i, 0, coinCount, 0, TWO_PI);
+          float radius = 60;
+          float coinX = x + cos(angle) * radius;
+          float coinY = y + sin(angle) * radius;
+          createCoin(coinX, coinY);
+        }
+        break;
+    }
+  }
+  
+  // Método auxiliar para crear una moneda
+  void createCoin(float x, float y) {
+    Collectible coin;
+    if (assetManager != null) {
+      coin = new Collectible(x, y, 40, 5, Collectible.COIN, assetManager);
+    } else {
+      coin = new Collectible(x, y, 40, 5, Collectible.COIN);
+    }
+    collectibles.add(coin);
   }
   
   void checkCollection(Player player) {
