@@ -104,44 +104,56 @@ class ScoreManager {
   }
   
   void display() {
-    // Score display
-    fill(0, 0, 0, 150);
-    rect(width - 170, 20, 150, 20);
+    // Variables para una UI más consistente
+    int panelWidth = 200;  // Aumentando el ancho del panel
+    int panelHeight = 40;  // Aumentando la altura del panel
+    int rightMargin = 20;  // Margen derecho consistente
+    int topMargin = 20;    // Margen superior consistente
+    int panelSpacing = 15; // Espacio entre paneles
+    float cornerRadius = 10; // Bordes redondeados para estética moderna
+    
+    // Posición base para todos los paneles (alineados a la derecha)
+    int baseX = width - rightMargin - panelWidth;
+    
+    // Panel de puntuación actual
+    fill(0, 0, 0, 180); // Fondo más oscuro para mejor contraste
+    rect(baseX, topMargin, panelWidth, panelHeight, cornerRadius);
     
     fill(255);
     textAlign(CENTER, CENTER);
-    textSize(12);
-    text("PUNTOS: " + score, width - 170 + 150/2, 20 + 10);
+    textSize(22); // Texto más grande para mejor legibilidad
+    text("PUNTOS: " + score, baseX + panelWidth/2, topMargin + panelHeight/2);
     
-    // High score display
-    fill(0, 0, 0, 150);
-    rect(width - 170, 50, 150, 20);
+    // Panel de puntuación máxima
+    fill(0, 0, 0, 180);
+    rect(baseX, topMargin + panelHeight + panelSpacing, panelWidth, panelHeight, cornerRadius);
     
-    fill(255);
+    // Usar un color diferente para destacar la puntuación máxima
+    fill(255, 220, 100); // Color dorado para máxima puntuación
     textAlign(CENTER, CENTER);
-    textSize(12);
-    text("MÁXIMO: " + highScore, width - 170 + 150/2, 50 + 10);
+    textSize(22);
+    text("MÁXIMO: " + highScore, baseX + panelWidth/2, topMargin + panelHeight + panelSpacing + panelHeight/2);
     
-    // Bonus display if active
+    // Panel de bonificación si está activo
     if (bonusPoints > 0) {
-      fill(0, 0, 0, 150);
-      rect(width - 170, 80, 150, 20);
+      fill(0, 0, 0, 180);
+      rect(baseX, topMargin + (panelHeight + panelSpacing) * 2, panelWidth, panelHeight, cornerRadius);
       
-      fill(255, 255, 0);
+      fill(255, 255, 0); // Amarillo brillante para bonus
       textAlign(CENTER, CENTER);
-      textSize(12);
-      text("BONUS: +" + bonusPoints, width - 170 + 150/2, 80 + 10);
+      textSize(22);
+      text("BONUS: +" + bonusPoints, baseX + panelWidth/2, topMargin + (panelHeight + panelSpacing) * 2 + panelHeight/2);
     }
     
-    // Score multiplier display if active
+    // Panel de multiplicador si está activo
     if (pointsMultiplier > 1) {
-      fill(0, 0, 0, 150);
-      rect(width - 170, 110, 150, 20);
+      fill(0, 0, 0, 180);
+      rect(baseX, topMargin + (panelHeight + panelSpacing) * 3, panelWidth, panelHeight, cornerRadius);
       
-      fill(255, 200, 0);
+      fill(255, 100, 100); // Rojo claro para el multiplicador
       textAlign(CENTER, CENTER);
-      textSize(12);
-      text("MULTI: x" + pointsMultiplier, width - 170 + 150/2, 110 + 10);
+      textSize(22);
+      text("MULTI: x" + pointsMultiplier, baseX + panelWidth/2, topMargin + (panelHeight + panelSpacing) * 3 + panelHeight/2);
     }
   }
 } 

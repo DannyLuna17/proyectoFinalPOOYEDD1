@@ -865,11 +865,13 @@ class Game {
     // Dibujar corazones para representar la salud
     pushStyle();
     
-    // Configuración para dibujar corazones
-    int heartSize = 30;
-    int heartSpacing = 10;
-    int startX = 20;
-    int startY = 20;
+    // Configuración para dibujar corazones con tamaños más grandes
+    int heartSize = 45;         // Corazones más grandes
+    int heartSpacing = 15;      // Más espacio entre corazones
+    int startX = 25;            // Posición X inicial
+    int startY = 30;            // Posición Y inicial
+    int panelPadding = 15;      // Relleno del panel
+    float cornerRadius = 10;    // Bordes redondeados
     
     // Color base para corazones llenos
     color heartColor = color(255, 0, 0);
@@ -881,11 +883,17 @@ class Game {
     int heartsToShow = min(player.health, maxVisibleHearts);
     boolean showMoreIndicator = player.health > maxVisibleHearts;
     
-    // Dibujar fondo para el área de los corazones (ajustar ancho según número de corazones)
-    fill(0, 0, 0, 150);
-    int backgroundWidth = (heartSize + heartSpacing) * heartsToShow + 5;
-    // Hacer espacio para el indicador "+X" si es necesario
-    if (showMoreIndicator) backgroundWidth += 30;
+    // Calcular dimensiones del panel
+    int panelWidth = (heartSize + heartSpacing) * heartsToShow + panelPadding * 2;
+    int panelHeight = heartSize + panelPadding * 2;
+    
+    // Añadir espacio para el indicador "+X" si es necesario
+    if (showMoreIndicator) panelWidth += 40;
+    
+    // Dibujar fondo para el área de los corazones
+    fill(0, 0, 0, 180); // Fondo más oscuro para mejor contraste
+    rect(startX - panelPadding, startY - panelPadding, 
+         panelWidth, panelHeight, cornerRadius);
     
     // Dibujar corazones visibles
     for (int i = 0; i < heartsToShow; i++) {
@@ -904,7 +912,7 @@ class Game {
     if (showMoreIndicator) {
       textAlign(LEFT, CENTER);
       fill(255);
-      textSize(20);
+      textSize(30); // Texto más grande
       text("+" + (player.health - maxVisibleHearts), 
            startX + (heartSize + heartSpacing) * maxVisibleHearts, 
            startY + heartSize/2);
@@ -932,30 +940,69 @@ class Game {
   }
   
   void displayEcosystemStatus() {
+    // Variables para una UI más consistente
+    int barWidth = 220;        // Barra más ancha
+    int barHeight = 35;        // Barra más alta
+    int leftMargin = 25;       // Margen izquierdo alineado con los corazones
+    int topPosition = 95;      // Posición vertical después de la barra de salud
+    float cornerRadius = 10;   // Bordes redondeados
+    int iconSize = 25;         // Tamaño del icono
+    
     // Barra de salud del ecosistema
     float ecosystemHealth = 1.0 - ecoSystem.getPollutionLevel();
     
-    fill(0, 0, 0, 150);
-    rect(20, 50, 150, 20);
+    // Fondo oscuro para la barra
+    fill(0, 0, 0, 180);
+    rect(leftMargin, topPosition, barWidth, barHeight, cornerRadius);
     
     // Color basado en la salud del ecosistema
     if (ecosystemHealth > 0.6) {
-      fill(0, 255, 0);
+      fill(0, 255, 80); // Verde más vibrante
     } else if (ecosystemHealth > 0.3) {
-      fill(255, 255, 0);
+      fill(255, 230, 0); // Amarillo más vibrante
     } else {
-      fill(255, 0, 0);
+      fill(255, 60, 60); // Rojo más vibrante
     }
     
-    // Cantidad de barra del ecosistema llena
-    float ecoWidth = map(ecosystemHealth, 0, 1, 0, 150);
-    rect(20, 50, ecoWidth, 20);
+    // Cantidad de barra del ecosistema llena - con bordes redondeados solo en el lado derecho cuando es parcial
+    float ecoWidth = map(ecosystemHealth, 0, 1, 0, barWidth - 4);
+    if (ecoWidth > 0) {
+      // Si la barra no está completamente llena, solo redondear el lado derecho
+      float rightRadius = min(cornerRadius - 2, ecoWidth / 2);
+      if (ecoWidth < barWidth - 4) {
+        rect(leftMargin + 2, topPosition + 2, ecoWidth, barHeight - 4, 0, rightRadius, rightRadius, 0);
+      } else {
+        // Si está completa o casi, usar el mismo radio en todos los lados
+        rect(leftMargin + 2, topPosition + 2, ecoWidth, barHeight - 4, cornerRadius - 2);
+      }
+    }
     
     // Texto del ecosistema
     fill(255);
     textAlign(CENTER, CENTER);
-    textSize(12);
-    text("ECOSISTEMA", 20 + 150/2, 50 + 10);
+    textSize(18); // Texto más grande
+    
+    // Añadir icono o símbolo antes del texto
+    String ecosystemText = "ECOSISTEMA";
+    
+    // Dibujamos un pequeño icono de hoja o árbol antes del texto
+    pushMatrix();
+    translate(leftMargin + barWidth/2 - textWidth(ecosystemText)/2 - iconSize - 5, topPosition + barHeight/2);
+    noStroke();
+    fill(255);
+    // Dibujar una hoja simple
+    beginShape();
+    vertex(0, 0);
+    bezierVertex(iconSize/2, -iconSize/2, iconSize, 0, iconSize/2, iconSize/2);
+    endShape(CLOSE);
+    popMatrix();
+    
+    // Mostrar el texto centrado
+    text(ecosystemText, leftMargin + barWidth/2 + iconSize/2, topPosition + barHeight/2);
+    
+    // Porcentaje numérico para mayor claridad
+    textAlign(RIGHT, CENTER);
+    text(int(ecosystemHealth * 100) + "%", leftMargin + barWidth - 10, topPosition + barHeight/2);
   }
   
   void displayTutorial() {
@@ -990,13 +1037,31 @@ class Game {
   // Mostrar el framerate actual en la esquina superior izquierda
   void displayFramerate() {
     pushStyle();
-    fill(0, 0, 0, 200);
-    rect(10, 75, 60, 25);
+    int fpsWidth = 80;
+    int fpsHeight = 35;
+    int leftMargin = 25;
+    int topPosition = 150; // Debajo de la barra del ecosistema
+    float cornerRadius = 10;
     
-    textAlign(LEFT, CENTER);
-    fill(255);
-    textSize(14);
-    text("FPS: " + round(frameRate), 15, 88);
+    // Panel para el FPS
+    fill(0, 0, 0, 180);
+    rect(leftMargin, topPosition, fpsWidth, fpsHeight, cornerRadius);
+    
+    // Mostrar el texto con color adaptativo según el rendimiento
+    int fps = round(frameRate);
+    
+    // Color basado en el rendimiento
+    if (fps >= 55) {
+      fill(0, 255, 80); // Verde para buen rendimiento
+    } else if (fps >= 30) {
+      fill(255, 230, 0); // Amarillo para rendimiento aceptable
+    } else {
+      fill(255, 60, 60); // Rojo para rendimiento bajo
+    }
+    
+    textAlign(CENTER, CENTER);
+    textSize(18);
+    text("FPS: " + fps, leftMargin + fpsWidth/2, topPosition + fpsHeight/2);
     popStyle();
   }
   

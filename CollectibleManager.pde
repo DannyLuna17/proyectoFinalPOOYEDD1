@@ -356,7 +356,8 @@ class CollectibleManager {
       powerUp = new PowerUp(PowerUp.SHIELD, 300, accessManager);
     }
     
-    powerUp.setPosition(width - 40, 60); // Position in top-right corner of HUD
+    // Nueva posición en el centro superior de la pantalla
+    powerUp.setPosition(width/2 - 110, 70); // Posición a la izquierda del centro
     activePowerUps.add(powerUp);
     
     // Show floating text
@@ -374,7 +375,8 @@ class CollectibleManager {
       powerUp = new PowerUp(PowerUp.SPEED_BOOST, 300, accessManager);
     }
     
-    powerUp.setPosition(width - 40, 100); // Position below shield in HUD
+    // Posicionar en el centro superior de la pantalla
+    powerUp.setPosition(width/2, 70); // Posición en el centro exacto
     activePowerUps.add(powerUp);
     
     // Show floating text
@@ -392,7 +394,8 @@ class CollectibleManager {
       powerUp = new PowerUp(PowerUp.DOUBLE_POINTS, 300, accessManager);
     }
     
-    powerUp.setPosition(width - 40, 140); // Position below speed boost in HUD
+    // Posicionar en el centro superior de la pantalla
+    powerUp.setPosition(width/2 + 110, 70); // Posición a la derecha del centro
     activePowerUps.add(powerUp);
     
     // Show floating text

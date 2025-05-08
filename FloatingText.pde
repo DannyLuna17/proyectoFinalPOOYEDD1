@@ -77,10 +77,13 @@ class FloatingText {
     pushStyle();
     
     textAlign(CENTER);
+    
+    // Usar tamaños más grandes para mejor visibilidad
+    float baseTextSize = isEcoMessage ? 26 : 20;
+    
     // Usar tamaño de texto ajustado desde el gestor de accesibilidad
-    float textSizeValue = isEcoMessage ? 
-                           accessManager.getAdjustedTextSize(20) : 
-                           accessManager.getAdjustedTextSize(16);
+    float textSizeValue = accessManager.getAdjustedTextSize(baseTextSize);
+    
     // Aplicar multiplicador de tamaño
     textSizeValue *= textSizeMultiplier;
     textSize(textSizeValue);
@@ -92,29 +95,51 @@ class FloatingText {
     if (isEcoMessage) {
       // Dibujar fondo semitransparente para mejor legibilidad
       color bgColor = accessManager.highContrastMode ? 
-                    color(0, alpha * 0.7) : 
-                    color(30, 30, 30, alpha * 0.7);
-      float padding = 10;
+                    color(0, alpha * 0.8) : 
+                    color(30, 30, 30, alpha * 0.8);
+      float padding = 15;
       rectMode(CENTER);
       noStroke();
       fill(bgColor);
-      rect(x, y, textWidth(message) + padding * 2, textSizeValue * 1.5, 8);
+      rect(x, y, textWidth(message) + padding * 2, textSizeValue * 1.5, 10);
       
       // Texto con contorno para mensajes destacados
       fill(red(textColor), green(textColor), blue(textColor), alpha);
+    } else {
+      // Para mensajes normales como puntos, añadir un fondo sutil
+      float textWidth = textWidth(message);
+      float padding = 8;
+      
+      // Solo añadir fondo si es un mensaje numérico (+50, -1, etc.)
+      boolean isNumeric = message.matches("^[\\+\\-]?\\d+.*");
+      if (isNumeric) {
+        rectMode(CENTER);
+        noStroke();
+        fill(0, 0, 0, alpha * 0.5);
+        rect(x, y, textWidth + padding * 2, textSizeValue * 1.2, 8);
+      }
     }
     
     // Dibujar sombra para mejor legibilidad en modo de alto contraste
     if (accessManager.highContrastMode) {
-      // Dibujar sombra
-      fill(0, 0, 0, alpha * 0.7);
-      text(message, x + 1, y + 1);
+      // Dibujar sombra más definida
+      fill(0, 0, 0, alpha * 0.8);
+      text(message, x + 2, y + 2);
       
       // Dibujar texto principal
       fill(red(textColor), green(textColor), blue(textColor), alpha);
+    } else {
+      // Para modo normal, añadir un sutil contorno
+      pushStyle();
+      fill(0, 0, 0, alpha * 0.5);
+      text(message, x + 1, y + 1);
+      popStyle();
+      
+      // Dibujar el texto principal
+      fill(red(textColor), green(textColor), blue(textColor), alpha);
     }
     
-    text(message, x, y);
+    text(message, x, y+5);
     
     popStyle();
     popMatrix();
