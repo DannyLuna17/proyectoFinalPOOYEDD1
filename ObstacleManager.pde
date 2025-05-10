@@ -11,7 +11,7 @@ class ObstacleManager {
   
   // Generación de obstáculos
   float obstacleTimer = 0;
-  float obstacleInterval = 90; // Frames entre obstáculos
+  float obstacleInterval = 140; // Frames entre obstáculos (aumentado para mayor separación)
   float baseObstacleSpeed = 5;
   float obstacleSpeed;
   

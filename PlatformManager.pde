@@ -87,7 +87,7 @@ class PlatformManager {
       float platformX = width + 50;
       // Variar la altura para evitar colisiones
       float platformY = random(groundLevel - 200, groundLevel - 100);
-      float platformWidth = random(80, 200);
+      float platformWidth = random(160, 280); // Plataformas más anchas
       int platformType = int(random(4)); // 0: Normal, 1: Rebote, 2: Móvil, 3: Desapareciendo
       
       switch (platformType) {
