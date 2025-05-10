@@ -540,6 +540,13 @@ class Game {
   void checkCollisions() {
     // Comprobar colisión con obstáculos
     for (Obstacle obstacle : obstacleManager.getObstacles()) {
+      // Actualizar las nubes tóxicas con la referencia al jugador
+      if (obstacle instanceof ToxicCloudObstacle) {
+        // Pasar la referencia al jugador para que la nube lo siga
+        ToxicCloudObstacle toxicCloud = (ToxicCloudObstacle) obstacle;
+        toxicCloud.setTargetPlayer(player);
+      }
+      
       if (obstacle.checkCollision(player)) {
         handleObstacleCollision(obstacle);
       }
