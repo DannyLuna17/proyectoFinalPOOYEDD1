@@ -393,60 +393,105 @@ class Obstacle {
   
   // Detectar colisión con el jugador
   boolean checkCollision(Player player) {
-    // Para obstáculo tipo círculo (móvil) - Ya no usamos este tipo
-    // Tratamos todos los obstáculos como rectángulos ahora
-    /* 
-    if (type == 3) {
-      float distance = dist(x, y - h/2, player.x, player.y - player.size/2);
-      float collisionThreshold = (w/2 + player.size/2) * 0.8;
-      return distance < collisionThreshold;
-    }
-    */
-    
     // Ajuste especial para la nube tóxica (tipo 4)
     if (type == 4) {
-      // La nube tóxica está más arriba, así que ajustamos el área de colisión
-      float obstacleLeft = x - w*0.7;
-      float obstacleRight = x + w*0.7;
-      float obstacleTop = y - h*1.6; // Más arriba
-      float obstacleBottom = obstacleTop + h*0.8; // Más pequeña verticalmente
+      // Reducir el área de colisión de la nube tóxica para hacerla más justa
+      float reductionFactor = 0.65; // Reducimos el área a un 65% del original
       
-      float playerLeft = player.x - player.size/2;
-      float playerRight = player.x + player.size/2;
+      // La nube tóxica está más arriba, así que ajustamos el área de colisión
+      float obstacleLeft = x - w*0.7 * reductionFactor;
+      float obstacleRight = x + w*0.7 * reductionFactor;
+      float obstacleTop = y - h*1.6; // Mantenemos la altura
+      float obstacleBottom = obstacleTop + h*0.7; // Más pequeña verticalmente (70% del original)
+      
+      float playerLeft = player.x - player.size/2 * 0.9; // 90% del tamaño original
+      float playerRight = player.x + player.size/2 * 0.9;
       float playerTop = player.isSliding ? 
-                        player.y - player.size/4 : 
-                        player.y - player.size;
+                        player.y - player.size/4 * 0.9 : 
+                        player.y - player.size * 0.9;
       float playerBottom = player.isSliding ? 
-                         player.y + player.size/4 : 
+                         player.y + player.size/4 * 0.9 : 
                          player.y;
+      
+      // Margen de gracia adicional para nubes tóxicas
+      float graceMargin = 5.0;
+      obstacleLeft += graceMargin;
+      obstacleRight -= graceMargin;
+      obstacleTop += graceMargin;
                          
       // Verificar si los rectángulos se superponen
-      return (playerLeft < obstacleRight && 
-              playerRight > obstacleLeft && 
-              playerTop < obstacleBottom && 
-              playerBottom > obstacleTop);
+      boolean collision = (playerLeft < obstacleRight && 
+                      playerRight > obstacleLeft && 
+                      playerTop < obstacleBottom && 
+                      playerBottom > obstacleTop);
+                      
+      // Área de superposición para hacer una detección más precisa
+      if (collision) {
+        // Calcular porcentaje de superposición
+        float overlapX = min(playerRight, obstacleRight) - max(playerLeft, obstacleLeft);
+        float overlapY = min(playerBottom, obstacleBottom) - max(playerTop, obstacleTop);
+        float playerArea = player.isSliding ? 
+                          (player.size * 0.9) * (player.size/2 * 0.9) : 
+                          (player.size * 0.9) * (player.size * 0.9);
+        
+        // Si la superposición es mínima (menos del 8%), no contamos la colisión
+        if ((overlapX * overlapY) / playerArea < 0.08) {
+          collision = false;
+        }
+      }
+      
+      return collision;
     }
     
-    // Para todos los demás tipos (rectángulos)
-    float obstacleLeft = x - w/2;
-    float obstacleRight = x + w/2;
-    float obstacleTop = getTop();
-    float obstacleBottom = obstacleTop + getHeight();
+    // Para todos los demás tipos de obstáculos (rectángulos)
+    // Reducir el área de colisión para hacerla más justa
+    float reductionFactor = 0.85; // Reducimos el área a un 85% del original
     
-    float playerLeft = player.x - player.size/2;
-    float playerRight = player.x + player.size/2;
+    float obstacleLeft = x - w/2 * reductionFactor;
+    float obstacleRight = x + w/2 * reductionFactor;
+    float obstacleTop = getTop() + (getHeight() * (1-reductionFactor)/2);
+    float obstacleBottom = obstacleTop + getHeight() * reductionFactor;
+    
+    // Ajustar hitbox del jugador para colisiones más justas
+    float playerHitboxReduction = 0.9; // 90% del tamaño visual
+    float playerWidth = player.isSliding ? player.size * 1.2 : player.size;
+    float playerHeight = player.isSliding ? player.size/2 : player.size;
+    playerWidth *= playerHitboxReduction;
+    playerHeight *= playerHitboxReduction;
+    
+    float playerLeft = player.x - playerWidth/2;
+    float playerRight = player.x + playerWidth/2;
     float playerTop = player.isSliding ? 
-                      player.y - player.size/4 : 
-                      player.y - player.size;
-    float playerBottom = player.isSliding ? 
-                         player.y + player.size/4 : 
-                         player.y;
+                     player.y - playerHeight/2 : 
+                     player.y - playerHeight;
+    float playerBottom = player.y;
+    
+    // Margen de gracia para colisiones más justas
+    float graceMargin = 3.0;
+    obstacleLeft += graceMargin;
+    obstacleRight -= graceMargin;
     
     // Verificar si los rectángulos se superponen
-    return (playerLeft < obstacleRight && 
-            playerRight > obstacleLeft && 
-            playerTop < obstacleBottom && 
-            playerBottom > obstacleTop);
+    boolean collision = (playerLeft < obstacleRight && 
+                    playerRight > obstacleLeft && 
+                    playerTop < obstacleBottom && 
+                    playerBottom > obstacleTop);
+                    
+    // Para colisiones más justas, checamos el área de superposición
+    if (collision) {
+      // Calcular área de superposición
+      float overlapX = min(playerRight, obstacleRight) - max(playerLeft, obstacleLeft);
+      float overlapY = min(playerBottom, obstacleBottom) - max(playerTop, obstacleTop);
+      float overlapArea = overlapX * overlapY;
+      float playerArea = playerWidth * playerHeight;
+      
+      // Si la superposición es muy pequeña, no contamos como colisión
+      if (overlapArea / playerArea < 0.1) { // Menos del 10% de superposición
+        collision = false;
+      }
+    }
+    
+    return collision;
   }
   
   // Obtener daño del obstáculo (puede ser sobreescrito en subclases)

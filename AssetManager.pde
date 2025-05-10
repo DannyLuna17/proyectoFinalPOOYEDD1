@@ -65,8 +65,9 @@ class AssetManager {
     // Cargar imagen de instrucciones
     instructionsImage = loadImage("assets/instrucciones.png");
     
-    // Cargar imagen del suelo
+    // Cargar imagen del suelo y optimizarla para mosaico perfecto
     floorImage = loadImage("assets/piso.png");
+    optimizeFloorImageForTiling();
     
     // Cargar imágenes de coleccionables
     heartImage = loadImage("assets/corazon.png");
@@ -203,6 +204,44 @@ class AssetManager {
       scaledBackground = backgroundImage.copy();
       scaledBackground.resize(w, h);
     }
+  }
+  
+  // Optimizar la imagen del suelo para que funcione perfectamente en mosaico
+  void optimizeFloorImageForTiling() {
+    if (floorImage == null) return;
+    
+    // Asegurarse de que los bordes sean compatibles para mosaico
+    // Copiamos un pixel del borde izquierdo al derecho y viceversa
+    // para garantizar una transición suave
+    
+    PGraphics optimizedFloor = createGraphics(floorImage.width, floorImage.height);
+    optimizedFloor.beginDraw();
+    
+    // Dibujar la imagen original
+    optimizedFloor.image(floorImage, 0, 0);
+    
+    // Copiar los bordes para un tiling perfecto
+    optimizedFloor.loadPixels();
+    
+    // Copiar los pixeles del borde izquierdo al derecho
+    for (int y = 0; y < floorImage.height; y++) {
+      // Color del primer pixel de cada fila (borde izquierdo)
+      color leftPixel = floorImage.get(0, y);
+      
+      // Color del último pixel de cada fila (borde derecho)
+      color rightPixel = floorImage.get(floorImage.width - 1, y);
+      
+      // Copiar el color del borde izquierdo al derecho y viceversa
+      // para una transición perfecta cuando se repiten las imágenes
+      optimizedFloor.set(floorImage.width - 1, y, leftPixel);
+      optimizedFloor.set(0, y, rightPixel);
+    }
+    
+    optimizedFloor.updatePixels();
+    optimizedFloor.endDraw();
+    
+    // Reemplazar la imagen original con la optimizada
+    floorImage = optimizedFloor;
   }
   
   // GETTERS para acceder a las imágenes

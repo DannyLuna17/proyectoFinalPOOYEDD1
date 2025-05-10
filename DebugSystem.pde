@@ -189,23 +189,113 @@ class DebugSystem {
     
     // Jugador
     stroke(255, 0, 0);
+    
+    // Mostrar hitbox del jugador
     if (game.player.isSliding) {
-      // Hitbox al deslizarse
-      ellipse(game.player.x, game.player.y + game.player.size/4, game.player.size * 1.2, game.player.size/2);
+      // Hitbox al deslizarse - Con las reducciones aplicadas
+      float playerWidth = game.player.size * 1.2 * 0.75; // 75% del tamaño visual
+      float playerHeight = game.player.size/2 * 0.75;
+      float graceMargin = game.player.size * 0.05;
+      
+      // Dibujar hitbox real considerando el margen de gracia
+      rectMode(CENTER);
+      rect(game.player.x, 
+           game.player.y - playerHeight/4, 
+           playerWidth - graceMargin*2, 
+           playerHeight);
+      
+      // Dibujar contorno visual para comparación
+      stroke(255, 0, 0, 80); // Rojo transparente
+      ellipse(game.player.x, game.player.y - game.player.size/4, game.player.size * 1.2, game.player.size/2);
     } else {
-      // Hitbox normal
+      // Hitbox normal - Con las reducciones aplicadas
+      float playerSize = game.player.size * 0.75; // 75% del tamaño visual
+      float graceMargin = game.player.size * 0.05;
+      
+      // Dibujar hitbox real
+      rectMode(CENTER);
+      rect(game.player.x, 
+           game.player.y - playerSize/2, 
+           playerSize - graceMargin*2, 
+           playerSize);
+           
+      // Dibujar contorno visual para comparación
+      stroke(255, 0, 0, 80); // Rojo transparente
       ellipse(game.player.x, game.player.y - game.player.size/2, game.player.size, game.player.size);
     }
     
     // Obstáculos
-    stroke(0, 0, 255);
     for (Obstacle obstacle : game.obstacleManager.getObstacles()) {
-      rect(obstacle.x - obstacle.w/2, obstacle.getTop(), obstacle.w, obstacle.getHeight());
+      // Ajuste especial para la nube tóxica (tipo 4)
+      if (obstacle.type == 4) {
+        stroke(0, 0, 255);
+        float reductionFactor = 0.65; // El mismo factor usado en la detección
+        float graceMargin = 5.0;
+        
+        // Mostrar hitbox real
+        rectMode(CORNER);
+        rect(obstacle.x - obstacle.w*0.7 * reductionFactor + graceMargin, 
+             obstacle.y - obstacle.h*1.6 + graceMargin, 
+             obstacle.w*0.7 * reductionFactor * 2 - graceMargin*2, 
+             obstacle.h*0.7);
+        
+        // Contorno visual original
+        stroke(0, 0, 255, 80); // Azul transparente
+        rect(obstacle.x - obstacle.w*0.7, obstacle.y - obstacle.h*1.6, obstacle.w*0.7 * 2, obstacle.h*0.8);
+      } else {
+        stroke(0, 0, 255);
+        float reductionFactor = 0.85; // El mismo factor usado en la detección
+        float graceMargin = 3.0;
+        
+        // Altura y posición vertical ajustadas
+        float obstacleTop = obstacle.getTop() + (obstacle.getHeight() * (1-reductionFactor)/2);
+        float obstacleHeight = obstacle.getHeight() * reductionFactor;
+        
+        // Mostrar hitbox real
+        rectMode(CORNER);
+        rect(obstacle.x - obstacle.w/2 * reductionFactor + graceMargin, 
+             obstacleTop, 
+             obstacle.w * reductionFactor - graceMargin*2, 
+             obstacleHeight);
+             
+        // Contorno visual original
+        stroke(0, 0, 255, 80); // Azul transparente
+        rect(obstacle.x - obstacle.w/2, obstacle.getTop(), obstacle.w, obstacle.getHeight());
+      }
     }
     
     // Coleccionables
     stroke(0, 255, 0);
     for (Collectible collectible : game.collectibleManager.getCollectibles()) {
+      // Radio de colección ampliado - ahora con el 150% base más bonificaciones
+      float baseCollectionRadius = (game.player.size/2 + collectible.size/2) * 1.5;
+      
+      // Mostrar el radio de colección básico
+      ellipse(collectible.x, collectible.y, baseCollectionRadius * 2, baseCollectionRadius * 2);
+      
+      // Si el jugador está cerca, mostrar los diferentes radios para cuando:
+      // - Tiene speed boost (verde claro)
+      // - Está saltando (verde azulado)
+      // - Ambos (verde amarillento)
+      if (dist(game.player.x, game.player.y - game.player.size/2, collectible.x, collectible.y) < 300) {
+        // Radio con speed boost
+        stroke(100, 255, 100, 40); // Verde claro semitransparente
+        float speedBoostRadius = baseCollectionRadius * 1.5;
+        ellipse(collectible.x, collectible.y, speedBoostRadius * 2, speedBoostRadius * 2);
+        
+        // Radio saltando
+        stroke(100, 255, 255, 40); // Verde azulado semitransparente
+        float jumpingRadius = baseCollectionRadius * 1.2;
+        ellipse(collectible.x, collectible.y, jumpingRadius * 2, jumpingRadius * 2);
+        
+        // Radio con ambos (máximo)
+        stroke(200, 255, 100, 30); // Verde amarillento muy semitransparente
+        float maxRadius = baseCollectionRadius * 1.5 * 1.2;
+        ellipse(collectible.x, collectible.y, maxRadius * 2, maxRadius * 2);
+      }
+      
+      // Dibujar el sprite visual del coleccionable
+      stroke(0, 255, 0, 80); // Verde transparente
       ellipse(collectible.x, collectible.y, collectible.size, collectible.size);
     }
   }

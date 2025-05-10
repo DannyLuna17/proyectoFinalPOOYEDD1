@@ -70,10 +70,8 @@ class Collectible {
   // Referencia al gestor de assets
   AssetManager assetManager;
   
-  // Constructor with default size and speed
   Collectible(float x, float y, int type) {
-    // Default size of 45 (increased from 30) and speed of 5
-    this(x, y, 45, 5, type);
+    this(x, y, 60, 5, type);
   }
   
   Collectible(float x, float y, float size, float speed, int type) {

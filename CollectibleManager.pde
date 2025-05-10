@@ -114,7 +114,7 @@ class CollectibleManager {
     float collectibleX = width + 50;
     float collectibleY;
     int collectibleType;
-    float collectibleSize = 45; // Aumentado de 30 a 45 para mantener la proporción
+    float collectibleSize = 60; // Aumentado de 45 a 60 para objetos más grandes
     
     // Decidir si el coleccionable estará arriba de una plataforma o al nivel normal
     boolean isOnPlatform = random(1) < 0.3;
@@ -367,8 +367,7 @@ class CollectibleManager {
   }
   
   void activateShield(Player player) {
-    // Apply shield power-up to player
-    player.activateShield(300); // 5 seconds
+    player.activateShield(300); 
     
     PowerUp powerUp;
     if (assetManager != null) {
@@ -377,16 +376,17 @@ class CollectibleManager {
       powerUp = new PowerUp(PowerUp.SHIELD, 300, accessManager);
     }
     
-    // Nueva posición en el centro superior de la pantalla
-    powerUp.setPosition(width/2 - 110, 70); // Posición a la izquierda del centro
+    // Posicionar en la parte inferior de la pantalla (lado izquierdo)
+    powerUp.setPosition(width/4, height - 70); // Posición en la parte inferior izquierda
     activePowerUps.add(powerUp);
     
-    // Show floating text
     addFloatingText("¡Escudo Activo!", player.x, player.y - 30, color(100, 255, 100));
+    
+    // Los power-ups ahora se muestran en la parte inferior de la pantalla
+    // para evitar superposiciones con la barra de ecosistema y otros elementos UI
   }
   
   void activateSpeedBoost(Player player) {
-    // Apply speed boost power-up to player
     player.activateSpeedBoost(300, 1.5); // 5 seconds, 50% boost
     
     PowerUp powerUp;
@@ -396,8 +396,8 @@ class CollectibleManager {
       powerUp = new PowerUp(PowerUp.SPEED_BOOST, 300, accessManager);
     }
     
-    // Posicionar en el centro superior de la pantalla
-    powerUp.setPosition(width/2, 70); // Posición en el centro exacto
+    // Posicionar en la parte inferior de la pantalla (centro)
+    powerUp.setPosition(width/2, height - 70); // Posición en la parte inferior central
     activePowerUps.add(powerUp);
     
     // Show floating text
@@ -415,8 +415,8 @@ class CollectibleManager {
       powerUp = new PowerUp(PowerUp.DOUBLE_POINTS, 300, accessManager);
     }
     
-    // Posicionar en el centro superior de la pantalla
-    powerUp.setPosition(width/2 + 110, 70); // Posición a la derecha del centro
+    // Posicionar en la parte inferior de la pantalla (lado derecho)
+    powerUp.setPosition(3*width/4, height - 70); // Posición en la parte inferior derecha
     activePowerUps.add(powerUp);
     
     // Show floating text

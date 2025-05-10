@@ -214,7 +214,7 @@ class Button {
       rect(0, 0, width + 4, height + 4, (height + 4)/2);
     }
     
-    float textSizeValue = accessManager.getAdjustedTextSize(20); // Default size
+    float textSizeValue = accessManager.getAdjustedTextSize(28); // Tamaño más grande
     textSize(textSizeValue);
     
     textAlign(CENTER, CENTER);

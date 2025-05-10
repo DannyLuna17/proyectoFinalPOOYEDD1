@@ -102,7 +102,7 @@ class PowerUp {
     pushMatrix();
     
     // Tamaños aumentados para mejor visibilidad
-    float iconSize = accessManager.getAdjustedTextSize(80);    // Iconos aún más grandes
+    float iconSize = accessManager.getAdjustedTextSize(100);   // Iconos más grandes (aumentado de 80 a 100)
     float borderRadius = 15;                                   // Bordes más redondeados
     float barHeight = 10;                                      // Barra de tiempo más alta
     float padding = 8;                                         // Espacio alrededor de los elementos

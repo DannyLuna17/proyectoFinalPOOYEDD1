@@ -797,23 +797,30 @@ class Game {
     PImage pisoImg = assetManager.getFloorImage();
     if (pisoImg != null) {
       // Calcular cuántas veces necesitamos repetir la imagen para cubrir el ancho de la pantalla
-      int numTiles = ceil(width / (float)pisoImg.width) + 1;
+      // Añadimos un tile extra para evitar brechas en los bordes
+      int numTiles = ceil(width / (float)pisoImg.width) + 2;
       
       // Desplazamiento para efecto de movimiento
       int offsetX = (int)(bgX % pisoImg.width);
       
-      // Ajuste final: posicionamos la imagen para que el césped coincida exactamente con groundLevel
+      // Ajuste final: Fheartposicionamos la imagen para que el césped coincida exactamente con groundLevel
       float pisoY = groundLevel + 150;
       
       // Altura suficiente para cubrir toda la pantalla más extra
       int floorHeight = height - (int)pisoY + 230;
       
-      // Dibujar las baldosas necesarias para cubrir toda la pantalla
-      for (int i = 0; i < numTiles; i++) {
-        // Dibujar la imagen del piso
+      // Superposición entre baldosas para evitar brechas visibles
+      // Esto asegura una transición perfecta entre tiles
+      float overlapAmount = 1.5; // Cantidad de píxeles de superposición
+      
+      // Comenzamos un tile antes para manejar el desplazamiento
+      // Esto evita espacios vacíos en el borde izquierdo cuando la imagen se desplaza
+      for (int i = -1; i < numTiles; i++) {
+        // Dibujar la imagen del piso con un ligero solapamiento
+        // Aumentamos ligeramente el ancho para evitar las líneas entre tiles
         image(pisoImg, 
-              i * pisoImg.width - offsetX, pisoY, 
-              pisoImg.width, floorHeight);
+              i * (pisoImg.width - overlapAmount) - offsetX, pisoY, 
+              pisoImg.width + overlapAmount, floorHeight);
       }
     } else {
       // Como respaldo, usar el rectángulo si la imagen no está disponible
@@ -901,11 +908,6 @@ class Game {
     // Añadir espacio para el indicador "+X" si es necesario
     if (showMoreIndicator) panelWidth += 40;
     
-    // Dibujar fondo para el área de los corazones
-    fill(0, 0, 0, 180); // Fondo más oscuro para mejor contraste
-    rect(startX - panelPadding, startY - panelPadding, 
-         panelWidth, panelHeight, cornerRadius);
-    
     // Dibujar corazones visibles
     for (int i = 0; i < heartsToShow; i++) {
       // Posición del corazón actual
@@ -930,6 +932,9 @@ class Game {
     }
     
     popStyle();
+    
+    // La barra de salud está en la esquina superior izquierda
+    // y no se superpone con otros elementos de la interfaz
   }
   
   // Función para dibujar un corazón
@@ -952,21 +957,23 @@ class Game {
   
   void displayEcosystemStatus() {
     // Variables para una UI más consistente
-    int barWidth = 220;        // Barra más ancha
-    int barHeight = 35;        // Barra más alta
-    int leftMargin = 25;       // Margen izquierdo alineado con los corazones
-    int topPosition = 95;      // Posición vertical después de la barra de salud
-    float cornerRadius = 10;   // Bordes redondeados
-    int iconSize = 25;         // Tamaño del icono
+    int barWidth = 350;        // Barra más ancha y grande
+    int barHeight = 45;        // Barra más alta
+    int topPosition = 20;      // Posición en la parte superior de la pantalla
+    float cornerRadius = 12;   // Bordes redondeados
+    int iconSize = 30;         // Tamaño del icono más grande
+    
+    // Calcular posición central
+    int centerX = width / 2 - barWidth / 2;
     
     // Barra de salud del ecosistema
     float ecosystemHealth = 1.0 - ecoSystem.getPollutionLevel();
     
-    // Fondo oscuro para la barra
-    fill(0, 0, 0, 180);
-    rect(leftMargin, topPosition, barWidth, barHeight, cornerRadius);
+    // Fondo oscuro para la barra con mayor opacidad
+    fill(0, 0, 0, 200);
+    rect(centerX, topPosition, barWidth, barHeight, cornerRadius);
     
-    // Color basado en la salud del ecosistema
+    // Color basado en la salud del ecosistema (más vibrante)
     if (ecosystemHealth > 0.6) {
       fill(0, 255, 80); // Verde más vibrante
     } else if (ecosystemHealth > 0.3) {
@@ -981,24 +988,24 @@ class Game {
       // Si la barra no está completamente llena, solo redondear el lado derecho
       float rightRadius = min(cornerRadius - 2, ecoWidth / 2);
       if (ecoWidth < barWidth - 4) {
-        rect(leftMargin + 2, topPosition + 2, ecoWidth, barHeight - 4, 0, rightRadius, rightRadius, 0);
+        rect(centerX + 2, topPosition + 2, ecoWidth, barHeight - 4, 0, rightRadius, rightRadius, 0);
       } else {
         // Si está completa o casi, usar el mismo radio en todos los lados
-        rect(leftMargin + 2, topPosition + 2, ecoWidth, barHeight - 4, cornerRadius - 2);
+        rect(centerX + 2, topPosition + 2, ecoWidth, barHeight - 4, cornerRadius - 2);
       }
     }
     
     // Texto del ecosistema
     fill(255);
     textAlign(CENTER, CENTER);
-    textSize(18); // Texto más grande
+    textSize(20); // Texto más grande
     
     // Añadir icono o símbolo antes del texto
     String ecosystemText = "ECOSISTEMA";
     
     // Dibujamos un pequeño icono de hoja o árbol antes del texto
     pushMatrix();
-    translate(leftMargin + barWidth/2 - textWidth(ecosystemText)/2 - iconSize - 5, topPosition + barHeight/2);
+    translate(centerX + barWidth/2 - textWidth(ecosystemText)/2 - iconSize - 5, topPosition + barHeight/2);
     noStroke();
     fill(255);
     // Dibujar una hoja simple
@@ -1009,23 +1016,32 @@ class Game {
     popMatrix();
     
     // Mostrar el texto centrado
-    text(ecosystemText, leftMargin + barWidth/2 + iconSize/2, topPosition + barHeight/2);
+    text(ecosystemText, centerX + barWidth/2 + iconSize/2, topPosition + barHeight/2);
     
     // Porcentaje numérico para mayor claridad
     textAlign(RIGHT, CENTER);
-    text(int(ecosystemHealth * 100) + "%", leftMargin + barWidth - 10, topPosition + barHeight/2);
+    text(int(ecosystemHealth * 100) + "%", centerX + barWidth - 10, topPosition + barHeight/2);
+    
+    // La barra del ecosistema está ahora centrada en la parte superior de la pantalla
+    // para que el jugador esté siempre consciente de la salud del ecosistema.
+    // Su mayor tamaño la hace más visible y prominente durante el juego.
   }
   
   void displayTutorial() {
-    // Caja de tutorial en la parte superior
+    // Variables para una UI más consistente
+    int barWidth = 400;
+    int barHeight = 60;
+    int topPosition = 80; // Posición debajo de la barra del ecosistema
+    
+    // Caja de tutorial 
     fill(0, 0, 0, 200);
-    rect(width/2 - 200, 40, 400, 60);
+    rect(width/2 - barWidth/2, topPosition, barWidth, barHeight, 10);
     
     // Texto de tutorial
     fill(255);
     textAlign(CENTER, CENTER);
     textSize(16);
-    text(tutorialMessages.get(currentTutorialMessage), width/2, 70);
+    text(tutorialMessages.get(currentTutorialMessage), width/2, topPosition + barHeight/2 - 5);
     
     // Puntos de progreso
     for (int i = 0; i < tutorialMessages.size(); i++) {
@@ -1034,8 +1050,11 @@ class Game {
       } else {
         fill(150);
       }
-      ellipse(width/2 - 30 + i * 20, 90, 8, 8);
+      ellipse(width/2 - 30 + i * 20, topPosition + barHeight - 12, 8, 8);
     }
+    
+    // Los mensajes de tutorial ahora aparecen debajo de la barra de ecosistema
+    // para evitar superposiciones y mantener una interfaz limpia
   }
   
   void displayActivePowerUps() {
@@ -1051,7 +1070,7 @@ class Game {
     int fpsWidth = 80;
     int fpsHeight = 35;
     int leftMargin = 25;
-    int topPosition = 150; // Debajo de la barra del ecosistema
+    int topPosition = 90; // Posición debajo de la barra de salud
     float cornerRadius = 10;
     
     // Panel para el FPS
@@ -1074,6 +1093,9 @@ class Game {
     textSize(18);
     text("FPS: " + fps, leftMargin + fpsWidth/2, topPosition + fpsHeight/2);
     popStyle();
+    
+    // El indicador de FPS está posicionado debajo de la barra de salud
+    // para evitar superposiciones y mantener la interfaz organizada
   }
   
   // Getters de puntuación para acceso externo

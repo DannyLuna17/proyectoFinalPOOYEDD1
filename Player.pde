@@ -592,18 +592,21 @@ class Player {
     
     // Ajustar el hitbox para ser un poco más pequeño que el sprite visual
     // para una mejor experiencia de juego
-    float hitboxReduction = 0.85; // 85% del tamaño visual
+    float hitboxReduction = 0.75; // 75% del tamaño visual (más favorable al jugador)
     playerWidth *= hitboxReduction;
     playerHeight *= hitboxReduction;
     
-    float playerBottom = y;
+    // Cálculo del margen de gracia para hacer el juego más justo
+    float graceMargin = size * 0.05; // Margen de 5% del tamaño del jugador
+    
+    float playerBottom = y - graceMargin;
     float playerTop = isSliding ? playerBottom - playerHeight/2 : playerBottom - playerHeight;
-    float playerLeft = x - playerWidth/2;
-    float playerRight = x + playerWidth/2;
+    float playerLeft = x - playerWidth/2 + graceMargin;
+    float playerRight = x + playerWidth/2 - graceMargin;
     
     // Obtener dimensiones del obstáculo
-    float obstacleTop = obstacle.y - obstacle.h;
-    float obstacleBottom = obstacle.y;
+    float obstacleTop = obstacle.getTop();
+    float obstacleBottom = obstacleTop + obstacle.getHeight();
     float obstacleLeft = obstacle.x - obstacle.w/2;
     float obstacleRight = obstacle.x + obstacle.w/2;
     
@@ -611,10 +614,29 @@ class Player {
     if (isInvincible) return false;
     
     // Comprobar si hay solapamiento en ambas dimensiones
-    return (playerRight > obstacleLeft && 
-            playerLeft < obstacleRight && 
-            playerBottom > obstacleTop && 
-            playerTop < obstacleBottom);
+    boolean collision = (playerRight > obstacleLeft && 
+                        playerLeft < obstacleRight && 
+                        playerBottom > obstacleTop && 
+                        playerTop < obstacleBottom);
+    
+    // Dar un poco más de margen para colisiones menores
+    // Esto hace que roces muy leves no cuenten como colisión
+    if (collision) {
+      // Calcular porcentaje de superposición
+      float overlapX = min(playerRight, obstacleRight) - max(playerLeft, obstacleLeft);
+      float overlapY = min(playerBottom, obstacleBottom) - max(playerTop, obstacleTop);
+      
+      // Área de superposición relativa al tamaño del jugador
+      float overlapArea = (overlapX * overlapY) / (playerWidth * playerHeight);
+      
+      // Si la superposición es mínima, ignorarla
+      // Esto favorece al jugador en caso de roces leves
+      if (overlapArea < 0.1) { // Menos del 10% de superposición
+        collision = false;
+      }
+    }
+    
+    return collision;
   }
   
   // Método para comprobar si estamos recogiendo un coleccionable
@@ -623,8 +645,32 @@ class Player {
     float distance = dist(x, y - size/2, collectible.x, collectible.y);
     
     // Considerar colisión si la distancia es menor que la suma de los radios
-    // Hacemos el radio de colección un poco más grande para mejorar la experiencia
-    float collectionRadius = (size/2 + collectible.size/2) * 0.9;
+    // Hacemos el radio de colección mucho más grande para mejorar la experiencia
+    float collectionRadius = (size/2 + collectible.size/2) * 1.5; // Aumentado a 150% para ser más generoso
+    
+    // Ajustar dinámicamente el radio de colección basado en la velocidad del jugador
+    // Esto hace más fácil recoger coleccionables cuando se va rápido
+    if (hasSpeedBoost) {
+      collectionRadius *= 1.5; // 50% más grande cuando tiene boost de velocidad
+    }
+    
+    // Radio adicional cuando el jugador está en el aire (saltando)
+    if (isJumping) {
+      collectionRadius *= 1.2; // 20% extra si está saltando
+    }
+    
+    // Ayudar a la recolección mientras se está en movimiento
+    // Calculamos la proyección futura para anticipar la colección
+    if (vSpeed != 0 || isJumping) {
+      // Intentar predecir dónde estará el jugador en los siguientes frames
+      for (float t = 0.1; t <= 1.0; t += 0.3) {
+        float futureY = y - size/2 + vSpeed * t;
+        float futureDist = dist(x, futureY, collectible.x, collectible.y);
+        
+        // Usar la distancia más corta (actual o futura)
+        distance = min(distance, futureDist);
+      }
+    }
     
     return distance < collectionRadius;
   }

@@ -126,9 +126,9 @@ class Menu {
   
   void initializeButtons() {
     // Calcular espaciado horizontal consistente para botones en una fila
-    float buttonWidth = 220; // Un poco más ancho para acomodar la forma de píldora
-    float buttonHeight = 60; // Un poco más alto para mejores proporciones
-    float spacing = 25; // Espacio entre botones
+    float buttonWidth = 260; // Botones más anchos
+    float buttonHeight = 70; // Botones más altos
+    float spacing = 30; // Espacio entre botones
     
     // Calcular el ancho total para 4 botones (3 espacios entre ellos)
     float totalWidth = (buttonWidth * 4) + (spacing * 3);
@@ -146,40 +146,46 @@ class Menu {
     
     // Botones de la pantalla de instrucciones
     instructionsButtons = new ArrayList<Button>();
-    instructionsButtons.add(new Button(width/2, height - 50, 220, 60, "Back", accessManager));
+    instructionsButtons.add(new Button(width/2, height - 50, 260, 70, "Back", accessManager));
     
     // Mayor espaciado vertical para botones de configuración
-    float verticalSpacing = 80; // Aumentado desde implícitos 60 píxeles
+    float verticalSpacing = 90; // Aumentado para mayor espacio entre botones
     
     // Botones de la pantalla de configuración
     settingsButtons = new ArrayList<Button>();
-    settingsButtons.add(new Button(width/2, height/2 - 260, 220, 60, "Sound: ON", accessManager));
-    settingsButtons.add(new Button(width/2, height/2 - 260 + verticalSpacing, 220, 60, "Music: ON", accessManager));
+    settingsButtons.add(new Button(width/2, height/2 - 260, 260, 70, "Sound: ON", accessManager));
+    settingsButtons.add(new Button(width/2, height/2 - 260 + verticalSpacing, 260, 70, "Music: ON", accessManager));
     
     // Título de la sección de accesibilidad - con más espacio antes
-    settingsButtons.add(new Button(width/2, height/2 - 260 + (verticalSpacing * 2) + 20, 320, 60, "Accessibility Options", accessManager));
+    settingsButtons.add(new Button(width/2, height/2 - 260 + (verticalSpacing * 2) + 20, 360, 70, "Accessibility Options", accessManager));
     
     // Opciones de accesibilidad (movidas desde accessibilityButtons) - con espaciado aumentado
-    settingsButtons.add(new Button(width/2, height/2 - 260 + (verticalSpacing * 3) + 20, 320, 60, "High Contrast: OFF", accessManager));
-    settingsButtons.add(new Button(width/2, height/2 - 260 + (verticalSpacing * 4) + 20, 320, 60, "Color Blind Mode: OFF", accessManager));
+    settingsButtons.add(new Button(width/2, height/2 - 260 + (verticalSpacing * 3) + 20, 360, 70, "High Contrast: OFF", accessManager));
+    settingsButtons.add(new Button(width/2, height/2 - 260 + (verticalSpacing * 4) + 20, 360, 70, "Color Blind Mode: OFF", accessManager));
     // settingsButtons.add(new Button(width/2, height/2 - 260 + (verticalSpacing * 5) + 20, 320, 60, "Keyboard Navigation: OFF"));
     
     // Botón de regreso en la parte inferior
-    settingsButtons.add(new Button(width/2, height - 50, 220, 60, "Back", accessManager));
+    settingsButtons.add(new Button(width/2, height - 50, 260, 70, "Back", accessManager));
     
     // Definir el espaciado vertical para los botones del menú de pausa
     float pauseButtonSpacing = 100; // Mayor espaciado vertical para mejor legibilidad
     
     // Botones del menú de pausa
     pauseMenuButtons = new ArrayList<Button>();
-    pauseMenuButtons.add(new Button(width/2, height/2 - 120, 220, 60, "Resume", accessManager));
-    pauseMenuButtons.add(new Button(width/2, height/2, 220, 60, "Restart", accessManager));
-    pauseMenuButtons.add(new Button(width/2, height/2 + 120, 220, 60, "Main Menu", accessManager));
+    pauseMenuButtons.add(new Button(width/2, height/2 - 120, 260, 70, "Resume", accessManager));
+    pauseMenuButtons.add(new Button(width/2, height/2, 260, 70, "Restart", accessManager));
+    pauseMenuButtons.add(new Button(width/2, height/2 + 120, 260, 70, "Main Menu", accessManager));
     
     // Botones de fin de juego - centrados verticalmente
     gameOverButtons = new ArrayList<Button>();
-    gameOverButtons.add(new Button(width/2, height/2 + 60, 220, 60, "Restart", accessManager));
-    gameOverButtons.add(new Button(width/2, height/2 + 140, 220, 60, "Main Menu", accessManager));
+    gameOverButtons.add(new Button(width/2, height/2 + 60, 260, 70, "Restart", accessManager));
+    gameOverButtons.add(new Button(width/2, height/2 + 140, 260, 70, "Main Menu", accessManager));
+    
+    // Los botones ahora son más grandes para acomodar mejor el texto más grande
+    
+    // Aumentamos el tamaño de los botones y su texto para mejorar la legibilidad
+    // y hacer que los menús sean más accesibles. Los botones más grandes también
+    // facilitan la interacción en dispositivos táctiles y mejoran la experiencia visual.
   }
   
   // Método auxiliar para obtener el estado actual del juego desde el gestor de estado
