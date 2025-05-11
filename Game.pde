@@ -589,12 +589,27 @@ class Game {
       difficultyLevel++;
       lastDifficultyIncrease = currentScore;
       
-      // Aumentar velocidad de obstáculos
-      obstacleSpeed = baseObstacleSpeed + (difficultyLevel - 1) * 0.5;
+      // Limitar el nivel máximo de dificultad para evitar que el juego sea imposible
+      int maxDifficultyLevel = 15;
+      if (difficultyLevel > maxDifficultyLevel) {
+        difficultyLevel = maxDifficultyLevel;
+      }
       
-      // Ajustar intervalo de obstáculos
-      float newInterval = max(40, obstacleManager.obstacleInterval - 5);
+      // Calcular factor de dificultad con una curva logarítmica para suavizar el aumento
+      // Esto hará que la dificultad aumente más rápido al principio y más lento en niveles altos
+      float difficultyFactor = log(difficultyLevel + 1) / log(maxDifficultyLevel + 1);
+      
+      // Aumentar velocidad de obstáculos de forma más gradual
+      obstacleSpeed = baseObstacleSpeed + 3.0 * difficultyFactor;
+      
+      // Ajustar intervalo de obstáculos con un mínimo más alto para garantizar espacio entre obstáculos
+      // A medida que aumenta la velocidad, también aumentamos el intervalo mínimo para dar tiempo de reacción
+      float minInterval = 60 + (difficultyLevel * 2); // Intervalo mínimo aumenta con la dificultad
+      float newInterval = max(minInterval, obstacleManager.obstacleInterval - 3);
       obstacleManager.obstacleInterval = newInterval;
+      
+      // Comunicar nivel de dificultad al gestor de obstáculos
+      obstacleManager.setScoreBasedDifficultyLevel(difficultyLevel);
       
       // Mostrar mensaje de aumento de dificultad
       collectibleManager.addFloatingText("¡Nivel " + difficultyLevel + "!", width/2, height/2 - 50, color(255, 200, 0));
@@ -608,27 +623,41 @@ class Game {
       // Analizar rendimiento del jugador y ajustar dificultad
       if (consecutiveCollisions > 3) {
         // Demasiado difícil, hacerlo más fácil
-        ddaMultiplier = max(0.8, ddaMultiplier - 0.1);
+        ddaMultiplier = max(0.75, ddaMultiplier - 0.15);
         
         // Aplicar modificadores
         obstacleSpeed *= ddaMultiplier;
+        
+        // Aumentar el intervalo entre obstáculos para dar más respiro al jugador
+        obstacleManager.obstacleInterval = min(obstacleManager.obstacleInterval + 15, 180);
         
         // Asistencia secreta
         if (consecutiveCollisions > 5) {
           player.jumpForce *= 1.1; // Mejores saltos
           player.gravity *= 0.95;  // Caída más lenta
+          
+          // Añadir mensaje sutil de asistencia
+          collectibleManager.addFloatingText("¡Viento a favor!", player.x, player.y - 60, color(100, 200, 255));
         }
       } else if (consecutiveSuccesses > 5) {
         // Demasiado fácil, hacerlo más difícil
-        ddaMultiplier = min(1.2, ddaMultiplier + 0.1);
+        ddaMultiplier = min(1.15, ddaMultiplier + 0.05);
         
         // Aplicar modificadores
         obstacleSpeed *= ddaMultiplier;
-        obstacleManager.obstacleInterval = max(obstacleManager.obstacleInterval - 5, 40);
+        
+        // Reducir el intervalo con un límite más conservador según el nivel de dificultad
+        // para evitar que se vuelva imposible
+        float minIntervalBasedOnDifficulty = 60 + (difficultyLevel * 1.5);
+        obstacleManager.obstacleInterval = max(obstacleManager.obstacleInterval - 5, minIntervalBasedOnDifficulty);
       }
       
       // Reiniciar contadores
       ddaTimer = 0;
+      
+      // Suavizar reinicio de contadores para evitar cambios bruscos
+      if (consecutiveCollisions > 0) consecutiveCollisions--;
+      if (consecutiveSuccesses > 0) consecutiveSuccesses--;
     }
   }
   
