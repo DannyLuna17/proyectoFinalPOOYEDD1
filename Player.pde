@@ -4,7 +4,7 @@ class Player {
   float groundY;
   float vSpeed = 0;
   float gravity = 0.5;
-  float jumpForce = -14.5;
+  float jumpForce = -4.5;
   float maxJumpForce = -16;
   boolean isJumping = false;
   boolean isSliding = false;
@@ -57,8 +57,12 @@ class Player {
   
   // Escudo
   color shieldColor = color(100, 255, 100, 100);
+  color shieldWarningColor = color(255, 100, 100, 150); // Color de advertencia para el escudo (rojizo)
   float shieldSize = 0;
   float shieldPulse = 0;
+  boolean isShieldBlinking = false; // Variable para controlar el parpadeo del escudo
+  boolean hasShownShieldWarning = false; // Para mostrar la advertencia solo una vez
+  int shieldBlinkThreshold = 100; // Comenzar a parpadear 3 segundos antes (60 FPS * 3)
   
   // Variables para plataformas
   boolean isOnPlatform = false;
@@ -71,6 +75,7 @@ class Player {
   AccessibilityManager accessManager;
   SoundManager soundManager;
   AssetManager assetManager; // Referencia al gestor de assets
+  CollectibleManager collectibleManager; // Referencia al gestor de coleccionables
   
   // Imágenes del jugador
   PImage characterImage;
@@ -122,6 +127,11 @@ class Player {
     }
   }
   
+  // Método para establecer el gestor de coleccionables
+  void setCollectibleManager(CollectibleManager cm) {
+    this.collectibleManager = cm;
+  }
+  
   void update() {
     handleJump();
     handleSlide();
@@ -157,6 +167,19 @@ class Player {
     if (hasShield) {
       shieldPulse = (shieldPulse + 0.05) % TWO_PI;
       shieldSize = size * 1.5 + sin(shieldPulse) * 7;
+      
+      // Verificar si el escudo está por expirar para activar parpadeo
+      if (shieldDuration > 0 && shieldTimer >= shieldDuration - shieldBlinkThreshold) {
+        // Si acabamos de empezar a parpadear y no hemos mostrado la advertencia
+        if (!isShieldBlinking && !hasShownShieldWarning && collectibleManager != null) {
+          // Mostrar mensaje de advertencia
+          collectibleManager.addFloatingText("¡Escudo por expirar!", x, y - size - 20, shieldWarningColor);
+          hasShownShieldWarning = true;
+        }
+        isShieldBlinking = true;
+      } else {
+        isShieldBlinking = false;
+      }
     }
     
     // Actualizar timers de power-ups
@@ -336,8 +359,26 @@ class Player {
     if (hasShield) {
       pushStyle();
       color adjustedShieldColor = accessManager.getForegroundColor(shieldColor);
-      fill(adjustedShieldColor);
-      ellipse(x, y - size/2, shieldSize, shieldSize);
+      color adjustedWarningColor = accessManager.getForegroundColor(shieldWarningColor);
+      
+      // Aplicar efecto de parpadeo si el escudo está por expirar
+      if (isShieldBlinking) {
+        // Efecto de parpadeo más intenso
+        if (frameCount % 12 < 6) {
+          // Usar color de advertencia con más opacidad en el parpadeo activo
+          fill(adjustedWarningColor);
+          // Dibujar un escudo ligeramente más grande durante el parpadeo para mayor visibilidad
+          ellipse(x, y - size/2, shieldSize * 1.05, shieldSize * 1.05);
+        } else {
+          // Usar color normal con menos opacidad en el parpadeo inactivo
+          fill(red(adjustedShieldColor), green(adjustedShieldColor), blue(adjustedShieldColor), 80);
+          ellipse(x, y - size/2, shieldSize, shieldSize);
+        }
+      } else {
+        // Dibujo normal del escudo cuando no está parpadeando
+        fill(adjustedShieldColor);
+        ellipse(x, y - size/2, shieldSize, shieldSize);
+      }
       popStyle();
     }
     
@@ -581,6 +622,8 @@ class Player {
     hasShield = false;
     shieldDuration = 0;
     shieldTimer = 0;
+    isShieldBlinking = false; // Reiniciar estado de parpadeo
+    hasShownShieldWarning = false; // Reiniciar el indicador de advertencia
   }
   
   void activateSpeedBoost(int duration, float multiplier) {

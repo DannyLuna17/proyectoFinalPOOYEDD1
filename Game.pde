@@ -215,12 +215,23 @@ class Game {
         } else {
           collectibleManager = new CollectibleManager(height * 0.8, obstacleSpeed, ecoSystem, accessManager);
         }
+        
+        // Establecer la referencia del CollectibleManager en el jugador
+        player.setCollectibleManager(collectibleManager);
+        
         println("Gestor de coleccionables inicializado con éxito");
       } catch (Exception e) {
         println("ERROR al inicializar gestor de coleccionables: " + e.getMessage());
         e.printStackTrace();
         // Crear gestor de coleccionables por defecto
         collectibleManager = new CollectibleManager(height * 0.8, obstacleSpeed, ecoSystem, accessManager);
+        
+        // Intentar establecer la referencia incluso en caso de error
+        try {
+          player.setCollectibleManager(collectibleManager);
+        } catch (Exception refError) {
+          println("ERROR al establecer referencia de collectibleManager: " + refError.getMessage());
+        }
       }
       
       try {
@@ -312,6 +323,15 @@ class Game {
             collectibleManager = new CollectibleManager(height * 0.8, obstacleSpeed, ecoSystem, accessManager, assetManager);
           } else {
             collectibleManager = new CollectibleManager(height * 0.8, obstacleSpeed, ecoSystem, accessManager);
+          }
+          
+          // Establecer referencia en el respaldo de emergencia
+          try {
+            if (player != null && collectibleManager != null) {
+              player.setCollectibleManager(collectibleManager);
+            }
+          } catch (Exception refError) {
+            println("ERROR al establecer referencia en respaldo de emergencia: " + refError.getMessage());
           }
         }
         
