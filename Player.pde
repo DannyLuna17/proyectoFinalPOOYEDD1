@@ -12,6 +12,12 @@ class Player {
   int jumpHoldTime = 0;
   int maxJumpHoldTime = 15;
   
+  // Coyote time
+  // Tiempo corto después de caer de una plataforma durante el cual aún se puede saltar
+  int coyoteTime = 0;
+  int maxCoyoteTime = 15; // Aproximadamente 15 frames (1/4 de segundo a 60 FPS)
+  boolean canCoyoteJump = false;
+  
   // Deslizamiento
   int slideDuration = 0;
   int maxSlideDuration = 45;
@@ -119,6 +125,15 @@ class Player {
   void update() {
     handleJump();
     handleSlide();
+    
+    // Actualizar contador de coyote time
+    if (canCoyoteJump) {
+      coyoteTime++;
+      if (coyoteTime >= maxCoyoteTime) {
+        canCoyoteJump = false;
+        coyoteTime = 0;
+      }
+    }
     
     if (isInvincible) {
       invincibilityTimer++;
@@ -278,6 +293,11 @@ class Player {
       currentPlatform = null;
       isJumping = true;
       vSpeed = 0; // Comenzar a caer sin velocidad inicial
+      
+      // Activar coyote time
+      // Permite al jugador saltar durante un breve periodo después de caer de una plataforma
+      canCoyoteJump = true;
+      coyoteTime = 0;
     }
   }
   
@@ -459,7 +479,14 @@ class Player {
   }
   
   void jump() {
-    if ((!isJumping && !isSliding) || isOnPlatform) {
+    // Permitir salto normal o durante coyote time
+    if ((!isJumping && !isSliding) || isOnPlatform || canCoyoteJump) {
+      // Desactivar coyote time después de usarlo
+      if (canCoyoteJump) {
+        canCoyoteJump = false;
+        coyoteTime = 0;
+      }
+      
       isJumping = true;
       spacePressed = true;
       
@@ -742,6 +769,10 @@ class Player {
     deactivateShield();
     deactivateSpeedBoost();
     deactivateDoublePoints();
+    
+    // Reiniciar coyote time
+    canCoyoteJump = false;
+    coyoteTime = 0;
     
     // Reiniciar estado de invencibilidad
     isInvincible = false;
