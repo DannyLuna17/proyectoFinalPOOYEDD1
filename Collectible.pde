@@ -508,7 +508,7 @@ class Collectible {
   }
 }
 
-// Clase para efectos de partículas
+// Clase para efectos de partículas 
 class Particle {
   PVector position;
   PVector velocity;
