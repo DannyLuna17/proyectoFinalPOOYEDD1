@@ -673,8 +673,6 @@ class Game {
         player.health = max(1, player.health - 1);
         collectibleManager.addFloatingText("¡Peligro! Aire tóxico", player.x, player.y - 40, color(255, 50, 0));
       }
-      
-      // Efectos visuales hechos en render
     } 
     else if (ecosystemHealth < 0.6) {
       // Efectos de estado de advertencia
@@ -1093,9 +1091,6 @@ class Game {
     textSize(18);
     text("FPS: " + fps, leftMargin + fpsWidth/2, topPosition + fpsHeight/2);
     popStyle();
-    
-    // El indicador de FPS está posicionado debajo de la barra de salud
-    // para evitar superposiciones y mantener la interfaz organizada
   }
   
   // Getters de puntuación para acceso externo

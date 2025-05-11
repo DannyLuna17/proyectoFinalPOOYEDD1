@@ -499,13 +499,11 @@ class Collectible {
   }
   
   boolean checkCollision(Player player) {
-    // Calculate distance between player and collectible
     float distance = dist(x, y, player.x, player.y);
     
-    // Use average of player and collectible sizes for collision detection
-    float collisionThreshold = (size + player.size) * 0.4;
+    // Hitbox más grande para facilitar recoger los items
+    float collisionThreshold = (size + player.size) * 0.6;
     
-    // Return true if collision detected
     return distance < collisionThreshold;
   }
 }

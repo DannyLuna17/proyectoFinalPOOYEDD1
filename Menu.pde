@@ -58,10 +58,6 @@ class Menu {
     // Establecer los botones activos como menú principal inicialmente
     currentActiveButtons = mainMenuButtons;
     
-    // Cargar imágenes (marcadores de posición por ahora)
-    // menuBackground = loadImage("background.png");
-    // logo = loadImage("logo.png");
-    
     // Actualizar texto de botones de configuración según ajustes de accesibilidad actuales
     updateSettingsButtonText();
   }
@@ -159,10 +155,9 @@ class Menu {
     // Título de la sección de accesibilidad - con más espacio antes
     settingsButtons.add(new Button(width/2, height/2 - 260 + (verticalSpacing * 2) + 20, 360, 70, "Accessibility Options", accessManager));
     
-    // Opciones de accesibilidad (movidas desde accessibilityButtons) - con espaciado aumentado
+    // Opciones de accesibilidad - con espaciado aumentado
     settingsButtons.add(new Button(width/2, height/2 - 260 + (verticalSpacing * 3) + 20, 360, 70, "High Contrast: OFF", accessManager));
     settingsButtons.add(new Button(width/2, height/2 - 260 + (verticalSpacing * 4) + 20, 360, 70, "Color Blind Mode: OFF", accessManager));
-    // settingsButtons.add(new Button(width/2, height/2 - 260 + (verticalSpacing * 5) + 20, 320, 60, "Keyboard Navigation: OFF"));
     
     // Botón de regreso en la parte inferior
     settingsButtons.add(new Button(width/2, height - 50, 260, 70, "Back", accessManager));
@@ -180,12 +175,6 @@ class Menu {
     gameOverButtons = new ArrayList<Button>();
     gameOverButtons.add(new Button(width/2, height/2 + 60, 260, 70, "Restart", accessManager));
     gameOverButtons.add(new Button(width/2, height/2 + 140, 260, 70, "Main Menu", accessManager));
-    
-    // Los botones ahora son más grandes para acomodar mejor el texto más grande
-    
-    // Aumentamos el tamaño de los botones y su texto para mejorar la legibilidad
-    // y hacer que los menús sean más accesibles. Los botones más grandes también
-    // facilitan la interacción en dispositivos táctiles y mejoran la experiencia visual.
   }
   
   // Método auxiliar para obtener el estado actual del juego desde el gestor de estado

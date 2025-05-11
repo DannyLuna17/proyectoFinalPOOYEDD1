@@ -645,8 +645,7 @@ class Player {
     float distance = dist(x, y - size/2, collectible.x, collectible.y);
     
     // Considerar colisión si la distancia es menor que la suma de los radios
-    // Hacemos el radio de colección mucho más grande para mejorar la experiencia
-    float collectionRadius = (size/2 + collectible.size/2) * 1.5; // Aumentado a 150% para ser más generoso
+    float collectionRadius = (size/2 + collectible.size/2) * 1.8;
     
     // Ajustar dinámicamente el radio de colección basado en la velocidad del jugador
     // Esto hace más fácil recoger coleccionables cuando se va rápido

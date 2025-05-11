@@ -14,7 +14,6 @@ void setup() {
   // Guardar referencia a this (PApplet)
   applet = this;
   
-  // size(1920, 1080, P2D);
   fullScreen(P2D);
 
 //  fullScreen();
@@ -51,11 +50,11 @@ void keyReleased() {
 
 void mousePressed() {
   gameManager.handleMousePressed();
-    }
+}
     
 void mouseWheel(MouseEvent event) {
   gameManager.handleMouseWheel(event);
-    }
+}
 
 void exit() {
   // Realizar operaciones de limpieza antes de salir

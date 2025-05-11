@@ -234,8 +234,7 @@ class VideoIntroMenu {
     
     // Intentar cargar frames para animación alternativa desde assets
     try {
-      // Para simplificar, usaremos el fondo final como único frame
-      // En una implementación real, podrías tener múltiples frames como "frame_01.png", "frame_02.png", etc.
+      // Usar una sola imagen como fallback simplificado
       fallbackFrames = new PImage[1];
       fallbackFrames[0] = finalBackground;
     } catch (Exception e) {
