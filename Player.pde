@@ -81,6 +81,11 @@ class Player {
   PImage characterImage;
   PImage shadowImage;
   
+  // Fast fall y drop-through
+  boolean isFastFalling = false; // Si el jugador está haciendo fast fall
+  boolean wantsToDrop = false;   // Si el jugador quiere bajar por plataforma
+  float fastFallSpeed = 30;      // Velocidad de caída rápida
+  
   // Constructor simplificado
   Player(float x, float groundY) {
     // Crear un AccessibilityManager y pasarlo tanto al constructor padre como al SoundManager
@@ -135,6 +140,16 @@ class Player {
   void update() {
     handleJump();
     handleSlide();
+    // Fast fall: si está en el aire y activado, cae más rápido
+    if (isFastFalling && isInAir()) {
+      vSpeed = fastFallSpeed;
+    }
+    // Resetear fast fall si toca el suelo o plataforma
+    if (!isInAir()) {
+      isFastFalling = false;
+      // Resetear drop-through solo cuando el jugador ya no está en el aire
+      wantsToDrop = false;
+    }
     
     // Actualizar contador de coyote time
     if (canCoyoteJump) {
@@ -244,8 +259,13 @@ class Player {
   
   // Comprobar colisión con plataformas
   void checkPlatformCollision(ArrayList<Platform> platforms) {
-    // Si estamos deslizándonos, no interactuamos con plataformas
     if (isSliding) {
+      return;
+    }
+    // Si el jugador quiere bajar, ignorar colisión con plataformas hasta que esté en el aire
+    if (wantsToDrop) {
+      isOnPlatform = false;
+      currentPlatform = null;
       return;
     }
     
@@ -840,5 +860,25 @@ class Player {
     endShape(CLOSE);
     
     popMatrix();
+  }
+  
+  // Nuevo método para activar fast fall
+  void startFastFall() {
+    if (isInAir()) {
+      isFastFalling = true;
+    }
+  }
+  
+  // Este método hace que el jugador baje por la plataforma cuando está parado sobre ella y presiona la flecha abajo
+  // Básicamente, ignora la colisión con la plataforma y lo pone en modo de caída. Súper útil para bajar rápido sin saltar.
+  void dropThroughPlatform() {
+    // Solo si está en plataforma
+    if (isOnPlatform && currentPlatform != null) {
+      wantsToDrop = true;
+      isOnPlatform = false;
+      currentPlatform = null;
+      isJumping = true;
+      vSpeed = 0;
+    }
   }
 } 

@@ -180,8 +180,18 @@ class InputHandler {
     
     if (key == accessManager.getJumpKey()) {
       game.player.jump();
-    } else if (key == accessManager.getSlideKey() || keyCode == DOWN) {
+    } else if (key == accessManager.getSlideKey()) {
       game.player.slide();
+    } else if (keyCode == DOWN) {
+      // Si está en el aire, activar fast fall
+      if (game.player.isInAir()) {
+        // Caída rápida
+        game.player.startFastFall();
+      } else if (game.player.isOnPlatform && game.player.currentPlatform != null) {
+        // Si el jugador está parado en una plataforma y presiona abajo, baja por la plataforma al toque
+        // Esto no aplica si está en el aire, solo cuando está bien parado sobre una plataforma
+        game.player.dropThroughPlatform();
+      }
     } else if (key == accessManager.pauseKey) {
       pauseGame();
     }
@@ -198,7 +208,7 @@ class InputHandler {
   void handleGameplayKeyReleased() {
     if (key == accessManager.getJumpKey()) {
       game.player.releaseJump();
-    } else if (key == accessManager.getSlideKey() || keyCode == DOWN) {
+    } else if (key == accessManager.getSlideKey()) {
       game.player.stopSliding();
     }
   }
