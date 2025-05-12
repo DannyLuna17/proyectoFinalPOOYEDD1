@@ -339,7 +339,7 @@ class VideoIntroMenu {
             // Si no podemos obtener una duración válida, considerar el video terminado después de 5 segundos
             if (millis() > 5000) {
               videoFinished = true;
-              println("Video considered complete (could not get valid duration)");
+              println("Video considerado completado");
             }
           }
         } catch (Exception e) {

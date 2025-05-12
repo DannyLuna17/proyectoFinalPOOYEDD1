@@ -382,8 +382,6 @@ class CollectibleManager {
     
     addFloatingText("¡Escudo Activo!", player.x, player.y - 30, color(100, 255, 100));
     
-    // Los power-ups ahora se muestran en la parte inferior de la pantalla
-    // para evitar superposiciones con la barra de ecosistema y otros elementos UI
   }
   
   void activateSpeedBoost(Player player) {

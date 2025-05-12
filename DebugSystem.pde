@@ -20,7 +20,7 @@ class DebugSystem {
   int currentLogLevel = LOG_WARNING;
   
   // Logs
-  ArrayList<LogEntry> logEntries = new ArrayList<LogEntry>();
+  Queue<LogEntry> logEntries = new Queue<LogEntry>();
   int maxLogEntries = 1000;
   
   // Scroll del visor
@@ -86,10 +86,10 @@ class DebugSystem {
   
   // Añadir entrada
   void addLogEntry(LogEntry entry) {
-    logEntries.add(entry);
+    logEntries.enqueue(entry);
     // Eliminar entradas antiguas
     while (logEntries.size() > maxLogEntries) {
-      logEntries.remove(0);
+      logEntries.dequeue();
     }
   }
   
@@ -271,7 +271,7 @@ class DebugSystem {
       float baseCollectionRadius = (game.player.size/2 + collectible.size/2) * 1.5;
       
       // Mostrar el radio de colección básico
-      ellipse(collectible.x, collectible.y, baseCollectionRadius * 2, baseCollectionRadius * 2);
+      // ellipse(collectible.x, collectible.y, baseCollectionRadius * 2, baseCollectionRadius * 2);
       
       // Si el jugador está cerca, mostrar los diferentes radios para cuando:
       // - Tiene speed boost (verde claro)
@@ -279,19 +279,19 @@ class DebugSystem {
       // - Ambos (verde amarillento)
       if (dist(game.player.x, game.player.y - game.player.size/2, collectible.x, collectible.y) < 300) {
         // Radio con speed boost
-        stroke(100, 255, 100, 40); // Verde claro semitransparente
-        float speedBoostRadius = baseCollectionRadius * 1.5;
-        ellipse(collectible.x, collectible.y, speedBoostRadius * 2, speedBoostRadius * 2);
+        // stroke(100, 255, 100, 40); // Verde claro semitransparente
+        // float speedBoostRadius = baseCollectionRadius * 1.5;
+        // ellipse(collectible.x, collectible.y, speedBoostRadius * 2, speedBoostRadius * 2);
         
-        // Radio saltando
-        stroke(100, 255, 255, 40); // Verde azulado semitransparente
-        float jumpingRadius = baseCollectionRadius * 1.2;
-        ellipse(collectible.x, collectible.y, jumpingRadius * 2, jumpingRadius * 2);
+        // // Radio saltando
+        // stroke(100, 255, 255, 40); // Verde azulado semitransparente
+        // float jumpingRadius = baseCollectionRadius * 1.2;
+        // ellipse(collectible.x, collectible.y, jumpingRadius * 2, jumpingRadius * 2);
         
-        // Radio con ambos (máximo)
-        stroke(200, 255, 100, 30); // Verde amarillento muy semitransparente
-        float maxRadius = baseCollectionRadius * 1.5 * 1.2;
-        ellipse(collectible.x, collectible.y, maxRadius * 2, maxRadius * 2);
+        // // Radio con ambos (máximo)
+        // stroke(200, 255, 100, 30); // Verde amarillento muy semitransparente
+        // float maxRadius = baseCollectionRadius * 1.5 * 1.2;
+        // ellipse(collectible.x, collectible.y, maxRadius * 2, maxRadius * 2);
       }
       
       // Dibujar el sprite visual del coleccionable
@@ -537,30 +537,33 @@ class DebugSystem {
     
     float y = logAreaY;
     for (int i = startIndex; i < endIndex; i++) {
-      LogEntry entry = logEntries.get(i);
+      // Obtener la entrada
+      LogEntry entry = getLogEntryAt(i);
       
-      // Color según nivel de log
-      switch (entry.level) {
-        case LOG_ERROR:
-          fill(255, 0, 0);
-          break;
-        case LOG_WARNING:
-          fill(255, 200, 0);
-          break;
-        case LOG_INFO:
-          fill(0, 255, 0);
-          break;
-        case LOG_DEBUG:
-          fill(200);
-          break;
+      if (entry != null) {
+        // Color según nivel de log
+        switch (entry.level) {
+          case LOG_ERROR:
+            fill(255, 0, 0);
+            break;
+          case LOG_WARNING:
+            fill(255, 200, 0);
+            break;
+          case LOG_INFO:
+            fill(0, 255, 0);
+            break;
+          case LOG_DEBUG:
+            fill(200);
+            break;
+        }
+        
+        // Formatear timestamp
+        String timestamp = formatTimestamp(entry.timestamp);
+        
+        // Mostrar entrada de log con ajuste de palabras apropiado
+        text(timestamp + " " + entry.message, logAreaX, y);
+        y += 20;
       }
-      
-      // Formatear timestamp
-      String timestamp = entry.getFormattedTimestamp();
-      
-      // Mostrar entrada de log con ajuste de palabras apropiado
-      text(timestamp + " " + entry.getMessage(), logAreaX, y);
-      y += 20;
     }
     
     // Finalizar recorte
@@ -621,10 +624,26 @@ class DebugSystem {
     logScrollPosition = constrain(logScrollPosition - delta, 0, max(0, logEntries.size() - logEntriesPerPage));
   }
   
-  // Alternar visualizaciones de debug
+  // Activar cajas de colisión
+  void enableCollisionBoxes() {
+    // Activar directamente sin necesidad de modo debug general
+    showCollisionBoxes = true;
+  }
+  
+  // Desactivar cajas de colisión
+  void disableCollisionBoxes() {
+    // Desactivar directamente
+    showCollisionBoxes = false;
+  }
+  
+  // Alternar visualización de cajas de colisión
   void toggleCollisionBoxes() {
     showCollisionBoxes = !showCollisionBoxes;
-    logInfo("Cajas de colisión " + (showCollisionBoxes ? "activadas" : "desactivadas"));
+    if (showCollisionBoxes) {
+      logInfo("Cajas de colisión activadas");
+    } else {
+      logInfo("Cajas de colisión desactivadas");
+    }
   }
   
   void togglePerformanceMetrics() {
@@ -663,9 +682,66 @@ class DebugSystem {
     
     return nf(hours, 2) + ":" + nf(minutes, 2) + ":" + nf(seconds, 2) + "." + nf(ms, 3);
   }
+  
+  // Método para obtener todos los logs para mostrar
+  LogEntry[] getLogEntries() {
+    // Crear un array del tamaño de la cola
+    LogEntry[] entries = new LogEntry[logEntries.size()];
+    
+    // Crear una cola temporal para no modificar la original
+    Queue<LogEntry> tempQueue = new Queue<LogEntry>();
+    
+    // Llenar el array y la cola temporal
+    int index = 0;
+    while (!logEntries.isEmpty()) {
+      LogEntry entry = logEntries.dequeue();
+      entries[index++] = entry;
+      tempQueue.enqueue(entry);
+    }
+    
+    // Restaurar la cola original
+    while (!tempQueue.isEmpty()) {
+      logEntries.enqueue(tempQueue.dequeue());
+    }
+    
+    return entries;
+  }
+  
+  // Método para obtener una entrada de log por índice
+  LogEntry getLogEntryAt(int index) {
+    if (index < 0 || index >= logEntries.size()) {
+      return null;
+    }
+    
+    // Usar una cola temporal para no perder los datos
+    Queue<LogEntry> tempQueue = new Queue<LogEntry>();
+    LogEntry targetEntry = null;
+    int currentIndex = 0;
+    
+    // Desencolar todos los elementos hasta encontrar el buscado
+    while (!logEntries.isEmpty()) {
+      LogEntry entry = logEntries.dequeue();
+      
+      // Si es el índice buscado, guardarlo
+      if (currentIndex == index) {
+        targetEntry = entry;
+      }
+      
+      // Guardar la entrada en la cola temporal
+      tempQueue.enqueue(entry);
+      currentIndex++;
+    }
+    
+    // Restaurar la cola original
+    while (!tempQueue.isEmpty()) {
+      logEntries.enqueue(tempQueue.dequeue());
+    }
+    
+    return targetEntry;
+  }
 }
 
-// Estructura de datos para entradas de log
+// Clase para entradas de log
 class LogEntry {
   int level;
   String message;
@@ -678,7 +754,7 @@ class LogEntry {
   }
   
   String getLevelName() {
-    switch (level) {
+    switch(level) {
       case 0: return "ERROR";
       case 1: return "WARNING";
       case 2: return "INFO";
@@ -687,7 +763,7 @@ class LogEntry {
     }
   }
   
-  String getMessage() {
+  String getFormattedMessage() {
     return "[" + getLevelName() + "] " + message;
   }
   

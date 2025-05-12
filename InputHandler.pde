@@ -90,6 +90,14 @@ class InputHandler {
       handleEscapeKey();
       key = 0; // Evitar que Processing salga
     }
+    
+    // Permitir que la tecla "1" sea manejada por Game para activar cajas de colisión
+    if (key == '1') {
+      // Pasar el control al método keyPressed de Game
+      if (game != null) {
+        game.keyPressed();
+      }
+    }
   }
   
   // Manejar teclas de flecha y enter para navegación del menú
@@ -165,6 +173,11 @@ class InputHandler {
   }
   
   void handleGameplayInput() {
+    // Evitar manejar la tecla "1" aquí ya que es para cajas de colisión
+    if (key == '1') {
+      return;
+    }
+    
     if (key == accessManager.getJumpKey()) {
       game.player.jump();
     } else if (key == accessManager.getSlideKey() || keyCode == DOWN) {

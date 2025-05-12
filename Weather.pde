@@ -1,24 +1,30 @@
+/**
+ * Sistema de clima para el juego.
+ */
+
 class Weather {
   // Tipos de clima
-  static final int CLEAR = 0;
-  static final int FOG = 1;
-  static final int WIND = 2;
-  static final int HEATWAVE = 3;
+  static final int CLEAR = 0;  // Despejado
+  static final int FOG = 1;    // Niebla
+  static final int WIND = 2;   // Viento
+  static final int HEATWAVE = 3; // Ola de calor
   
-  // Estado actual
+  // Estado de clima actual
   int currentWeather = CLEAR;
-  float intensity = 0; // 0.0 a 1.0
-  float transitionProgress = 0;
-  int transitionDuration = 180; // frames para la transición del clima
-  boolean isTransitioning = false;
   int targetWeather = CLEAR;
+  float intensity = 0; // 0 a 1
   
-  // Temporizadores y duraciones del clima
+  // Temporizadores y duración
   int weatherTimer = 0;
-  int weatherDuration = 600; // Duración base para eventos climáticos (10 segundos a 60fps)
-  int clearDuration = 1200; // Duración base para períodos de clima despejado (20 segundos a 60fps)
+  int weatherDuration = 600; // 10 segundos aproximadamente para climas
+  int clearDuration = 1200;  // 20 segundos aproximadamente para clima despejado
   
-  // Probabilidades del clima - pueden ser influenciadas por la salud del ecosistema
+  // Transición
+  boolean isTransitioning = false;
+  float transitionProgress = 0;
+  int transitionDuration = 180; // 3 segundos de transición
+  
+  // Probabilidades de los tipos de clima
   float fogProbability = 0.2;
   float windProbability = 0.2;
   float heatwaveProbability = 0.1;
@@ -29,7 +35,7 @@ class Weather {
   float visibilityModifier = 0; // -0.7 a 0
   
   // Elementos de efectos visuales
-  ArrayList<WindParticle> windParticles;
+  Queue<WindParticle> windParticles;
   color fogColor = color(255, 255, 255, 0);
   float fogOpacity = 0;
   float[] heatwaveDistortion;
@@ -38,7 +44,7 @@ class Weather {
   String weatherName = "Clear";
   
   Weather() {
-    windParticles = new ArrayList<WindParticle>();
+    windParticles = new Queue<WindParticle>();
     heatwaveDistortion = new float[width];
     
     // Inicializar valores de distorsión de ola de calor
@@ -245,6 +251,52 @@ class Weather {
   }
   
   void updateWeatherEffects() {
+    // Actualizar niebla
+    if (currentWeather == FOG) {
+      updateFogEffects();
+    } else {
+      // Actualizar efecto de viento (partículas)
+      if (currentWeather == WIND) {
+        // Generar nuevas partículas basadas en la intensidad
+        int particleAmount = floor(intensity * 2); // hasta 1-2 partículas por frame
+        
+        for (int i = 0; i < particleAmount; i++) {
+          if (random(1) < 0.2 * intensity) {
+            float xPos = width + random(50);
+            float yPos = random(height);
+            float speedMultiplier = 0.5 + random(1) * intensity;
+            WindParticle particle = new WindParticle(xPos, yPos, speedMultiplier);
+            // windParticles.add(particle);
+            windParticles.enqueue(particle);
+          }
+        }
+      }
+    }
+    
+    // Actualizar partículas de viento
+    // Eliminar partículas que han salido de la pantalla
+    // for (int i = windParticles.size() - 1; i >= 0; i--) {
+    //   WindParticle particle = windParticles.get(i);
+    //   particle.update();
+    //   
+    //   if (particle.isDead()) {
+    //     windParticles.remove(i);
+    //   }
+    // }
+    
+    // Actualizar y eliminar partículas usando Queue
+    int particleCount = windParticles.size();
+    for (int i = 0; i < particleCount; i++) {
+      WindParticle particle = windParticles.dequeue();
+      particle.update();
+      
+      // Si la partícula sigue viva, volver a ponerla en la cola
+      if (!particle.isDead()) {
+        windParticles.enqueue(particle);
+      }
+      // Si está muerta, no la volvemos a poner en la cola
+    }
+    
     // Actualizar efectos visuales del clima según el clima actual y su intensidad
     switch (currentWeather) {
       case FOG:
@@ -272,20 +324,39 @@ class Weather {
     // Añadir nuevas partículas de viento según la intensidad
     int maxParticles = int(map(intensity, 0, 1, 10, 50));
     
-    while (windParticles.size() < maxParticles) {
-      windParticles.add(new WindParticle());
+    int currentParticleCount = windParticles.size();
+    
+    while (currentParticleCount < maxParticles) {
+      // Crear una partícula con valores aleatorios
+      float randomX = width + random(50);
+      float randomY = random(height);
+      float speedMultiplier = 0.5 + random(1) * intensity;
+      
+      // windParticles.add(new WindParticle());
+      windParticles.enqueue(new WindParticle(randomX, randomY, speedMultiplier));
+      currentParticleCount++;
     }
     
     // Actualizar partículas existentes
-    for (int i = windParticles.size() - 1; i >= 0; i--) {
-      WindParticle particle = windParticles.get(i);
+    // Aquí necesitamos actualizar todas las partículas y eliminar las que estén fuera de pantalla
+    
+    // Crear una cola temporal para las partículas que vamos a mantener
+    Queue<WindParticle> tempQueue = new Queue<WindParticle>();
+    int tempSize = windParticles.size();  // Guardar el tamaño original
+    
+    // Procesar todas las partículas
+    for (int i = 0; i < tempSize; i++) {
+      WindParticle particle = windParticles.dequeue();
       particle.update();
       
-      // Eliminar partículas fuera de pantalla
-      if (particle.isOffscreen()) {
-        windParticles.remove(i);
+      // Si la partícula sigue en pantalla, guardarla
+      if (!particle.isOffscreen()) {
+        tempQueue.enqueue(particle);
       }
     }
+    
+    // Reemplazar la cola original con la filtrada
+    windParticles = tempQueue;
   }
   
   void updateHeatwaveEffects() {
@@ -361,9 +432,18 @@ class Weather {
   void displayWind() {
     // Dibujar partículas de viento
     noStroke();
-    for (WindParticle particle : windParticles) {
+    
+    // Necesitamos iterar sobre todas las partículas sin perderlas
+    Queue<WindParticle> tempQueue = new Queue<WindParticle>();
+    
+    while (!windParticles.isEmpty()) {
+      WindParticle particle = windParticles.dequeue();
       particle.display();
+      tempQueue.enqueue(particle);
     }
+    
+    // Restaurar la cola original
+    windParticles = tempQueue;
   }
   
   // Captadores de efectos de jugabilidad
@@ -395,31 +475,40 @@ class Weather {
   }
 }
 
-// Clase para efecto de viento
+// Clase para partículas de viento
 class WindParticle {
   float x, y;
   float speed;
-  float size;
   float alpha;
+  float size;
   
-  WindParticle() {
-    x = random(-20, 0);
-    y = random(height * 0.3, height * 0.7);
-    speed = random(5, 15);
-    size = random(2, 6);
-    alpha = random(50, 120);
+  WindParticle(float x, float y, float speedMultiplier) {
+    this.x = x;
+    this.y = y;
+    this.speed = (10 + random(5)) * speedMultiplier;
+    this.alpha = 120 + random(100);
+    this.size = 2 + random(4);
   }
   
   void update() {
-    x += speed;
+    x -= speed;
+    alpha -= 0.5;
   }
   
   void display() {
-    fill(200, 220, 255, alpha);
+    pushStyle();
+    noStroke();
+    fill(255, 255, 255, alpha);
     ellipse(x, y, size, size/2);
+    line(x, y, x + size*1.5, y);
+    popStyle();
+  }
+  
+  boolean isDead() {
+    return x < -10 || alpha <= 0;
   }
   
   boolean isOffscreen() {
-    return x > width + 20;
+    return x < -10 || x > width || y < -10 || y > height;
   }
 } 

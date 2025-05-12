@@ -17,6 +17,10 @@ class Game {
   ScoreManager scoreManager;
   GameStateManager gameStateManager;
   
+  // Sistema de debug
+  DebugSystem debugSystem;
+  boolean showCollisionBoxes = false;  // Flag para mostrar cajas de colisión
+  
   // Soporte de accesibilidad
   AccessibilityManager accessManager;
   
@@ -62,7 +66,7 @@ class Game {
   // Mensajes educativos
   int messageCooldown = 0;         // Contador de mensajes
   int messageInterval = 600;       // 10 segundos entre mensajes
-  ArrayList<String> shownMessages = new ArrayList<String>(); // Historial
+  Stack<String> shownMessages = new Stack<String>(); // Historial de mensajes usando una pila
   int maxRepeatedMessages = 5;     // Máximo antes de reiniciar
   
   // Logros
@@ -268,8 +272,7 @@ class Game {
         shownMessages.clear();
       } catch (Exception e) {
         println("ERROR al limpiar mensajes mostrados: " + e.getMessage());
-        e.printStackTrace();
-        shownMessages = new ArrayList<String>();
+        shownMessages = new Stack<String>();
       }
       
       // Tutorial
@@ -292,6 +295,15 @@ class Game {
       
       gameOver = false;
       gameStarted = true;
+      
+      // Inicializar sistema de debug
+      try {
+        debugSystem = new DebugSystem(gameStateManager, this);
+        println("Sistema de debug inicializado con éxito");
+      } catch (Exception e) {
+        println("ERROR al inicializar sistema de debug: " + e.getMessage());
+        e.printStackTrace();
+      }
       
       println("Reinicio del juego completado con éxito");
     } catch (Exception e) {
@@ -344,7 +356,7 @@ class Game {
         
         if (scoreManager == null) scoreManager = new ScoreManager();
         if (tutorialMessages == null) tutorialMessages = new ArrayList<String>();
-        if (shownMessages == null) shownMessages = new ArrayList<String>();
+        if (shownMessages == null) shownMessages = new Stack<String>();
         
         gameOver = false;
         gameStarted = true;
@@ -512,11 +524,16 @@ class Game {
       
       // Validar estado
         validateGameState();
+      
+      // Actualizar sistema de debug si las cajas de colisión están activas
+      if (debugSystem != null && showCollisionBoxes) {
+        debugSystem.update();
+      }
     } catch (Exception e) {
       println("ERROR en actualización del juego: " + e.getMessage());
-        e.printStackTrace();
-      }
+      e.printStackTrace();
     }
+  }
   
   void applyWeatherEffectsToPlayer() {
     // Aplicar efectos del clima al movimiento del jugador
@@ -759,6 +776,11 @@ class Game {
         reset();
       }
     }
+    
+    // Activar/desactivar cajas de colisión directamente con la tecla "1"
+    if (key == '1') {
+      toggleCollisionBoxes();
+    }
   }
   
   void mousePressed() {
@@ -801,6 +823,11 @@ class Game {
     
     // Dibujar elementos de UI (no afectados por la cámara)
     displayUI();
+    
+    // Mostrar información de debug si las cajas de colisión están activas
+    if (debugSystem != null && showCollisionBoxes) {
+      debugSystem.display();
+    }
   }
   
   void displayBackground() {
@@ -1192,6 +1219,118 @@ class Game {
     // Restaurar variables de dificultad
     difficultyLevel = 1;
     ddaMultiplier = 1.0;
+  }
+  
+  // Mostrar mensaje educativo aleatorio
+  void showEducationalMessage() {
+    if (messageCooldown > 0) return;
+    
+    // Lista de mensajes educativos
+    String[] messages = {
+      "Reciclar ayuda a reducir la contaminación",
+      "Usar menos plástico mejora la salud de los océanos",
+      "El cambio climático afecta a todos los seres vivos",
+      "Plantar árboles ayuda a combatir la contaminación",
+      "El transporte público reduce emisiones de CO2"
+    };
+    
+    // Seleccionar un mensaje aleatorio que no se haya mostrado recientemente
+    String selectedMessage = "";
+    int attempts = 0;
+    boolean messageFound = false;
+    
+    while (!messageFound && attempts < 10) {
+      int index = floor(random(messages.length));
+      selectedMessage = messages[index];
+      
+      // Comprobar si el mensaje ya está en las últimas mostradas
+      boolean alreadyShown = false;
+      
+      // Crear una copia temporal de la pila para no alterarla
+      Stack<String> tempStack = new Stack<String>();
+      int checkedMessages = 0;
+      
+      // Revisar solo los últimos mensajes (hasta maxRepeatedMessages)
+      while (!shownMessages.isEmpty() && checkedMessages < maxRepeatedMessages) {
+        String message = shownMessages.pop();
+        tempStack.push(message);
+        
+        if (message.equals(selectedMessage)) {
+          alreadyShown = true;
+        }
+        
+        checkedMessages++;
+      }
+      
+      // Restaurar los mensajes a la pila original
+      while (!tempStack.isEmpty()) {
+        shownMessages.push(tempStack.pop());
+      }
+      
+      // Si el mensaje no se ha mostrado recientemente, usarlo
+      if (!alreadyShown) {
+        messageFound = true;
+      }
+      
+      attempts++;
+    }
+    
+    // Si después de varios intentos no encontramos un mensaje nuevo, simplemente mostrar uno aleatorio
+    if (!messageFound) {
+      int index = floor(random(messages.length));
+      selectedMessage = messages[index];
+    }
+    
+    // Mostrar el mensaje seleccionado
+    collectibleManager.addFloatingText(selectedMessage, width/2, height/2 - 100, color(50, 200, 50));
+    soundManager.playCollectSound();
+    
+    // Registrar el mensaje mostrado
+    shownMessages.push(selectedMessage);
+    
+    // Limitar la lista de mensajes mostrados
+    while (shownMessages.size() > 20) {
+      // Para mantener la historia limitada a 20, creamos una pila temporal
+      Stack<String> tempStack = new Stack<String>();
+      
+      // Guarda solo los últimos 19 mensajes
+      int messagesToKeep = 19;
+      int removed = 0;
+      
+      while (!shownMessages.isEmpty()) {
+        String message = shownMessages.pop();
+        
+        // Solo guardar los mensajes más recientes
+        if (removed < messagesToKeep) {
+          tempStack.push(message);
+        }
+        removed++;
+      }
+      
+      // Restaurar los mensajes a mantener
+      while (!tempStack.isEmpty()) {
+        shownMessages.push(tempStack.pop());
+      }
+      
+      break; // Salir del bucle después de ajustar el tamaño
+    }
+    
+    // Reiniciar temporizador de enfriamiento
+    messageCooldown = messageInterval;
+  }
+  
+  // Método para alternar modo de cajas de colisión
+  void toggleCollisionBoxes() {
+    if (debugSystem != null) {
+      showCollisionBoxes = !showCollisionBoxes;
+      if (showCollisionBoxes) {
+        debugSystem.enableCollisionBoxes();
+        debugSystem.logInfo("Cajas de colisión activadas");
+      } else {
+        debugSystem.disableCollisionBoxes();
+        debugSystem.logInfo("Cajas de colisión desactivadas");
+      }
+    }
   }
 }
 
