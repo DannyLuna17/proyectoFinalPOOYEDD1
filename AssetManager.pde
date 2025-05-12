@@ -35,6 +35,9 @@ class AssetManager {
   private PImage trashObstacleImage;   // basura.png para obstáculos
   private PImage toxicCloudImage;      // nube.png para obstáculo de nube tóxica
   
+  // Efectos de clima
+  private PImage rainImage;        // lluvia.gif para efecto de lluvia
+  
   // Dimensiones escaladas estándar para coleccionables
   private final int STD_SIZE = 60;
   
@@ -79,6 +82,9 @@ class AssetManager {
     
     // Crear imagen de respaldo para monedas
     coinFallbackImage = createCoinFallbackImage();
+    
+    // Cargar imagen de lluvia
+    rainImage = loadImage("assets/lluvia.gif");
     
     // Para tener acceso a Processing directamente
     PApplet p = applet;  // Usamos la variable global
@@ -379,5 +385,10 @@ class AssetManager {
       default:
         return null; // Para otros tipos que no tienen imagen
     }
+  }
+  
+  // Getter para la imagen de lluvia
+  PImage getRainImage() {
+    return rainImage;
   }
 } 

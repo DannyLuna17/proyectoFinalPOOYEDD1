@@ -166,13 +166,15 @@ class Game {
       
       // Inicializar Weather con manejo de errores
       try {
-        weatherSystem = new Weather();
-        println("Sistema de clima inicializado con éxito");
+        if (ecoSystem != null) {
+          weatherSystem = new Weather(assetManager);
+        } else {
+          // Modo de desarrollo - sin ecosistema
+          weatherSystem = new Weather(assetManager);
+        }
       } catch (Exception e) {
-        println("ERROR al inicializar clima: " + e.getMessage());
-        e.printStackTrace();
-        // Crear clima por defecto
-        weatherSystem = new Weather();
+        println("Error inicializando sistema de clima: " + e.getMessage());
+        weatherSystem = null;
       }
       
       // Inicializar gestores con manejo de errores
@@ -321,7 +323,7 @@ class Game {
           }
         }
         if (ecoSystem == null) ecoSystem = new EcoSystem(null);
-        if (weatherSystem == null) weatherSystem = new Weather();
+        if (weatherSystem == null) weatherSystem = new Weather(assetManager);
         if (platformManager == null) platformManager = new PlatformManager(height * 0.8, 5, null);
         if (obstacleManager == null) {
           if (assetManager != null) {
