@@ -1,72 +1,85 @@
-# EcoRunner - Proyecto Final POO
+# EcoRunner - Proyecto Final POO y Estructura de Datos I
 
-## ChangeLog
+## Integrantes
+- Danny Luna Quintana
+- Daniel Monterroza
+- Fabian Miranda
+- Gabriel Mosquera
 
-### v1.3.0
-- Añadido sistema de plataformas verticales
-- Cámara dinámica que sigue al jugador
-- Nuevos tipos de plataformas (rebote, móviles)
-- Ítems especiales en plataformas
-- Intento de Tutorial para nuevas mecánicas
+## Descripción
+EcoRunner es un juego endless runner educativo sobre el cambio climático, donde controlas a un personaje que debe evitar obstáculos mientras recolecta objetos para mejorar el ecosistema y obtener puntos.
 
-### v1.2.0
-- Video intro y transiciones
+## Requisitos
+- Processing 3 o superior
+- Para la intro de video: Biblioteca Video de Processing
+- Para los gif animados: Biblioteca GifAnimation de Processing
+- Para los sonidos: Biblioteca Minim de Processing
 
-### v1.1.0
-- Framework de pruebas y errores
-
-### v1.0.5
-- Corregido menús
-
-### v1.0.4
-- Arreglada navegación
-
-### v1.0.3
-- Arreglado reinicio en modo daltónico
-
-### v1.0.2
-- Corrección de texto
-
-### v1.0.1
-- Navegación con teclado y ratón
-
-## Nota
-Crear una carpeta llamada proyFinalPOO, ahí inicializar el repo y ejecutar.
+## Instalación
+1. Clona o descarga este repositorio
+2. Abre el archivo `proyFinalPOO.pde` con Processing
+3. - Abre Processing > Sketch > Import Library > Add Library...
+   - Instala las biblioteca "Video", "GifAnimation" y "Minim" de The Processing Foundation
+   - Reinicia Processing
+   
+Si la biblioteca de Video no está instalada, el juego funcionará correctamente pero utilizará una imagen estática en lugar de la introducción animada.
 
 ## Controles del juego
 
+### Controles básicos
 - **ESPACIO**: Saltar (mantén pulsado para saltar más alto)
-- **S**: Deslizar
-- **ESPACIO** (en plataforma): Saltar entre plataformas
-- **S** (en plataforma): Caer de la plataforma
+- **P**: Pausar el juego
+- **R**: Reiniciar (cuando el juego termina)
+- **ESC**: Volver o salir (dependiendo del contexto)
 
-## Nuevas mecánicas de plataformas
+### Controles de plataformas
+- **ESPACIO** (en plataforma): Saltar entre plataformas (salto más potente)
 
-El juego ahora cuenta con un sistema de plataformas verticales que permiten:
+### Controles de menú
+- **Flechas** o **WASD**: Navegar por las opciones
+- **ENTER** o **ESPACIO**: Seleccionar opción
+- **ESC**: Volver al menú anterior
 
-1. **Exploración vertical**: Salta entre niveles de altura para explorar nuevas rutas
-2. **Plataformas especiales**:
-   - **Azules**: Plataformas estándar
-   - **Verdes**: Plataformas de rebote (te impulsan automáticamente)
-   - **Moradas**: Plataformas con movimiento vertical
-   - **Naranjas**: Plataformas con movimiento horizontal
-3. **Recompensas exclusivas**: Las plataformas pueden contener ítems especiales que otorgan más puntos
+### Modo de depuración
+- **1**: Activar/desactivar visualización de cajas de colisión.
 
-## Requisitos para la intro de video
+## Mecánicas del juego
 
-Para que funcione la intro animada, hay que instalar la biblioteca Video:
 
-1. Abre Processing
-2. Ve a Sketch > Import Library > Add Library...
-3. Busca "Video"
-4. Instala la biblioteca "Video" de The Processing Foundation
-5. Reinicia Processing
 
-Si no está instalada, el juego usa el menú normal sin la intro.
+### Tipos de plataformas
+- **Estándar**: Plataformas normales de color marrón
+- **Rebote**: Plataformas verdes que te impulsan automáticamente hacia arriba
+- **Móviles verticales**: Plataformas que se mueven arriba y abajo
+
+### Coleccionables y power-ups
+Durante el juego, podrás recolectar diferentes ítems:
+- **Puntos**: Aumentan tu puntuación
+- **Escudo**: Te protege de un impacto
+- **Velocidad**: Aumenta temporalmente tu velocidad
+- **Corazones**: Recuperan salud perdida
+- **Doble puntos**: Multiplica por 2 los puntos que consigas
+
+### Sistema de ecosistema
+A medida que juegas, tus acciones afectan a un ecosistema virtual:
+- Recolectar ítems mejora la salud del ecosistema
+- Chocar con obstáculos contamina el ecosistema
+- El estado del ecosistema afecta al clima y a tus habilidades
+
+## Opciones de accesibilidad
+El juego incluye varias opciones para mejorar la accesibilidad:
+
+- **Alto contraste**: Mejora la visibilidad usando colores con mayor contraste
+- **Modo daltónico**: Usa una paleta de colores diseñada para personas con deficiencias en la visión de colores
+- **Navegación por teclado**: Permite navegar todos los menús usando únicamente el teclado
+
+Estas opciones se pueden activar desde el menú de configuración.
 
 ## Consejos
 
-1. Salta entre plataformas para conseguir ítems especiales
-2. Las plataformas verdes dan un impulso extra al saltar
-3. Usa el deslizamiento para caer rápidamente de las plataformas
+1. Mantén pulsado espacio para saltar más alto
+2. Las plataformas verdes te dan un impulso extra al saltar
+3. El escudo te protege de un obstáculo.
+4. Aprende los patrones de los obstáculos para mejorar tu puntuación
+5. Recoge todos los coleccionables que puedas para mejorar el ecosistema
 
