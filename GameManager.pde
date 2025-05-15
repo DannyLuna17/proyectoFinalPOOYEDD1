@@ -12,6 +12,8 @@ class GameManager {
   SoundManager soundManager;
   AccessibilityManager accessManager;
   VideoIntroMenu videoIntroMenu;
+  Leaderboard leaderboard;
+  PlayerNameInput playerNameInput;
   
   // Gestores
   GameStateManager stateManager;
@@ -43,6 +45,8 @@ class GameManager {
     soundManager = initializer.getSoundManager();
     accessManager = initializer.getAccessibilityManager();
     videoIntroMenu = initializer.getVideoIntroMenu();
+    leaderboard = initializer.getLeaderboard();
+    playerNameInput = initializer.getPlayerNameInput();
     
     // Mostrar instrucciones del juego
     initializer.printGameInstructions();
@@ -54,7 +58,7 @@ class GameManager {
     stateManager.setState(STATE_INTRO_VIDEO);
     
     // Crear renderizador con todos los componentes necesarios
-    renderer = new GameRenderer(game, menu, videoIntroMenu, accessManager);
+    renderer = new GameRenderer(game, menu, videoIntroMenu, accessManager, leaderboard, playerNameInput);
     renderer.setGameState(stateManager.getState());
     renderer.setSelectedMenuItem(selectedMenuItem);
     
@@ -62,6 +66,8 @@ class GameManager {
     inputHandler = new InputHandler(game, menu, accessManager, soundManager, videoIntroMenu);
     inputHandler.setGameState(stateManager.getState());
     inputHandler.setSelectedMenuItem(selectedMenuItem);
+    inputHandler.leaderboard = leaderboard;
+    inputHandler.playerNameInput = playerNameInput;
     
     // Crear gestor de limpieza
     cleanupManager = new CleanupManager();

@@ -11,6 +11,8 @@ class GameRenderer {
   Menu menu;
   VideoIntroMenu videoIntroMenu;
   AccessibilityManager accessManager;
+  Leaderboard leaderboard;
+  PlayerNameInput playerNameInput;
   
   // Estado de la interfaz
   int selectedMenuItem;
@@ -28,6 +30,32 @@ class GameRenderer {
     if (game != null) {
       this.stateManager = game.gameStateManager;
     }
+  }
+  
+  // Constructor actualizado con leaderboard y playerNameInput
+  GameRenderer(Game game, Menu menu, VideoIntroMenu videoIntroMenu, 
+              AccessibilityManager accessManager, Leaderboard leaderboard,
+              PlayerNameInput playerNameInput) {
+    this.game = game;
+    this.menu = menu;
+    this.videoIntroMenu = videoIntroMenu;
+    this.accessManager = accessManager;
+    this.leaderboard = leaderboard;
+    this.playerNameInput = playerNameInput;
+    
+    // Inicializar referencia al gestor de estado
+    if (game != null) {
+      this.stateManager = game.gameStateManager;
+    }
+  }
+  
+  // Establecer referencias a leaderboard y playerNameInput después de la construcción
+  void setLeaderboard(Leaderboard leaderboard) {
+    this.leaderboard = leaderboard;
+  }
+  
+  void setPlayerNameInput(PlayerNameInput playerNameInput) {
+    this.playerNameInput = playerNameInput;
   }
   
   void setSelectedMenuItem(int selectedMenuItem) {
@@ -95,6 +123,12 @@ class GameRenderer {
       case STATE_PAUSED:
         renderPausedGame();
         break;
+      case STATE_LEADERBOARD:
+        renderLeaderboard();
+        break;
+      case STATE_NAME_INPUT:
+        renderNameInput();
+        break;
     }
   }
   
@@ -130,6 +164,47 @@ class GameRenderer {
   void renderPausedGame() {
     game.display();
     menu.displayPauseMenu();
+  }
+  
+  void renderLeaderboard() {
+    // Primero determinar qué pantalla está detrás del leaderboard
+    // Si venimos del juego, mostramos el juego; si no, el menú principal
+    // Esto es súper importante para mantener el contexto visual y que el usuario no se pierda
+    boolean fromGame = game.gameOver || game.gameStateManager.getState() == STATE_GAME_OVER;
+    
+    if (fromGame) {
+      // Renderizar juego como fondo si venimos del juego
+      // Así el jugador puede ver su partida detrás del leaderboard
+      game.display();
+    } else {
+      // Renderizar menú principal como fondo en otros casos
+      // El menú se ve de fondo y el leaderboard flota encima
+      menu.displayMainMenu();
+    }
+    
+    // Luego mostrar la tabla de clasificación como popup encima
+    if (leaderboard != null) {
+      leaderboard.display();
+    }
+  }
+  
+  void renderNameInput() {
+    // Primero renderizar el juego como fondo
+    game.display();
+    
+    if (playerNameInput != null) {
+      // Actualizar el efecto visual del cursor
+      playerNameInput.update();
+      
+      // Establecer datos del juego finalizado
+      playerNameInput.setGameData(game.getScore(), game.playTimeSeconds);
+      
+      // Mostrar interfaz de entrada
+      playerNameInput.display();
+    } else {
+      // Fallback si la entrada de nombre no está disponible
+      renderGameOver();
+    }
   }
   
   void displayAccessibilityHelpers() {

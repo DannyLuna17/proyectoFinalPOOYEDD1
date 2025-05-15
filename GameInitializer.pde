@@ -13,6 +13,8 @@ class GameInitializer {
   AccessibilityManager accessManager;
   VideoIntroMenu videoIntroMenu;
   AssetManager assetManager;
+  Leaderboard leaderboard;
+  PlayerNameInput playerNameInput;
   
   GameInitializer() {
     // El constructor está vacío porque la inicialización se hace en initializeComponents
@@ -29,8 +31,14 @@ class GameInitializer {
       // Inicializar la intro de video antes del menú
       initializeVideoIntro();
       
+      // Inicializar la tabla de clasificación
+      initializeLeaderboard();
+      
       // Ahora inicializar el menú con la intro de video
       initializeMenu();
+      
+      // Inicializar el sistema de entrada de nombre
+      initializePlayerNameInput();
       
       // Ahora que el menú está inicializado, asignarlo al VideoIntroMenu
       videoIntroMenu.setMenu(menu);
@@ -64,6 +72,16 @@ class GameInitializer {
     // No necesita establecer una referencia al juego
   }
   
+  // Inicializar la tabla de clasificación
+  void initializeLeaderboard() {
+    leaderboard = new Leaderboard(accessManager, assetManager);
+  }
+  
+  // Inicializar el sistema de entrada de nombre
+  void initializePlayerNameInput() {
+    playerNameInput = new PlayerNameInput(accessManager, game.gameStateManager, leaderboard);
+  }
+  
   // Inicializar el menú principal
   void initializeMenu() {
     menu = new Menu(accessManager, videoIntroMenu, game, soundManager, assetManager);
@@ -88,6 +106,14 @@ class GameInitializer {
   
   VideoIntroMenu getVideoIntroMenu() {
     return videoIntroMenu;
+  }
+  
+  Leaderboard getLeaderboard() {
+    return leaderboard;
+  }
+  
+  PlayerNameInput getPlayerNameInput() {
+    return playerNameInput;
   }
   
   // Mostrar instrucciones del juego

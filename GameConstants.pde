@@ -14,6 +14,8 @@ final int STATE_GAME = 3;
 final int STATE_GAME_OVER = 4;
 final int STATE_PAUSED = 5;
 final int STATE_ACCESSIBILITY = 6;
+final int STATE_LEADERBOARD = 7;
+final int STATE_NAME_INPUT = 8;
 
 // Dimensiones predeterminadas de la ventana
 final int WINDOW_WIDTH = 1280;

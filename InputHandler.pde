@@ -12,6 +12,8 @@ class InputHandler {
   AccessibilityManager accessManager;
   SoundManager soundManager;
   VideoIntroMenu videoIntroMenu;
+  Leaderboard leaderboard;
+  PlayerNameInput playerNameInput;
   
   // Estado
   int gameState; // Referencia local al estado actual del juego
@@ -54,6 +56,12 @@ class InputHandler {
   
   // Manejar eventos de tecla presionada
   void handleKeyPressed() {
+    // Manejar entrada de nombre si estamos en ese estado
+    if (getGameState() == STATE_NAME_INPUT && playerNameInput != null) {
+      playerNameInput.keyPressed();
+      return;
+    }
+    
     // Manejar navegación con teclado en pantallas de menú
     if (getGameState() != STATE_GAME) {
       handleMenuKeyboardNavigation();
@@ -238,6 +246,23 @@ class InputHandler {
     // Manejar entrada de ratón para menús
     if (accessManager.keyboardOnly) return; // Omitir si modo solo teclado
     
+    if (getGameState() == STATE_NAME_INPUT && playerNameInput != null) {
+      // Manejar clic en la entrada de nombre
+      playerNameInput.mousePressed(mouseX, mouseY);
+      return;
+    }
+    
+    if (getGameState() == STATE_LEADERBOARD && leaderboard != null) {
+      // Usar el nuevo método para verificar si se hizo clic en el botón volver
+      if (leaderboard.checkBackButtonClick()) {
+        // Volver al menú principal o al estado adecuado
+        stateManager.setState(STATE_MAIN_MENU);
+        selectedMenuItem = 0;
+        menu.updateSelectedItem(getGameState(), selectedMenuItem);
+        return;
+      }
+    }
+    
     if (getGameState() == STATE_INTRO_VIDEO) {
       handleIntroVideoMouseClick();
     } else if (getGameState() != STATE_GAME) {
@@ -250,6 +275,19 @@ class InputHandler {
   }
   
   void handleMouseWheel(MouseEvent event) {
+    // Manejar desplazamiento en la tabla de clasificación
+    if (getGameState() == STATE_LEADERBOARD && leaderboard != null) {
+      int delta = event.getCount();
+      if (delta < 0) {
+        // Desplazar hacia arriba
+        leaderboard.scrollUp();
+      } else {
+        // Desplazar hacia abajo
+        leaderboard.scrollDown();
+      }
+      return;
+    }
+    
     if (getGameState() != STATE_GAME) {
       int delta = event.getCount();
       // Desplazar elementos del menú
@@ -296,6 +334,9 @@ class InputHandler {
       case STATE_ACCESSIBILITY:
         menu.handleAccessibilityMenuClick();
         break;
+      case STATE_LEADERBOARD:
+        // Manejado directamente en handleMousePressed
+        break;
     }
   }
   
@@ -326,8 +367,11 @@ class InputHandler {
     } else if (selectedMenuItem == 1) {
       stateManager.setState(STATE_INSTRUCTIONS);
     } else if (selectedMenuItem == 2) {
-      stateManager.setState(STATE_SETTINGS);
+      // Botón de Leaderboard (ahora en la posición central de la fila principal)
+      stateManager.setState(STATE_LEADERBOARD);
     } else if (selectedMenuItem == 3) {
+      stateManager.setState(STATE_SETTINGS);
+    } else if (selectedMenuItem == 4) {
       exit(); // Salir del juego
     }
   }

@@ -62,7 +62,9 @@ class GameStateManager {
            currentState == STATE_INSTRUCTIONS || 
            currentState == STATE_SETTINGS || 
            currentState == STATE_PAUSED ||
-           currentState == STATE_GAME_OVER;
+           currentState == STATE_GAME_OVER ||
+           currentState == STATE_LEADERBOARD ||
+           currentState == STATE_NAME_INPUT;
   }
   
   boolean isPausedState() {

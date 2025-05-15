@@ -126,19 +126,21 @@ class Menu {
     float buttonHeight = 70; // Botones más altos
     float spacing = 30; // Espacio entre botones
     
-    // Calcular el ancho total para 4 botones (3 espacios entre ellos)
-    float totalWidth = (buttonWidth * 4) + (spacing * 3);
+    // Calcular el ancho total para 5 botones (4 espacios entre ellos)
+    float totalWidth = (buttonWidth * 5) + (spacing * 4);
+
     // Posición para iniciar la fila (centrada correctamente)
     float startX = (width - totalWidth) / 2;
     
     float buttonY = height * 0.85; // Posicionar botones en la parte inferior de la pantalla
     
-    // Botones del menú principal - en una fila horizontal con nuevo estilo (centrados correctamente)
+    // Botones del menú principal - en una fila horizontal
     mainMenuButtons = new ArrayList<Button>();
     mainMenuButtons.add(new Button(startX + (buttonWidth/2), buttonY, buttonWidth, buttonHeight, "Play", accessManager));
     mainMenuButtons.add(new Button(startX + buttonWidth + spacing + (buttonWidth/2), buttonY, buttonWidth, buttonHeight, "Instructions", accessManager));
-    mainMenuButtons.add(new Button(startX + 2 * (buttonWidth + spacing) + (buttonWidth/2), buttonY, buttonWidth, buttonHeight, "Settings", accessManager));
-    mainMenuButtons.add(new Button(startX + 3 * (buttonWidth + spacing) + (buttonWidth/2), buttonY, buttonWidth, buttonHeight, "Exit", accessManager));
+    mainMenuButtons.add(new Button(startX + 2 * (buttonWidth + spacing) + (buttonWidth/2), buttonY, buttonWidth, buttonHeight, "Leaderboard", accessManager)); 
+    mainMenuButtons.add(new Button(startX + 3 * (buttonWidth + spacing) + (buttonWidth/2), buttonY, buttonWidth, buttonHeight, "Settings", accessManager));
+    mainMenuButtons.add(new Button(startX + 4 * (buttonWidth + spacing) + (buttonWidth/2), buttonY, buttonWidth, buttonHeight, "Exit", accessManager));
     
     // Botones de la pantalla de instrucciones
     instructionsButtons = new ArrayList<Button>();
@@ -430,6 +432,13 @@ class Menu {
     selectedMenuItem = 3; 
     updateSelectedItem();
     displaySettings();
+  }
+  
+  // Mostrar tabla de clasificación
+  void displayLeaderboard(Leaderboard leaderboard) {
+    if (leaderboard != null) {
+      leaderboard.display();
+    }
   }
   
   // Mostrar explicación para la opción de accesibilidad
@@ -745,10 +754,13 @@ class Menu {
       selectedMenuItem = 0;
     } else if (buttonText.equals("Exit")) {
       exit();
+    } else if (buttonText.equals("Leaderboard")) {
+      stateManager.setState(STATE_LEADERBOARD);
+      selectedMenuItem = 0;
     }
     // Manejar botones de instrucciones
     else if (buttonText.equals("Back")) {
-      if (getGameState() == STATE_INSTRUCTIONS || getGameState() == STATE_SETTINGS || getGameState() == STATE_ACCESSIBILITY) {
+      if (getGameState() == STATE_INSTRUCTIONS || getGameState() == STATE_SETTINGS || getGameState() == STATE_ACCESSIBILITY || getGameState() == STATE_LEADERBOARD) {
         stateManager.setState(STATE_MAIN_MENU);
         selectedMenuItem = 0;
       }

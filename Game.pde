@@ -85,6 +85,10 @@ class Game {
   boolean gameOver = false;
   boolean gameStarted = false;
   
+  // Tiempo de juego
+  int playTimeFrames = 0;
+  int playTimeSeconds = 0;
+  
   // Sistema de acciones temporizadas
   ArrayList<TimedAction> timedActions = new ArrayList<TimedAction>();
   
@@ -129,6 +133,10 @@ class Game {
       
       // Guardar estado del tutorial antes del reinicio
       boolean tutorialAlreadyShown = tutorialShownInSession;
+      
+      // Resetear tiempo de juego
+      playTimeFrames = 0;
+      playTimeSeconds = 0;
       
       // Configuración base
       groundLevel = height * 0.8;
@@ -457,6 +465,14 @@ class Game {
       return;
     }
     
+    // Actualizar tiempo de juego si el juego está activo
+    if (gameStarted && !gameOver) {
+      playTimeFrames++;
+      if (playTimeFrames % 60 == 0) {
+        playTimeSeconds++;
+      }
+    }
+    
     try {
       // Actualizar eco-sistema
       ecoSystem.update();
@@ -756,7 +772,15 @@ class Game {
     
     // Transición automática al estado de game over
     if (gameStateManager != null) {
-      gameStateManager.setState(STATE_GAME_OVER);
+      // Verificar si hay una puntuación suficiente para entrar en la tabla
+      if (scoreManager.getScore() > 0) {
+        // Cambiar al estado de entrada de nombre
+        gameStateManager.setState(STATE_NAME_INPUT);
+      } else {
+        // Si no hay puntuación, ir directo a game over
+        gameStateManager.setState(STATE_GAME_OVER);
+      }
+      
       // Reproducir sonido de game over si está disponible
       if (soundManager != null) {
         soundManager.playGameOverSound();
