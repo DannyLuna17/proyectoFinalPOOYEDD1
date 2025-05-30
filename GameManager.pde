@@ -133,6 +133,14 @@ class GameManager {
     inputHandler.handleMousePressed();
   }
   
+  void handleMouseDragged() {
+    inputHandler.handleMouseDragged();
+  }
+  
+  void handleMouseReleased() {
+    inputHandler.handleMouseReleased();
+  }
+  
   void handleMouseWheel(MouseEvent event) {
     inputHandler.handleMouseWheel(event);
   }

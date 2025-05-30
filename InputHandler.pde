@@ -253,6 +253,9 @@ class InputHandler {
     }
     
     if (getGameState() == STATE_LEADERBOARD && leaderboard != null) {
+      // Manejar interacciones del scrollbar 
+      leaderboard.handleMousePressed();
+      
       // Usar el nuevo método para verificar si se hizo clic en el botón volver
       if (leaderboard.checkBackButtonClick()) {
         // Volver al menú principal o al estado adecuado
@@ -277,14 +280,8 @@ class InputHandler {
   void handleMouseWheel(MouseEvent event) {
     // Manejar desplazamiento en la tabla de clasificación
     if (getGameState() == STATE_LEADERBOARD && leaderboard != null) {
-      int delta = event.getCount();
-      if (delta < 0) {
-        // Desplazar hacia arriba
-        leaderboard.scrollUp();
-      } else {
-        // Desplazar hacia abajo
-        leaderboard.scrollDown();
-      }
+      float delta = event.getCount();
+      leaderboard.handleMouseWheel(delta);
       return;
     }
     
@@ -457,6 +454,20 @@ class InputHandler {
   void checkGameOver() {
     if (getGameState() == STATE_GAME && game.gameOver) {
       transitionToGameOver();
+    }
+  }
+  
+  // Manejar arrastre del mouse para el scrollbar 
+  void handleMouseDragged() {
+    if (getGameState() == STATE_LEADERBOARD && leaderboard != null) {
+      leaderboard.handleMouseDragged();
+    }
+  }
+  
+  // Manejar liberación del mouse para el scrollbar 
+  void handleMouseReleased() {
+    if (getGameState() == STATE_LEADERBOARD && leaderboard != null) {
+      leaderboard.handleMouseReleased();
     }
   }
 } 

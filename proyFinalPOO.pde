@@ -1,5 +1,7 @@
 // EcoRunner - juego endless runner sobre cambio climático
 // Versión 1.3
+// La gloria es de Dios, a los santos nadie los toca.
+// Dev: github.com/DannyLuna17
 
 // Importación para GIFs animados
 import gifAnimation.*;
@@ -50,6 +52,14 @@ void keyReleased() {
 
 void mousePressed() {
   gameManager.handleMousePressed();
+}
+
+void mouseDragged() {
+  gameManager.handleMouseDragged();
+}
+
+void mouseReleased() {
+  gameManager.handleMouseReleased();
 }
     
 void mouseWheel(MouseEvent event) {

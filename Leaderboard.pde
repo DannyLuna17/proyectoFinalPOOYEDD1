@@ -2,16 +2,24 @@
  * Leaderboard.pde
  * 
  * Sistema de clasificación que muestra los mejores puntajes de los jugadores.
- * Permite visualizar los 30 mejores puntajes ordenados de mayor a menor.
+ * Permite visualizar los 20 mejores puntajes ordenados de mayor a menor.
  */
 class Leaderboard {
   // Lista de records para la tabla de clasificación
   ArrayList<LeaderboardRecord> records;
   
   // Propiedades de visualización
-  int maxRecordsToShow = 30;
+  int maxRecordsToShow = 20;
   int visibleRecords = 10; // Cantidad de registros visibles sin desplazamiento
   int scrollOffset = 0; // Desplazamiento actual para mostrar más registros
+  
+  // Archivo para almacenamiento persistente
+  String leaderboardFile = "leaderboard.txt";
+  
+  // Variables para el scrollbar
+  boolean isDraggingScrollbar = false; // Para saber si estamos arrastrando el scrollbar
+  float scrollbarMouseOffset = 0; // Offset del mouse relativo al scrollbar cuando empezamos a arrastrar
+  float lastMouseY = 0; // Última posición Y del mouse para calcular movimiento
   
   // Iconos para los 3 primeros lugares
   PImage goldIcon;
@@ -25,6 +33,11 @@ class Leaderboard {
   // Botón para volver - usando la misma clase Button del menú principal
   Button backButton;
   
+  // Coordenadas del scrollbar para detección de mouse (se actualizan en display())
+  float scrollbarX, scrollbarY, scrollbarWidth, scrollbarHeight;
+  float scrollAreaHeight, scrollAreaStartY;
+  float arrowUpY, arrowDownY;
+  
   // Constructor
   Leaderboard(AccessibilityManager accessManager, AssetManager assetManager) {
     this.accessManager = accessManager;
@@ -35,9 +48,92 @@ class Leaderboard {
     // Usamos la misma clase Button para mantener la consistencia visual en todo el juego
     backButton = new Button(width/2, height/2 + (height * 0.7)/2 - 35, 180, 45, "VOLVER", accessManager);
     
-    // Inicializar con datos de ejemplo (se eliminarán cuando haya records reales)
+    // Cargar datos del archivo antes de generar datos de ejemplo
+    loadLeaderboardData();
+    
+    // Solo generar datos de ejemplo si no se cargaron datos del archivo
     loadIcons();
-    generateSampleData();
+    if (records.isEmpty()) {
+      generateSampleData();
+    }
+  }
+  
+  // Cargar datos del leaderboard desde el archivo
+  void loadLeaderboardData() {
+    try {
+      // Intentar cargar el archivo de texto
+      String[] lines = loadStrings(leaderboardFile);
+      
+      if (lines != null && lines.length > 0) {
+        println("Cargando " + lines.length + " registros del leaderboard...");
+        
+        for (String line : lines) {
+          // Saltar líneas vacías
+          if (line.trim().length() == 0) continue;
+          
+          // Dividir la línea por comas (formato CSV prácticamente)
+          String[] parts = split(line.trim(), ',');
+          
+          // Verificar que tenga los 4 campos esperados
+          if (parts.length == 4) {
+            try {
+              String playerName = parts[0].trim();
+              int score = Integer.parseInt(parts[1].trim());
+              String date = parts[2].trim();
+              String playtime = parts[3].trim();
+              
+              // Validar que los campos no estén vacíos
+              if (playerName.length() > 0 && date.length() > 0 && playtime.length() > 0 && score >= 0) {
+                // Crear y añadir el record sin activar el guardado automático
+                LeaderboardRecord record = new LeaderboardRecord(playerName, score, date, playtime);
+                records.add(record);
+              } else {
+                println("Registro con datos inválidos ignorado: " + line);
+              }
+            } catch (NumberFormatException e) {
+              println("Error al parsear puntuación en línea: " + line);
+            } catch (Exception e) {
+              println("Error inesperado al procesar línea: " + line + " - " + e.getMessage());
+            }
+          } else {
+            println("Línea con formato incorrecto ignorada: " + line);
+          }
+        }
+        
+        // Ordenar y limitar después de cargar todos los records
+        sortRecords();
+        trimRecords();
+        
+        println("Leaderboard cargado exitosamente con " + records.size() + " registros.");
+      } else {
+        println("Archivo de leaderboard vacío o no encontrado. Iniciando con lista vacía.");
+      }
+    } catch (Exception e) {
+      println("Error al cargar leaderboard: " + e.getMessage());
+      println("Iniciando con leaderboard vacío.");
+      records.clear(); // Asegurar que la lista esté vacía en caso de error
+    }
+  }
+  
+  // Guardar datos del leaderboard al archivo
+  void saveLeaderboardData() {
+    try {
+      // Crear array de strings para guardar
+      String[] lines = new String[records.size()];
+      
+      for (int i = 0; i < records.size(); i++) {
+        LeaderboardRecord record = records.get(i);
+        // Formato: nombre,puntuación,fecha,tiempo
+        lines[i] = record.playerName + "," + record.score + "," + record.date + "," + record.playtime;
+      }
+      
+      // Guardar al archivo sobrescribiendo el contenido anterior
+      saveStrings(leaderboardFile, lines);
+      println("Leaderboard guardado exitosamente con " + records.size() + " registros.");
+      
+    } catch (Exception e) {
+      println("Error al guardar leaderboard: " + e.getMessage());
+    }
   }
   
   // Cargar iconos para los primeros puestos
@@ -96,12 +192,15 @@ class Leaderboard {
   void generateSampleData() {
     // Solo generar datos si la lista está vacía
     if (records.isEmpty()) {
-      // Añadir algunos registros de prueba
-      addRecord("Player1", 10000, "2023-12-01", "10:25");
-      addRecord("Player2", 8500, "2023-12-02", "08:15");
-      addRecord("Player3", 7200, "2023-12-03", "12:40");
-      addRecord("Player4", 6800, "2023-12-04", "05:30");
-      addRecord("Player5", 5500, "2023-12-05", "14:20");
+      records.add(new LeaderboardRecord("Player1", 10000, "2023-12-01", "10:25"));
+      records.add(new LeaderboardRecord("Player2", 8500, "2023-12-02", "08:15"));
+      records.add(new LeaderboardRecord("Player3", 7200, "2023-12-03", "12:40"));
+      records.add(new LeaderboardRecord("Player4", 6800, "2023-12-04", "05:30"));
+      records.add(new LeaderboardRecord("Player5", 5500, "2023-12-05", "14:20"));
+      
+      // Ordenar los datos de ejemplo
+      sortRecords();
+      trimRecords();
     }
   }
   
@@ -112,6 +211,15 @@ class Leaderboard {
       playerName = playerName.substring(0, 14);
     }
     
+    // Limpiar el nombre del jugador para evitar problemas con el formato CSV
+    // Remover comas y caracteres que puedan romper el formato
+    playerName = playerName.replace(",", "").replace("\n", "").replace("\r", "");
+    
+    // Si el nombre queda vacío después de la limpieza, usar un nombre por defecto
+    if (playerName.trim().length() == 0) {
+      playerName = "Jugador";
+    }
+    
     // Crear y añadir el nuevo record
     LeaderboardRecord record = new LeaderboardRecord(playerName, score, date, playtime);
     records.add(record);
@@ -119,8 +227,11 @@ class Leaderboard {
     // Ordenar la lista de mayor a menor según puntuación
     sortRecords();
     
-    // Mantener solo los mejores 30 registros
+    // Mantener solo los mejores 20 registros
     trimRecords();
+    
+    // Guardar automáticamente los cambios al archivo
+    saveLeaderboardData();
   }
   
   // Ordenar los registros por puntuación (de mayor a menor)
@@ -128,7 +239,7 @@ class Leaderboard {
     records.sort((a, b) -> b.score - a.score);
   }
   
-  // Mantener solo los mejores 30 registros
+  // Mantener solo los mejores 20 registros
   void trimRecords() {
     if (records.size() > maxRecordsToShow) {
       records = new ArrayList<LeaderboardRecord>(records.subList(0, maxRecordsToShow));
@@ -195,8 +306,8 @@ class Leaderboard {
     
     // Tamaño del popup (más pequeño que la pantalla completa)
     float popupWidth = width * 0.7;
-    float popupHeight = height * 0.7;
-    rect(width/2, height/2, popupWidth, popupHeight, 15);
+    float popupHeight = height * 0.75;
+    rect(width/2, height/2, popupWidth, popupHeight + 55, 15);
     
     // Título
     textAlign(CENTER, CENTER);
@@ -311,31 +422,76 @@ class Leaderboard {
     
     // Indicadores de desplazamiento (si hay más records que los visibles)
     if (records.size() > visibleRecords) {
-      // Calcular posición y tamaño del "scrollbar"
-      float scrollbarHeight = (popupHeight - 160) * ((float)visibleRecords / records.size());
-      float scrollbarY = startY + ((popupHeight - 160) - scrollbarHeight) * ((float)scrollOffset / (records.size() - visibleRecords));
+      // Calcular dimensiones del scrollbar
+      float scrollAreaHeight = popupHeight - 160;
+      float scrollbarWidth = 12; 
+      float scrollbarX = endX + 12;
       
-      // Dibujar fondo del scrollbar
-      fill(accessManager.getBackgroundColor(color(80, 80, 80)));
-      rect(endX + 15, startY + (popupHeight - 160)/2, 8, popupHeight - 160);
+      // Calcular altura y posición del "thumb" del scrollbar
+      float scrollbarHeight = scrollAreaHeight * ((float)visibleRecords / records.size());
+      float maxScrollOffset = records.size() - visibleRecords;
+      float scrollbarY = startY + (scrollAreaHeight - scrollbarHeight) * ((float)scrollOffset / maxScrollOffset);
       
-      // Dibujar "thumb" del scrollbar
-      fill(accessManager.getTextColor(color(200, 200, 200)));
-      rect(endX + 15, scrollbarY + scrollbarHeight/2, 8, scrollbarHeight);
+      // Dibujar el fondo del área de scroll (track)
+      fill(accessManager.getBackgroundColor(color(60, 60, 60, 180)));
+      stroke(accessManager.getTextColor(color(100, 100, 100)));
+      strokeWeight(1);
+      rect(scrollbarX, startY + scrollAreaHeight/2, scrollbarWidth, scrollAreaHeight, 6);
       
-      // Indicadores de flecha arriba/abajo
-      textSize(accessManager.getAdjustedTextSize(18));
+      // Determinar el color del thumb basado en si está siendo hover o arrastrado
+      boolean mouseOverScrollbar = isMouseOverScrollbar(scrollbarX, scrollbarY, scrollbarWidth, scrollbarHeight);
+      color thumbColor;
+      
+      if (isDraggingScrollbar) {
+        thumbColor = accessManager.getTextColor(color(255, 255, 255)); // Blanco cuando se arrastra
+      } else if (mouseOverScrollbar) {
+        thumbColor = accessManager.getTextColor(color(220, 220, 220)); // Gris claro en hover
+      } else {
+        thumbColor = accessManager.getTextColor(color(180, 180, 180)); // Gris normal
+      }
+      
+      // Dibujar el "thumb" del scrollbar con efecto visual
+      fill(thumbColor);
+      stroke(accessManager.getTextColor(color(120, 120, 120)));
+      strokeWeight(1);
+      rect(scrollbarX, scrollbarY + scrollbarHeight/2, scrollbarWidth - 2, scrollbarHeight, 5);
+      
+      // Dibujar botones de flecha arriba y abajo con área clickeable
+      noStroke();
+      textSize(accessManager.getAdjustedTextSize(14));
       textAlign(CENTER, CENTER);
       
-      // Flecha arriba
+      // Área del botón de arriba
+      float arrowUpY = startY - 20;
+      boolean mouseOverArrowUp = mouseX >= scrollbarX - 8 && mouseX <= scrollbarX + 8 && 
+                                mouseY >= arrowUpY - 8 && mouseY <= arrowUpY + 8;
+      
       if (scrollOffset > 0) {
-        text("▲", endX + 15, startY - 15);
+        fill(mouseOverArrowUp ? accessManager.getTextColor(color(255, 255, 255)) : 
+                               accessManager.getTextColor(color(200, 200, 200)));
+        text("▲", scrollbarX, arrowUpY);
       }
       
-      // Flecha abajo
-      if (scrollOffset < records.size() - visibleRecords) {
-        text("▼", endX + 15, startY + (popupHeight - 160) + 15);
+      // Área del botón de abajo
+      float arrowDownY = startY + scrollAreaHeight + 20;
+      boolean mouseOverArrowDown = mouseX >= scrollbarX - 8 && mouseX <= scrollbarX + 8 && 
+                                  mouseY >= arrowDownY - 8 && mouseY <= arrowDownY + 8;
+      
+      if (scrollOffset < maxScrollOffset) {
+        fill(mouseOverArrowDown ? accessManager.getTextColor(color(255, 255, 255)) : 
+                                 accessManager.getTextColor(color(200, 200, 200)));
+        text("▼", scrollbarX, arrowDownY);
       }
+      
+      // Guardar las coordenadas del scrollbar para uso en los métodos de mouse
+      this.scrollbarX = scrollbarX;
+      this.scrollbarY = scrollbarY;
+      this.scrollbarWidth = scrollbarWidth;
+      this.scrollbarHeight = scrollbarHeight;
+      this.scrollAreaHeight = scrollAreaHeight;
+      this.scrollAreaStartY = startY;
+      this.arrowUpY = arrowUpY;
+      this.arrowDownY = arrowDownY;
     }
     
     // Botón para volver - usando la clase Button para consistencia con el menú principal
@@ -343,7 +499,7 @@ class Leaderboard {
     // Super importante actualizar la posición en cada frame porque si la ventana cambia de tamaño,
     // queremos que el botón siga en el lugar correcto.
     backButton.x = width/2;
-    backButton.y = height/2 + popupHeight/2 - 35;
+    backButton.y = height/2 + popupHeight/2 - 10;
     backButton.display();
     
     popStyle();
@@ -352,6 +508,88 @@ class Leaderboard {
   // Verificar si se hizo clic en el botón volver
   boolean checkBackButtonClick() {
     return backButton.isClicked();
+  }
+  
+  // Verificar si el mouse está sobre el thumb del scrollbar
+  boolean isMouseOverScrollbar(float scrollbarX, float scrollbarY, float scrollbarWidth, float scrollbarHeight) {
+    return mouseX >= scrollbarX - scrollbarWidth/2 && mouseX <= scrollbarX + scrollbarWidth/2 &&
+           mouseY >= scrollbarY && mouseY <= scrollbarY + scrollbarHeight;
+  }
+  
+  // Manejar el click del mouse en el área del leaderboard
+  void handleMousePressed() {
+    if (records.size() <= visibleRecords) return; // No hay scroll si no hay suficientes records
+    
+    // Verificar si se hizo click en las flechas
+    if (mouseX >= scrollbarX - 8 && mouseX <= scrollbarX + 8) {
+      if (mouseY >= arrowUpY - 8 && mouseY <= arrowUpY + 8 && scrollOffset > 0) {
+        scrollUp();
+        return;
+      }
+      if (mouseY >= arrowDownY - 8 && mouseY <= arrowDownY + 8 && scrollOffset < records.size() - visibleRecords) {
+        scrollDown();
+        return;
+      }
+    }
+    
+    // Verificar si se hizo click en el thumb del scrollbar
+    if (isMouseOverScrollbar(scrollbarX, scrollbarY, scrollbarWidth, scrollbarHeight)) {
+      isDraggingScrollbar = true;
+      scrollbarMouseOffset = mouseY - scrollbarY;
+      lastMouseY = mouseY;
+      return;
+    }
+    
+    // Verificar si se hizo click en el área del track (para saltar páginas)
+    if (mouseX >= scrollbarX - scrollbarWidth/2 && mouseX <= scrollbarX + scrollbarWidth/2 &&
+        mouseY >= scrollAreaStartY && mouseY <= scrollAreaStartY + scrollAreaHeight) {
+      
+      // Click arriba del thumb = página arriba
+      if (mouseY < scrollbarY) {
+        scrollOffset = max(0, scrollOffset - visibleRecords);
+      }
+      // Click abajo del thumb = página abajo  
+      else if (mouseY > scrollbarY + scrollbarHeight) {
+        scrollOffset = min(records.size() - visibleRecords, scrollOffset + visibleRecords);
+      }
+    }
+  }
+  
+  // Manejar cuando se suelta el mouse
+  void handleMouseReleased() {
+    isDraggingScrollbar = false;
+    scrollbarMouseOffset = 0;
+  }
+  
+  // Manejar el arrastre del mouse
+  void handleMouseDragged() {
+    if (!isDraggingScrollbar || records.size() <= visibleRecords) return;
+    
+    // Calcular nueva posición del scrollbar basada en el movimiento del mouse
+    float newScrollbarY = mouseY - scrollbarMouseOffset;
+    
+    // Limitar la posición del scrollbar al área válida
+    float minScrollbarY = scrollAreaStartY;
+    float maxScrollbarY = scrollAreaStartY + scrollAreaHeight - scrollbarHeight;
+    newScrollbarY = constrain(newScrollbarY, minScrollbarY, maxScrollbarY);
+    
+    // Convertir la posición del scrollbar a offset de scroll
+    float scrollPercentage = (newScrollbarY - minScrollbarY) / (maxScrollbarY - minScrollbarY);
+    int maxScrollOffset = records.size() - visibleRecords;
+    scrollOffset = round(scrollPercentage * maxScrollOffset);
+    scrollOffset = constrain(scrollOffset, 0, maxScrollOffset);
+  }
+  
+  // Manejar la rueda del mouse para scroll suave
+  void handleMouseWheel(float wheelDirection) {
+    if (records.size() <= visibleRecords) return;
+    
+    // wheelDirection es positivo cuando se rueda hacia arriba, negativo hacia abajo
+    if (wheelDirection > 0) {
+      scrollUp();
+    } else if (wheelDirection < 0) {
+      scrollDown();
+    }
   }
 }
 
