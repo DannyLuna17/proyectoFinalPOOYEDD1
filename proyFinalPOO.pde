@@ -12,13 +12,16 @@ public static PApplet applet;
 // Gestor principal del juego
 GameManager gameManager;
 
+void settings(){
+  PJOGL.setIcon("assets/EcoRunner.png");
+  fullScreen(P2D);
+  smooth(0);
+}
 void setup() {
   // Guardar referencia a this (PApplet)
   applet = this;
-  
-  fullScreen(P2D);
-
-//  fullScreen();
+ 
+  surface.setTitle("EcoRunner");
   
   try {
     // Inicializar el gestor del juego
