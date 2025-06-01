@@ -1,20 +1,5 @@
 /**
- * Clase VideoIntroMenu - Gestiona la secuencia introductoria y la animación del menú para EcoRunner
- * 
- * Características:
- * 1. Reproduce un video introductorio (menuVideo.mp4) cuando el juego se inicia por primera vez
- * 2. Hace una transición a una imagen de fondo estática (menuFinal.png) cuando termina el video
- * 3. Anima los botones del menú con efectos de escala y aparición gradual en secuencia escalonada
- * 4. Admite una alternativa elegante a imagen estática si el archivo de video falta o está corrupto
- * 5. Permite saltar el video de intro con la tecla ESC
- * 6. Se integra con la navegación por teclado/ratón para los botones del menú
- * 7. Proporciona retroalimentación visual (brillo/resaltado) para los botones activos
- * 
- * Notas de implementación:
- * - Usa la biblioteca Video de Processing para reproducción de video cuando está disponible
- * - Aplica ajustes de accesibilidad a todos los elementos visuales
- * - Mantiene una estratificación adecuada (fondo → botones)
- * - Maneja todos los recursos relacionados de manera responsable (carga y limpieza)
+ * Clase VideoIntroMenu - Gestiona la secuencia introductoria y la animación del menú
  */
 import processing.video.*;
 import java.io.File;
