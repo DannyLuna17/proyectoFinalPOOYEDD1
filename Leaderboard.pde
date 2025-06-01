@@ -5,8 +5,8 @@
  * Permite visualizar los 20 mejores puntajes ordenados de mayor a menor.
  */
 class Leaderboard {
-  // Lista de records para la tabla de clasificación
-  ArrayList<LeaderboardRecord> records;
+  // Pila de records para la tabla de clasificación (usamos Stack en lugar de ArrayList)
+  Stack<LeaderboardRecord> records;
   
   // Propiedades de visualización
   int maxRecordsToShow = 20;
@@ -42,11 +42,10 @@ class Leaderboard {
   Leaderboard(AccessibilityManager accessManager, AssetManager assetManager) {
     this.accessManager = accessManager;
     this.assetManager = assetManager;
-    records = new ArrayList<LeaderboardRecord>();
+    records = new Stack<LeaderboardRecord>();
     
-    // Inicializar botón de volver con el mismo estilo que los botones del menú
-    // Usamos la misma clase Button para mantener la consistencia visual en todo el juego
-    backButton = new Button(width/2, height/2 + (height * 0.7)/2 - 35, 180, 45, "VOLVER", accessManager);
+    // Inicializar botón de continuar
+    backButton = new Button(width/2, height/2 + (height * 0.7)/2 - 35, 180, 45, "CONTINUAR", accessManager);
     
     // Cargar datos del archivo antes de generar datos de ejemplo
     loadLeaderboardData();
@@ -84,9 +83,9 @@ class Leaderboard {
               
               // Validar que los campos no estén vacíos
               if (playerName.length() > 0 && date.length() > 0 && playtime.length() > 0 && score >= 0) {
-                // Crear y añadir el record sin activar el guardado automático
+                // Crear y añadir el record usando push() en lugar de add()
                 LeaderboardRecord record = new LeaderboardRecord(playerName, score, date, playtime);
-                records.add(record);
+                records.push(record);
               } else {
                 println("Registro con datos inválidos ignorado: " + line);
               }
@@ -111,24 +110,33 @@ class Leaderboard {
     } catch (Exception e) {
       println("Error al cargar leaderboard: " + e.getMessage());
       println("Iniciando con leaderboard vacío.");
-      records.clear(); // Asegurar que la lista esté vacía en caso de error
+      records.clear(); // Asegurar que la pila esté vacía en caso de error
     }
   }
   
   // Guardar datos del leaderboard al archivo
   void saveLeaderboardData() {
     try {
-      // Crear array de strings para guardar
-      String[] lines = new String[records.size()];
+      // Obtener records ordenados para guardar en el orden correcto
+      Stack<LeaderboardRecord> sortedRecords = getSortedRecords();
+      Stack<LeaderboardRecord> tempStack = new Stack<LeaderboardRecord>();
+      ArrayList<String> lines = new ArrayList<String>();
       
-      for (int i = 0; i < records.size(); i++) {
-        LeaderboardRecord record = records.get(i);
+      // Convertir cada record a string en formato CSV
+      while (!sortedRecords.isEmpty()) {
+        LeaderboardRecord record = sortedRecords.pop();
+        tempStack.push(record); // Guardar para no perder los datos
+        
         // Formato: nombre,puntuación,fecha,tiempo
-        lines[i] = record.playerName + "," + record.score + "," + record.date + "," + record.playtime;
+        String line = record.playerName + "," + record.score + "," + record.date + "," + record.playtime;
+        lines.add(line);
       }
       
+      // Convertir ArrayList a array para saveStrings()
+      String[] linesArray = lines.toArray(new String[lines.size()]);
+      
       // Guardar al archivo sobrescribiendo el contenido anterior
-      saveStrings(leaderboardFile, lines);
+      saveStrings(leaderboardFile, linesArray);
       println("Leaderboard guardado exitosamente con " + records.size() + " registros.");
       
     } catch (Exception e) {
@@ -192,11 +200,11 @@ class Leaderboard {
   void generateSampleData() {
     // Solo generar datos si la lista está vacía
     if (records.isEmpty()) {
-      records.add(new LeaderboardRecord("Player1", 10000, "2023-12-01", "10:25"));
-      records.add(new LeaderboardRecord("Player2", 8500, "2023-12-02", "08:15"));
-      records.add(new LeaderboardRecord("Player3", 7200, "2023-12-03", "12:40"));
-      records.add(new LeaderboardRecord("Player4", 6800, "2023-12-04", "05:30"));
-      records.add(new LeaderboardRecord("Player5", 5500, "2023-12-05", "14:20"));
+      records.push(new LeaderboardRecord("Player1", 10000, "2023-12-01", "10:25"));
+      records.push(new LeaderboardRecord("Player2", 8500, "2023-12-02", "08:15"));
+      records.push(new LeaderboardRecord("Player3", 7200, "2023-12-03", "12:40"));
+      records.push(new LeaderboardRecord("Player4", 6800, "2023-12-04", "05:30"));
+      records.push(new LeaderboardRecord("Player5", 5500, "2023-12-05", "14:20"));
       
       // Ordenar los datos de ejemplo
       sortRecords();
@@ -204,7 +212,44 @@ class Leaderboard {
     }
   }
   
-  // Añadir un nuevo record a la tabla
+  // Método auxiliar para buscar un record por nombre (case-insensitive)
+  // Devuelve el índice del record si lo encuentra, -1 si no existe
+  int findRecordByName(String playerName) {
+    for (int i = 0; i < getRecordsSize(); i++) {
+      LeaderboardRecord record = getRecordAt(i);
+      if (record != null && record.playerName.equalsIgnoreCase(playerName)) {
+        return i; // Encontramos el record, devolvemos su posición
+      }
+    }
+    return -1; // No se encontró el record
+  }
+  
+  // Método auxiliar para actualizar un record existente en una posición específica
+  // Esto es necesario porque Stack no tiene un método directo para actualizar por índice
+  void updateRecordAt(int index, String playerName, int score, String date, String playtime) {
+    // Crear una lista temporal con todos los records ordenados
+    Stack<LeaderboardRecord> sortedStack = getSortedRecords();
+    ArrayList<LeaderboardRecord> tempList = new ArrayList<LeaderboardRecord>();
+    
+    // Convertir el stack a lista para poder modificar por índice
+    while (!sortedStack.isEmpty()) {
+      tempList.add(sortedStack.pop());
+    }
+    
+    // Actualizar el record en la posición especificada
+    if (index >= 0 && index < tempList.size()) {
+      LeaderboardRecord updatedRecord = new LeaderboardRecord(playerName, score, date, playtime);
+      tempList.set(index, updatedRecord);
+    }
+    
+    // Limpiar el stack original y rebuildearlo con los datos actualizados
+    records.clear();
+    for (int i = tempList.size() - 1; i >= 0; i--) {
+      records.push(tempList.get(i));
+    }
+  }
+  
+  // Añadir un nuevo record a la tabla (con manejo de nombres duplicados)
   void addRecord(String playerName, int score, String date, String playtime) {
     // Limitar nombre a 14 caracteres
     if (playerName.length() > 14) {
@@ -220,9 +265,29 @@ class Leaderboard {
       playerName = "Jugador";
     }
     
-    // Crear y añadir el nuevo record
-    LeaderboardRecord record = new LeaderboardRecord(playerName, score, date, playtime);
-    records.add(record);
+    // Buscar si ya existe un record con este nombre (case-insensitive)
+    int existingIndex = findRecordByName(playerName);
+    
+    if (existingIndex != -1) {
+      // El nombre ya existe, verificar si el nuevo score es mejor
+      LeaderboardRecord existingRecord = getRecordAt(existingIndex);
+      
+      if (score > existingRecord.score) {
+        // El nuevo score es mejor, actualizar el record existente
+        // Preservamos la capitalización original del nombre del record existente
+        updateRecordAt(existingIndex, existingRecord.playerName, score, date, playtime);
+        println("🎉 ¡Nuevo record! " + existingRecord.playerName + ": " + existingRecord.score + " → " + score + " puntos");
+      } else {
+        // El nuevo score es igual o menor, no hacer nada
+        println("💭 " + existingRecord.playerName + " ya tiene un score mejor (" + existingRecord.score + " vs " + score + ")");
+        return; // Salir sin hacer cambios
+      }
+    } else {
+      // El nombre no existe, crear un nuevo record normalmente
+      LeaderboardRecord record = new LeaderboardRecord(playerName, score, date, playtime);
+      records.push(record);
+      println("✨ Nuevo jugador en el leaderboard: " + playerName + " con " + score + " puntos");
+    }
     
     // Ordenar la lista de mayor a menor según puntuación
     sortRecords();
@@ -236,13 +301,42 @@ class Leaderboard {
   
   // Ordenar los registros por puntuación (de mayor a menor)
   void sortRecords() {
-    records.sort((a, b) -> b.score - a.score);
+    // Convertir stack a lista temporal para ordenar
+    ArrayList<LeaderboardRecord> tempList = new ArrayList<LeaderboardRecord>();
+    
+    // Sacar todos los elementos del stack
+    while (!records.isEmpty()) {
+      tempList.add(records.pop());
+    }
+    
+    // Ordenar la lista (mayor a menor puntuación)
+    Collections.sort(tempList, (a, b) -> b.score - a.score);
+    
+    // Volver a meter los elementos en el stack (en orden inverso para mantener el orden correcto)
+    for (int i = tempList.size() - 1; i >= 0; i--) {
+      records.push(tempList.get(i));
+    }
   }
   
   // Mantener solo los mejores 20 registros
   void trimRecords() {
     if (records.size() > maxRecordsToShow) {
-      records = new ArrayList<LeaderboardRecord>(records.subList(0, maxRecordsToShow));
+      // Obtener records ordenados
+      Stack<LeaderboardRecord> sortedRecords = getSortedRecords();
+      Stack<LeaderboardRecord> tempStack = new Stack<LeaderboardRecord>();
+      
+      // Guardar solo los primeros maxRecordsToShow elementos
+      int count = 0;
+      while (!sortedRecords.isEmpty() && count < maxRecordsToShow) {
+        tempStack.push(sortedRecords.pop());
+        count++;
+      }
+      
+      // Limpiar el stack original y restaurar los records que queremos mantener
+      records.clear();
+      while (!tempStack.isEmpty()) {
+        records.push(tempStack.pop());
+      }
     }
   }
   
@@ -280,7 +374,7 @@ class Leaderboard {
   
   // Desplazar la lista hacia abajo
   void scrollDown() {
-    if (scrollOffset < records.size() - visibleRecords) {
+    if (scrollOffset < getRecordsSize() - visibleRecords) {
       scrollOffset++;
     }
   }
@@ -355,12 +449,12 @@ class Leaderboard {
     float startY = headerY + rowHeight;
     
     noStroke();
-    int maxToDisplay = min(visibleRecords, records.size());
+    int maxToDisplay = min(visibleRecords, getRecordsSize());
     
     for (int i = 0; i < maxToDisplay; i++) {
       int index = i + scrollOffset;
-      if (index < records.size()) {
-        LeaderboardRecord record = records.get(index);
+      if (index < getRecordsSize()) {
+        LeaderboardRecord record = getRecordAt(index);
         float rowY = startY + rowHeight * i;
         
         // Alternar colores de filas para mejor legibilidad con transparencia
@@ -421,15 +515,15 @@ class Leaderboard {
     }
     
     // Indicadores de desplazamiento (si hay más records que los visibles)
-    if (records.size() > visibleRecords) {
+    if (getRecordsSize() > visibleRecords) {
       // Calcular dimensiones del scrollbar
       float scrollAreaHeight = popupHeight - 160;
       float scrollbarWidth = 12; 
       float scrollbarX = endX + 12;
       
       // Calcular altura y posición del "thumb" del scrollbar
-      float scrollbarHeight = scrollAreaHeight * ((float)visibleRecords / records.size());
-      float maxScrollOffset = records.size() - visibleRecords;
+      float scrollbarHeight = scrollAreaHeight * ((float)visibleRecords / getRecordsSize());
+      float maxScrollOffset = getRecordsSize() - visibleRecords;
       float scrollbarY = startY + (scrollAreaHeight - scrollbarHeight) * ((float)scrollOffset / maxScrollOffset);
       
       // Dibujar el fondo del área de scroll (track)
@@ -518,7 +612,7 @@ class Leaderboard {
   
   // Manejar el click del mouse en el área del leaderboard
   void handleMousePressed() {
-    if (records.size() <= visibleRecords) return; // No hay scroll si no hay suficientes records
+    if (getRecordsSize() <= visibleRecords) return; 
     
     // Verificar si se hizo click en las flechas
     if (mouseX >= scrollbarX - 8 && mouseX <= scrollbarX + 8) {
@@ -526,7 +620,7 @@ class Leaderboard {
         scrollUp();
         return;
       }
-      if (mouseY >= arrowDownY - 8 && mouseY <= arrowDownY + 8 && scrollOffset < records.size() - visibleRecords) {
+      if (mouseY >= arrowDownY - 8 && mouseY <= arrowDownY + 8 && scrollOffset < getRecordsSize() - visibleRecords) { 
         scrollDown();
         return;
       }
@@ -550,7 +644,7 @@ class Leaderboard {
       }
       // Click abajo del thumb = página abajo  
       else if (mouseY > scrollbarY + scrollbarHeight) {
-        scrollOffset = min(records.size() - visibleRecords, scrollOffset + visibleRecords);
+        scrollOffset = min(getRecordsSize() - visibleRecords, scrollOffset + visibleRecords); // Usar getRecordsSize()
       }
     }
   }
@@ -563,7 +657,7 @@ class Leaderboard {
   
   // Manejar el arrastre del mouse
   void handleMouseDragged() {
-    if (!isDraggingScrollbar || records.size() <= visibleRecords) return;
+    if (!isDraggingScrollbar || getRecordsSize() <= visibleRecords) return; // Usar getRecordsSize()
     
     // Calcular nueva posición del scrollbar basada en el movimiento del mouse
     float newScrollbarY = mouseY - scrollbarMouseOffset;
@@ -575,14 +669,14 @@ class Leaderboard {
     
     // Convertir la posición del scrollbar a offset de scroll
     float scrollPercentage = (newScrollbarY - minScrollbarY) / (maxScrollbarY - minScrollbarY);
-    int maxScrollOffset = records.size() - visibleRecords;
+    int maxScrollOffset = getRecordsSize() - visibleRecords; // Usar getRecordsSize()
     scrollOffset = round(scrollPercentage * maxScrollOffset);
     scrollOffset = constrain(scrollOffset, 0, maxScrollOffset);
   }
   
   // Manejar la rueda del mouse para scroll suave
   void handleMouseWheel(float wheelDirection) {
-    if (records.size() <= visibleRecords) return;
+    if (getRecordsSize() <= visibleRecords) return; // Usar getRecordsSize()
     
     // wheelDirection es positivo cuando se rueda hacia arriba, negativo hacia abajo
     if (wheelDirection > 0) {
@@ -590,6 +684,65 @@ class Leaderboard {
     } else if (wheelDirection < 0) {
       scrollDown();
     }
+  }
+  
+  // Método auxiliar para convertir Stack a lista temporal ordenada para operaciones complejas
+  // Esto nos permite mantener la funcionalidad de ordenamiento sin perder la estructura de Stack
+  Stack<LeaderboardRecord> getSortedRecords() {
+    // Crear lista temporal para ordenar
+    ArrayList<LeaderboardRecord> tempList = new ArrayList<LeaderboardRecord>();
+    Stack<LeaderboardRecord> tempStack = new Stack<LeaderboardRecord>();
+    
+    // Sacar todos los elementos del stack original
+    while (!records.isEmpty()) {
+      LeaderboardRecord record = records.pop();
+      tempList.add(record);
+      tempStack.push(record); // Guardar para restaurar después
+    }
+    
+    // Restaurar el stack original
+    while (!tempStack.isEmpty()) {
+      records.push(tempStack.pop());
+    }
+    
+    // Ordenar la lista temporal (mayor a menor puntuación)
+    Collections.sort(tempList, (a, b) -> b.score - a.score);
+    
+    // Crear stack ordenado y devolverlo
+    Stack<LeaderboardRecord> sortedStack = new Stack<LeaderboardRecord>();
+    // Añadir en orden inverso para que el mayor quede arriba del stack
+    for (int i = tempList.size() - 1; i >= 0; i--) {
+      sortedStack.push(tempList.get(i));
+    }
+    
+    return sortedStack;
+  }
+  
+  // Método auxiliar para obtener un record por posición (similar al get de ArrayList)
+  // Necesario para mantener la funcionalidad de display y scrolling
+  LeaderboardRecord getRecordAt(int index) {
+    Stack<LeaderboardRecord> sortedStack = getSortedRecords();
+    Stack<LeaderboardRecord> tempStack = new Stack<LeaderboardRecord>();
+    LeaderboardRecord result = null;
+    
+    // Sacar elementos hasta llegar al índice deseado
+    int currentIndex = 0;
+    while (!sortedStack.isEmpty() && currentIndex <= index) {
+      LeaderboardRecord record = sortedStack.pop();
+      tempStack.push(record);
+      
+      if (currentIndex == index) {
+        result = record;
+      }
+      currentIndex++;
+    }
+    
+    return result;
+  }
+  
+  // Método auxiliar para obtener el tamaño del stack (equivalente a size())
+  int getRecordsSize() {
+    return records.size();
   }
 }
 
