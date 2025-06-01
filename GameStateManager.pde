@@ -6,8 +6,12 @@
  */
 
 class GameStateManager {
-  // Estado
-  private int currentState;
+  // Estado actual del juego
+  int currentState = STATE_INTRO_VIDEO;
+  int previousState = STATE_INTRO_VIDEO;
+  
+  // Variable para rastrear el origen del leaderboard - súper importante para el comportamiento correcto
+  boolean leaderboardFromMainMenu = false; // true = abierto desde menú principal, false = abierto después de partida
   
   // Callback para notificar cambios de estado
   private Runnable onStateChangeCallback;
@@ -20,20 +24,32 @@ class GameStateManager {
     return currentState;
   }
   
+  int getPreviousState() {
+    return previousState;
+  }
+  
   // Establecer una función de callback para notificar cambios de estado
   void setOnStateChangeCallback(Runnable callback) {
     this.onStateChangeCallback = callback;
   }
   
+  // Método principal para cambiar estados - ahora más inteligente
   void setState(int newState) {
-    // Realizar acciones específicas al cambiar estado
-    if (newState == STATE_MAIN_MENU && (currentState == STATE_PAUSED || currentState == STATE_GAME_OVER)) {
-      // Cuando volvemos al menú principal desde el menú de pausa o fin de juego
-      // realizar una limpieza adicional para evitar elementos residuales
-      cleanupBeforeMainMenu();
+    // Guardar el estado anterior antes de cambiar
+    previousState = currentState;
+    
+    // Detectar automáticamente desde dónde se abre el leaderboard para comportamiento inteligente
+    if (newState == STATE_LEADERBOARD) {
+      // Si venimos del menú principal, marcar que es desde menú
+      if (currentState == STATE_MAIN_MENU) {
+        leaderboardFromMainMenu = true;
+      } else {
+        // Si venimos de cualquier otro estado (partida, entrada de nombre, etc.), es desde juego
+        leaderboardFromMainMenu = false;
+      }
     }
     
-    this.currentState = newState;
+    currentState = newState;
     
     // Notificar cambio de estado si es necesario
     if (onStateChangeCallback != null) {
@@ -41,16 +57,23 @@ class GameStateManager {
     }
   }
   
-  // Método para limpiar específicamente al volver al menú principal
-  void cleanupBeforeMainMenu() {
-    // Forzar una limpieza visual completa para evitar elementos residuales
-    // que puedan quedar en pantalla
-    clear();
-    
-    // No usamos background(0) para evitar problemas con las imágenes de fondo
-    
-    // Asegurarse de que los gestores clave estén limpios
-    // (la implementación específica depende del juego)
+  // Método especial para abrir leaderboard desde menú principal - más claro y explícito
+  void openLeaderboardFromMenu() {
+    previousState = currentState;
+    currentState = STATE_LEADERBOARD;
+    leaderboardFromMainMenu = true; // Marca explícita de que viene del menú
+  }
+  
+  // Método especial para abrir leaderboard después de partida - más claro y explícito  
+  void openLeaderboardFromGame() {
+    previousState = currentState;
+    currentState = STATE_LEADERBOARD;
+    leaderboardFromMainMenu = false; // Marca explícita de que viene de una partida
+  }
+  
+  // Getter para saber el origen del leaderboard - útil para otros componentes
+  boolean isLeaderboardFromMainMenu() {
+    return leaderboardFromMainMenu;
   }
   
   boolean isGameplayState() {
@@ -64,7 +87,8 @@ class GameStateManager {
            currentState == STATE_PAUSED ||
            currentState == STATE_GAME_OVER ||
            currentState == STATE_LEADERBOARD ||
-           currentState == STATE_NAME_INPUT;
+           currentState == STATE_NAME_INPUT ||
+           currentState == STATE_XP_SUMMARY;
   }
   
   boolean isPausedState() {
