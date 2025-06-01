@@ -14,6 +14,7 @@ class InputHandler {
   VideoIntroMenu videoIntroMenu;
   Leaderboard leaderboard;
   PlayerNameInput playerNameInput;
+  GameManager gameManager; // Referencia al GameManager para acceder a xpSummaryScreen
   
   // Estado
   int gameState; // Referencia local al estado actual del juego
@@ -52,6 +53,10 @@ class InputHandler {
   
   void setSelectedMenuItem(int selectedMenuItem) {
     this.selectedMenuItem = selectedMenuItem;
+  }
+  
+  void setGameManager(GameManager gameManager) {
+    this.gameManager = gameManager;
   }
   
   // Manejar eventos de tecla presionada
@@ -252,14 +257,46 @@ class InputHandler {
       return;
     }
     
+    if (getGameState() == STATE_XP_SUMMARY && gameManager != null && gameManager.xpSummaryScreen != null) {
+      // Manejar clics en la pantalla de resumen de XP
+      if (gameManager.xpSummaryScreen.checkContinueClick()) {
+        // Si se hizo clic en continuar, ir al menú principal
+        stateManager.setState(STATE_MAIN_MENU);
+        selectedMenuItem = 0;
+        menu.updateSelectedItem(getGameState(), selectedMenuItem);
+        return;
+      }
+    }
+    
     if (getGameState() == STATE_LEADERBOARD && leaderboard != null) {
       // Manejar interacciones del scrollbar 
       leaderboard.handleMousePressed();
       
       // Usar el nuevo método para verificar si se hizo clic en el botón volver
       if (leaderboard.checkBackButtonClick()) {
-        // Volver al menú principal o al estado adecuado
-        stateManager.setState(STATE_MAIN_MENU);
+        // Comportamiento según desde dónde se abrió el leaderboard
+        if (stateManager.isLeaderboardFromMainMenu()) {
+          // Si fue abierto desde el menú principal, regresar directamente al menú sin mostrar XP
+          stateManager.setState(STATE_MAIN_MENU);
+        } else {
+          // Si fue abierto después de una partida, mostrar pantalla de XP como antes
+          if (game != null && game.gameOver && gameManager != null && gameManager.xpSummaryScreen != null) {
+            // Configurar datos del XP antes de mostrar la pantalla de resumen
+            gameManager.xpSummaryScreen.setXPData(
+              game.lastRunXP, // XP total ganado en la partida 
+              game.lastRunDistance, // Datos almacenados del juego
+              game.lastRunCollectibles, // Datos almacenados del juego
+              game.lastRunTimeSeconds, // Datos almacenados del juego
+              game.lastRunAvgEcoHealth, // Datos almacenados del juego
+              game.lastRunWasHit, // Datos almacenados del juego
+              game.lastRunGoodEcoTime // Datos almacenados del juego
+            );
+            stateManager.setState(STATE_XP_SUMMARY);
+          } else {
+            // Fallback al menú principal si no hay datos de XP
+            stateManager.setState(STATE_MAIN_MENU);
+          }
+        }
         selectedMenuItem = 0;
         menu.updateSelectedItem(getGameState(), selectedMenuItem);
         return;
@@ -364,8 +401,8 @@ class InputHandler {
     } else if (selectedMenuItem == 1) {
       stateManager.setState(STATE_INSTRUCTIONS);
     } else if (selectedMenuItem == 2) {
-      // Botón de Leaderboard (ahora en la posición central de la fila principal)
-      stateManager.setState(STATE_LEADERBOARD);
+      // Botón de Leaderboard - abrir desde menú principal con método específico
+      stateManager.openLeaderboardFromMenu();
     } else if (selectedMenuItem == 3) {
       stateManager.setState(STATE_SETTINGS);
     } else if (selectedMenuItem == 4) {
@@ -421,8 +458,34 @@ class InputHandler {
       videoIntroMenu.skipVideo();
     } else if (getGameState() == STATE_GAME) {
       pauseGame();
+    } else if (getGameState() == STATE_LEADERBOARD) {
+      // Manejo especial para el leaderboard según su origen
+      if (stateManager.isLeaderboardFromMainMenu()) {
+        // Si fue abierto desde el menú principal, regresar directamente al menú
+        stateManager.setState(STATE_MAIN_MENU);
+      } else {
+        // Si fue abierto después de una partida, mostrar pantalla de XP
+        if (game != null && game.gameOver && gameManager != null && gameManager.xpSummaryScreen != null) {
+          // Configurar datos del XP antes de mostrar la pantalla de resumen
+          gameManager.xpSummaryScreen.setXPData(
+            game.lastRunXP,
+            game.lastRunDistance,
+            game.lastRunCollectibles,
+            game.lastRunTimeSeconds,
+            game.lastRunAvgEcoHealth,
+            game.lastRunWasHit,
+            game.lastRunGoodEcoTime
+          );
+          stateManager.setState(STATE_XP_SUMMARY);
+        } else {
+          // Fallback al menú principal si no hay datos de XP
+          stateManager.setState(STATE_MAIN_MENU);
+        }
+      }
+      selectedMenuItem = 0;
+      menu.updateSelectedItem(getGameState(), selectedMenuItem);
     } else if (getGameState() != STATE_MAIN_MENU) {
-      // Volver al menú anterior
+      // Volver al menú anterior para otros estados
       if (getGameState() == STATE_PAUSED) {
         // Si estamos en el menú de pausa, necesitamos limpiar los elementos del juego
         game.cleanupForMenuTransition();
