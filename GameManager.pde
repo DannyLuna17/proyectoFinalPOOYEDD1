@@ -14,6 +14,7 @@ class GameManager {
   VideoIntroMenu videoIntroMenu;
   Leaderboard leaderboard;
   PlayerNameInput playerNameInput;
+  XPSummaryScreen xpSummaryScreen; // Pantalla de resumen de XP que se muestra después del leaderboard
   
   // Gestores
   GameStateManager stateManager;
@@ -48,6 +49,9 @@ class GameManager {
     leaderboard = initializer.getLeaderboard();
     playerNameInput = initializer.getPlayerNameInput();
     
+    // Inicializar pantalla de resumen de XP
+    xpSummaryScreen = new XPSummaryScreen(accessManager, game.playerProgression);
+    
     // Mostrar instrucciones del juego
     initializer.printGameInstructions();
   }
@@ -58,7 +62,7 @@ class GameManager {
     stateManager.setState(STATE_INTRO_VIDEO);
     
     // Crear renderizador con todos los componentes necesarios
-    renderer = new GameRenderer(game, menu, videoIntroMenu, accessManager, leaderboard, playerNameInput);
+    renderer = new GameRenderer(game, menu, videoIntroMenu, accessManager, leaderboard, playerNameInput, xpSummaryScreen);
     renderer.setGameState(stateManager.getState());
     renderer.setSelectedMenuItem(selectedMenuItem);
     
@@ -68,6 +72,7 @@ class GameManager {
     inputHandler.setSelectedMenuItem(selectedMenuItem);
     inputHandler.leaderboard = leaderboard;
     inputHandler.playerNameInput = playerNameInput;
+    inputHandler.setGameManager(this);
     
     // Crear gestor de limpieza
     cleanupManager = new CleanupManager();
