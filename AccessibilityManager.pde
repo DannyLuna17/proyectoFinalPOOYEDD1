@@ -48,7 +48,7 @@ class AccessibilityManager {
   
   // Propiedades para señales visuales de sonido
   float soundCueDisplayTime = 2.0;
-  ArrayList<SoundCue> activeSoundCues;
+  Queue<SoundCue> activeSoundCues;
   
   AccessibilityManager() {
     // Colores alto contraste
@@ -82,7 +82,7 @@ class AccessibilityManager {
     colorBlindObstacle = color(204, 82, 0);
     colorBlindCollectible = color(0, 153, 153);
     
-    activeSoundCues = new ArrayList<SoundCue>();
+    activeSoundCues = new Queue<SoundCue>();
   }
   
   float getAdjustedTextSize(float baseSize) {
@@ -295,7 +295,7 @@ class AccessibilityManager {
     if (!visualCuesForAudio) return;
     
     SoundCue cue = new SoundCue(soundType, x, y, this);
-    activeSoundCues.add(cue);
+    activeSoundCues.enqueue(cue);
   }
   
   String getKeyboardNavInstructions() {
@@ -305,14 +305,22 @@ class AccessibilityManager {
   void updateSoundCues() {
     if (!visualCuesForAudio) return;
     
-    for (int i = activeSoundCues.size() - 1; i >= 0; i--) {
-      SoundCue cue = activeSoundCues.get(i);
+    Queue<SoundCue> tempQueue = new Queue<SoundCue>(); 
+    
+    while (!activeSoundCues.isEmpty()) {
+      SoundCue cue = activeSoundCues.dequeue(); // Sacar la señal más antigua
       cue.update();
       cue.display();
       
-      if (cue.isExpired()) {
-        activeSoundCues.remove(i);
+      if (!cue.isExpired()) {
+        tempQueue.enqueue(cue); // Guardar en cola temporal si no ha expirado
       }
+      // Si ha expirado, simplemente no la volvemos a añadir
+    }
+    
+    // Restaurar las señales no expiradas a la cola principal
+    while (!tempQueue.isEmpty()) {
+      activeSoundCues.enqueue(tempQueue.dequeue());
     }
   }
   
