@@ -755,7 +755,8 @@ class Menu {
     } else if (buttonText.equals("Exit")) {
       exit();
     } else if (buttonText.equals("Leaderboard")) {
-      stateManager.setState(STATE_LEADERBOARD);
+      // Abrir leaderboard desde menú principal - usar método específico para marcar origen correcto
+      stateManager.openLeaderboardFromMenu();
       selectedMenuItem = 0;
     }
     // Manejar botones de instrucciones
