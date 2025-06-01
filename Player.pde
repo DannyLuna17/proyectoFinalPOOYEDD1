@@ -71,6 +71,12 @@ class Player {
   boolean isPlatformJump = false;
   float platformJumpBonus = 1.2; // Bonus de salto en plataformas
   
+  // Variables para preservar valores originales antes de aplicar efectos climáticos
+  boolean hasWeatherEffectsApplied = false;
+  float originalJumpForce = -7.5;
+  float originalMaxJumpForce = -22;
+  float originalGravity = 0.8;
+  
   // Referencias externas
   AccessibilityManager accessManager;
   SoundManager soundManager;
@@ -771,38 +777,56 @@ class Player {
     
     // Fondo de la barra
     fill(accessManager.getBackgroundColor(color(100)));
+    stroke(accessManager.getUIBorderColor(color(255, 255, 255, 120)));
+    strokeWeight(2);
     rect(x, y, w, h);
     
     // Configurar para mostrar un máximo visible de corazones a la vez
     int visibleHearts = 5; // Número máximo de corazones a mostrar en la barra
-    float heartSize = h * 0.8;
+    float heartSize = h * 0.9;
     float heartSpacing = (w - visibleHearts * heartSize) / (visibleHearts + 1);
     
-    // Si el jugador tiene más corazones de los que caben, mostrar un indicador
-    boolean showMoreIndicator = health > visibleHearts;
-    int heartsToShow = min(health, visibleHearts);
+    // Colores para los corazones
+    color heartColor = accessManager.getForegroundColor(color(255, 50, 50));
+    color emptyHeartColor = accessManager.getForegroundColor(color(80, 80, 80));
+    color outlineColor = accessManager.getForegroundColor(color(0));
     
-    // Dibujar corazones visibles
-    for (int i = 0; i < heartsToShow; i++) {
+    // Calcular cuántos corazones llenos y vacíos mostrar
+    boolean showMoreIndicator = health > visibleHearts;
+    int filledHearts = min(health, visibleHearts);
+    int emptyHearts = visibleHearts - filledHearts;
+    
+    // Dibujar corazones llenos
+    for (int i = 0; i < filledHearts; i++) {
       // Posición del corazón actual
       float heartX = x + heartSpacing + i * (heartSize + heartSpacing);
       float heartY = y + (h - heartSize) / 2;
       
-      // Dibujar corazón lleno
-      fill(accessManager.getForegroundColor(color(255, 0, 0)));
-      drawHeartShape(heartX, heartY, heartSize);
+      // Dibujar corazón lleno con borde
+      drawHeartShape(heartX, heartY, heartSize, heartColor, outlineColor, true);
     }
     
-    // Si hay más corazones de los que se pueden mostrar, dibujar indicador
+    // Dibujar corazones vacíos (representan la vida perdida)
+    for (int i = 0; i < emptyHearts; i++) {
+      // Posición del corazón vacío (continúa después de los llenos)
+      float heartX = x + heartSpacing + (filledHearts + i) * (heartSize + heartSpacing);
+      float heartY = y + (h - heartSize) / 2;
+      
+      // Dibujar corazón vacío solo con borde
+      drawHeartShape(heartX, heartY, heartSize, emptyHeartColor, outlineColor, false);
+    }
+    
+    // Si hay más corazones de los que se pueden mostrar, dibujar indicador más grande
     if (showMoreIndicator) {
       textAlign(LEFT, CENTER);
-      fill(accessManager.getForegroundColor(color(255, 0, 0)));
-      textSize(h * 0.6);
-      text("+" + (health - visibleHearts), x + w - 40, y + h/2);
+      fill(accessManager.getForegroundColor(color(255, 50, 50)));
+      textSize(h * 0.7); 
+      text("+" + (health - visibleHearts), x + w - 50, y + h/2); 
     }
     
-    // Borde
+    // Borde final sin relleno
     stroke(accessManager.getForegroundColor(color(255)));
+    strokeWeight(2);
     noFill();
     rect(x, y, w, h);
     
@@ -841,14 +865,32 @@ class Player {
     isInvincible = false;
     invincibilityTimer = 0;
     
+    // Reiniciar efectos climáticos para prevenir bugs de salto
+    hasWeatherEffectsApplied = false;
+    jumpForce = originalJumpForce;       
+    maxJumpForce = originalMaxJumpForce; 
+    gravity = originalGravity;           
+    
     // Restaurar color
     currentColor = normalColor;
   }
   
-  // Dibuja la forma de un corazón
-  void drawHeartShape(float x, float y, float size) {
+  // Dibuja la forma de un corazón con opciones mejoradas
+  void drawHeartShape(float x, float y, float size, color fillColor, color borderColor, boolean filled) {
     pushMatrix();
     translate(x + size/2, y + size/2);
+    
+    // Configurar el borde negro
+    stroke(borderColor);
+    strokeWeight(3); 
+    
+    if (filled) {
+      // Corazón lleno
+      fill(fillColor);
+    } else {
+      // Corazón vacío
+      noFill();
+    }
     
     beginShape();
     // Un corazón hecho con vértices
@@ -881,4 +923,4 @@ class Player {
       vSpeed = 0;
     }
   }
-} 
+}
