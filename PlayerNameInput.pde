@@ -68,8 +68,8 @@ class PlayerNameInput {
       // Añadir el record a la tabla de clasificación
       leaderboard.addRecordFromGame(playerName, finalScore, playTimeInSeconds);
       
-      // Cambiar al estado de tabla de clasificación
-      stateManager.setState(STATE_LEADERBOARD);
+      // Abrir leaderboard después de partida - usa método específico para marcar el origen correcto
+      stateManager.openLeaderboardFromGame();
       
       // Reiniciar para futuros usos
       reset();
