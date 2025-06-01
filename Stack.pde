@@ -1,5 +1,4 @@
 /**
- * Stack.pde
  * Implementación de una Pila (Stack) usando una lista doblemente enlazada.
  */
 
