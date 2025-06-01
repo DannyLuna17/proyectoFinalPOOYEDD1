@@ -16,6 +16,7 @@ final int STATE_PAUSED = 5;
 final int STATE_ACCESSIBILITY = 6;
 final int STATE_LEADERBOARD = 7;
 final int STATE_NAME_INPUT = 8;
+final int STATE_XP_SUMMARY = 9; // Pantalla de resumen de XP que se muestra después del leaderboard
 
 // Dimensiones predeterminadas de la ventana
 final int WINDOW_WIDTH = 1280;
