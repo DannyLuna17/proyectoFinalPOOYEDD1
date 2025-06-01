@@ -17,6 +17,9 @@ class Game {
   ScoreManager scoreManager;
   GameStateManager gameStateManager;
   
+  // Sistema de progresión del jugador para engagement a largo plazo
+  PlayerProgression playerProgression;
+  
   // Sistema de debug
   DebugSystem debugSystem;
   boolean showCollisionBoxes = false;  // Flag para mostrar cajas de colisión
@@ -89,8 +92,17 @@ class Game {
   int playTimeFrames = 0;
   int playTimeSeconds = 0;
   
+  // Datos del resumen de XP (para mostrar después del leaderboard)
+  int lastRunXP = 0;
+  float lastRunDistance = 0;
+  int lastRunCollectibles = 0;
+  int lastRunTimeSeconds = 0;
+  float lastRunAvgEcoHealth = 0;
+  boolean lastRunWasHit = false;
+  float lastRunGoodEcoTime = 0;
+  
   // Sistema de acciones temporizadas
-  ArrayList<TimedAction> timedActions = new ArrayList<TimedAction>();
+  Stack<TimedAction> timedActions = new Stack<TimedAction>(); // Pila para acciones temporizadas - las últimas en añadirse se procesan primero
   
   // Constructor predeterminado
   Game() {
@@ -258,6 +270,28 @@ class Game {
         scoreManager = new ScoreManager();
       }
       
+      // Inicializar sistema de progresión del jugador
+      try {
+        playerProgression = new PlayerProgression(accessManager);
+        println("Sistema de progresión del jugador inicializado con éxito");
+      } catch (Exception e) {
+        println("ERROR al inicializar sistema de progresión: " + e.getMessage());
+        e.printStackTrace();
+        // Crear sistema de progresión por defecto
+        playerProgression = new PlayerProgression();
+      }
+      
+      // Conectar el sistema de progresión con el gestor de coleccionables para XP en tiempo real
+      try {
+        if (collectibleManager != null && playerProgression != null) {
+          collectibleManager.setPlayerProgression(playerProgression);
+          println("Sistema de progresión conectado con gestor de coleccionables para XP en tiempo real");
+        }
+      } catch (Exception e) {
+        println("ERROR al conectar sistema de progresión con coleccionables: " + e.getMessage());
+        e.printStackTrace();
+      }
+      
       // Cámara
       cameraY = 0;
       targetCameraY = 0;
@@ -365,8 +399,18 @@ class Game {
         }
         
         if (scoreManager == null) scoreManager = new ScoreManager();
+        if (playerProgression == null) playerProgression = new PlayerProgression();
         if (tutorialMessages == null) tutorialMessages = new ArrayList<String>();
         if (shownMessages == null) shownMessages = new Stack<String>();
+        
+        // Conectar sistema de progresión con coleccionables incluso en respaldo de emergencia
+        try {
+          if (collectibleManager != null && playerProgression != null) {
+            collectibleManager.setPlayerProgression(playerProgression);
+          }
+        } catch (Exception connectionError) {
+          println("ERROR al conectar progresión con coleccionables en respaldo de emergencia: " + connectionError.getMessage());
+        }
         
         gameOver = false;
         gameStarted = true;
@@ -527,6 +571,21 @@ class Game {
       // Actualizar sistema de ajuste dinámico de dificultad
       updateDDASystem();
       
+      // Actualizar sistema de progresión del jugador
+      if (playerProgression != null) {
+        playerProgression.update();
+        
+        // Actualizar estadísticas de la partida actual
+        float distanceTraveled = (float)playTimeSeconds * (scrollSpeed + obstacleSpeed) / 10.0; // Aproximación de distancia
+        playerProgression.updateRunStats(
+          distanceTraveled,
+          scoreManager.collectiblesCollected,
+          playTimeSeconds,
+          ecoSystem.ecoHealth,
+          player.health < 3 // Si el jugador ha perdido vida, significa que fue golpeado
+        );
+      }
+      
       // Actualizar contador de mensajes
       if (messageCooldown > 0) {
         messageCooldown--;
@@ -554,9 +613,27 @@ class Game {
   }
   
   void applyWeatherEffectsToPlayer() {
-    // Aplicar efectos del clima al movimiento del jugador
-    player.jumpForce = player.maxJumpForce * (1 + weatherSystem.getJumpModifier());
-    player.speedMultiplier = 1.0 + weatherSystem.getSpeedModifier();
+    // Aplicar efectos del clima al movimiento del jugador de forma más eficiente
+    // Los modificadores del clima ahora actúan como multiplicadores, no reemplazos absolutos
+    
+    // Obtener modificadores del sistema de clima
+    float jumpModifier = weatherSystem.getJumpModifier();
+    float speedModifier = weatherSystem.getSpeedModifier();
+    
+    // Guardar los valores originales si no están guardados (primera vez)
+    if (!player.hasWeatherEffectsApplied) {
+      player.originalJumpForce = player.jumpForce;
+      player.originalMaxJumpForce = player.maxJumpForce;
+      player.originalGravity = player.gravity;
+      player.hasWeatherEffectsApplied = true;
+    }
+    
+    // Aplicar modificadores del clima a ambos valores de salto manteniendo su relación
+    player.jumpForce = player.originalJumpForce * (1 + jumpModifier);
+    player.maxJumpForce = player.originalMaxJumpForce * (1 + jumpModifier);
+    
+    // Aplicar modificador de velocidad como antes
+    player.speedMultiplier = 1.0 + speedModifier;
   }
   
   void updateCamera() {
@@ -686,10 +763,23 @@ class Game {
         // Aumentar el intervalo entre obstáculos para dar más respiro al jugador
         obstacleManager.obstacleInterval = min(obstacleManager.obstacleInterval + 15, 180);
         
-        // Asistencia secreta
         if (consecutiveCollisions > 5) {
-          player.jumpForce *= 1.1; // Mejores saltos
-          player.gravity *= 0.95;  // Caída más lenta
+          
+          // Crear un boost temporal de salto más efectivo pero que preserve la mecánica original
+          float tempJumpBoost = 1.1;  // 10% más de potencia de salto temporalmente
+          float tempGravityReduction = 0.95;  // 5% menos de gravedad temporalmente
+          
+          // Aplicar los modificadores de manera segura a través de los valores originales
+          if (player.hasWeatherEffectsApplied) {
+            player.jumpForce = player.originalJumpForce * tempJumpBoost * (1 + weatherSystem.getJumpModifier());
+            player.maxJumpForce = player.originalMaxJumpForce * tempJumpBoost * (1 + weatherSystem.getJumpModifier());
+            player.gravity = player.originalGravity * tempGravityReduction;
+          } else {
+            // Si no hay efectos climáticos, aplicar directamente pero de forma temporal
+            player.jumpForce *= tempJumpBoost;
+            player.maxJumpForce *= tempJumpBoost;
+            player.gravity *= tempGravityReduction;
+          }
           
           // Añadir mensaje sutil de asistencia
           collectibleManager.addFloatingText("¡Viento a favor!", player.x, player.y - 60, color(100, 200, 255));
@@ -735,15 +825,24 @@ class Game {
   }
   
   void updateTimedActions() {
-    // Procesar acciones temporizadas
-    for (int i = timedActions.size() - 1; i >= 0; i--) {
-      TimedAction action = timedActions.get(i);
+    // Procesar acciones temporizadas usando la pila (LIFO - las últimas añadidas se procesan primero)
+    Stack<TimedAction> tempStack = new Stack<TimedAction>(); // Pila temporal para mantener las acciones que no están completas
+    
+    // Procesar todas las acciones de la pila principal
+    while (!timedActions.isEmpty()) {
+      TimedAction action = timedActions.pop(); // Sacar la acción más reciente
       action.update();
       
       if (action.isComplete()) {
-        action.execute();
-        timedActions.remove(i);
+        action.execute(); // Ejecutar la acción si está completa
+      } else {
+        tempStack.push(action); // Guardar en pila temporal si no está completa
       }
+    }
+    
+    // Restaurar las acciones no completadas a la pila principal
+    while (!tempStack.isEmpty()) {
+      timedActions.push(tempStack.pop());
     }
   }
   
@@ -769,6 +868,26 @@ class Game {
   void triggerGameOver() {
     gameOver = true;
     playerDeathCount++;
+    
+    // Guardar datos del resumen de XP ANTES de calcular y resetear
+    if (playerProgression != null) {
+      lastRunDistance = playerProgression.distanceTraveled;
+      lastRunCollectibles = playerProgression.collectiblesGathered;
+      lastRunTimeSeconds = playerProgression.timeInSeconds;
+      lastRunAvgEcoHealth = playerProgression.avgEcosystemHealth;
+      lastRunWasHit = playerProgression.wasHitDuringRun;
+      lastRunGoodEcoTime = playerProgression.timeInGoodEcoState;
+      
+      // Ahora calcular y otorgar XP al final de la partida
+      int xpEarned = playerProgression.calculateEndOfRunXP();
+      
+      // Usar el XP total calculado (incluye todo el XP de la partida)
+      lastRunXP = xpEarned;
+      
+      // Guardar la progresión después de cada partida
+      playerProgression.saveProgression();
+      
+    }
     
     // Transición automática al estado de game over
     if (gameStateManager != null) {
@@ -948,20 +1067,27 @@ class Game {
   }
   
   void displayFloatingTexts() {
-    for (FloatingText text : collectibleManager.getFloatingTexts()) {
-      text.display();
-    }
+    // Usar el método del CollectibleManager para mostrar textos flotantes
+    collectibleManager.displayFloatingTexts();
   }
   
   void displayUI() {
     // Mostrar salud
     displayHealthBar();
     
+    // Mostrar sistema de progresión del jugador
+    if (playerProgression != null) {
+      playerProgression.display();
+    }
+    
     // Mostrar puntuación
     scoreManager.display();
     
     // Mostrar salud del ecosistema
     displayEcosystemStatus();
+    
+    // Mostrar cronómetro del juego junto a la barra del ecosistema
+    displayGameTimer();
     
     // Mostrar power-ups activos
     displayActivePowerUps();
@@ -983,65 +1109,100 @@ class Game {
     // Dibujar corazones para representar la salud
     pushStyle();
     
-    // Configuración para dibujar corazones con tamaños más grandes
-    int heartSize = 45;         // Corazones más grandes
-    int heartSpacing = 15;      // Más espacio entre corazones
-    int startX = 25;            // Posición X inicial
-    int startY = 30;            // Posición Y inicial
-    int panelPadding = 15;      // Relleno del panel
-    float cornerRadius = 10;    // Bordes redondeados
+    // Configuración para dibujar corazones
+    int heartSize = 65;         
+    int heartSpacing = 20;      
+    int startX = 35;            
+    int startY = 35;            
+    int panelPadding = 20;      
+    float cornerRadius = 12;    
     
-    // Color base para corazones llenos
-    color heartColor = color(255, 0, 0);
-    // Color para corazones vacíos
-    color emptyHeartColor = color(100, 0, 0);
+    // Color base para corazones llenos 
+    color heartColor = color(255, 50, 50);
+    // Color para corazones vacíos 
+    color emptyHeartColor = color(80, 80, 80);
+    // Color del borde negro para todos los corazones
+    color outlineColor = color(0);
     
-    // Configurar el número máximo de corazones a mostrar
-    int maxVisibleHearts = 5; // Máximo de corazones visibles
-    int heartsToShow = min(player.health, maxVisibleHearts);
+    // Configurar el número máximo de corazones a mostrar en pantalla
+    int maxVisibleHearts = 3; // Máximo de corazones visibles
+    
+    // Determinar cuántos corazones mostrar en total y cuántos están llenos/vacíos
+    int totalHeartsToShow;
+    int filledHearts;
+    int emptyHearts;
     boolean showMoreIndicator = player.health > maxVisibleHearts;
     
+    if (player.health <= maxVisibleHearts) {
+      // Si el jugador tiene 5 o menos corazones, mostrar siempre 5 en total
+      totalHeartsToShow = maxVisibleHearts;
+      filledHearts = player.health;
+      emptyHearts = maxVisibleHearts - player.health;
+    } else {
+      // Si tiene más de 5, mostrar solo 5 llenos y usar el indicador "+X"
+      totalHeartsToShow = maxVisibleHearts;
+      filledHearts = maxVisibleHearts;
+      emptyHearts = 0;
+    }
+    
     // Calcular dimensiones del panel
-    int panelWidth = (heartSize + heartSpacing) * heartsToShow + panelPadding * 2;
+    int panelWidth = (heartSize + heartSpacing) * totalHeartsToShow + panelPadding * 2;
     int panelHeight = heartSize + panelPadding * 2;
     
     // Añadir espacio para el indicador "+X" si es necesario
-    if (showMoreIndicator) panelWidth += 40;
+    if (showMoreIndicator) panelWidth += 60; 
     
-    // Dibujar corazones visibles
-    for (int i = 0; i < heartsToShow; i++) {
+    // Dibujar corazones llenos primero (los que representan la vida actual)
+    for (int i = 0; i < filledHearts; i++) {
       // Posición del corazón actual
       int heartX = startX + i * (heartSize + heartSpacing);
       int heartY = startY;
       
-      // Todos son corazones llenos porque estamos mostrando solo los que tiene el jugador
-      fill(heartColor);
-      
-      // Dibujar corazón
-      drawHeart(heartX, heartY, heartSize);
+      // Dibujar corazón lleno con borde negro
+      drawHeart(heartX, heartY, heartSize, heartColor, outlineColor, true);
     }
     
-    // Si hay más corazones de los que podemos mostrar, añadir un indicador
+    // Dibujar corazones vacíos después (para mostrar la vida perdida)
+    for (int i = 0; i < emptyHearts; i++) {
+      // Posición del corazón vacío (continúa después de los llenos)
+      int heartX = startX + (filledHearts + i) * (heartSize + heartSpacing);
+      int heartY = startY;
+      
+      // Dibujar corazón vacío con borde negro pero sin relleno
+      drawHeart(heartX, heartY, heartSize, emptyHeartColor, outlineColor, false);
+    }
+    
+    // Si hay más corazones de los que podemos mostrar, añadir un indicador más grande
     if (showMoreIndicator) {
       textAlign(LEFT, CENTER);
-      fill(255);
-      textSize(30); // Texto más grande
+      fill(0);
+      textSize(40); 
       text("+" + (player.health - maxVisibleHearts), 
            startX + (heartSize + heartSpacing) * maxVisibleHearts, 
-           startY + heartSize/2);
+           startY + heartSize/3);
     }
     
     popStyle();
     
-    // La barra de salud está en la esquina superior izquierda
-    // y no se superpone con otros elementos de la interfaz
   }
   
-  // Función para dibujar un corazón
-  void drawHeart(int x, int y, int size) {
+  // Función para dibujar un corazón con opciones de relleno y borde
+  void drawHeart(int x, int y, int size, color fillColor, color borderColor, boolean filled) {
     // Dibuja un corazón centrado en (x, y) con tamaño 'size'
     pushMatrix();
     translate(x + size/2, y + size/2);
+    
+    // Configurar el borde negro primero
+    stroke(borderColor);
+    strokeWeight(2.5); 
+    
+    if (filled) {
+      // Corazón lleno - usar el color de relleno especificado
+      fill(fillColor);
+    } else {
+      // Corazón vacío - mostrar relleno gris claro
+      fill(150, 150, 150);
+    }
     
     beginShape();
     // Un corazón hecho con vértices
@@ -1056,12 +1217,12 @@ class Game {
   }
   
   void displayEcosystemStatus() {
-    // Variables para una UI más consistente
-    int barWidth = 350;        // Barra más ancha y grande
-    int barHeight = 45;        // Barra más alta
-    int topPosition = 20;      // Posición en la parte superior de la pantalla
-    float cornerRadius = 12;   // Bordes redondeados
-    int iconSize = 30;         // Tamaño del icono más grande
+    // Variables para una UI más consistente y accesible
+    int barWidth = 450;        
+    int barHeight = 60;        
+    int topPosition = 25;      
+    float cornerRadius = 15;   
+    int iconSize = 40;        
     
     // Calcular posición central
     int centerX = width / 2 - barWidth / 2;
@@ -1069,28 +1230,26 @@ class Game {
     // Barra de salud del ecosistema
     float ecosystemHealth = 1.0 - ecoSystem.getPollutionLevel();
     
-    // Fondo oscuro para la barra con mayor opacidad
+    // Fondo oscuro para la barra
     fill(0, 0, 0, 200);
     rect(centerX, topPosition, barWidth, barHeight, cornerRadius);
     
-    // Color basado en la salud del ecosistema (más vibrante)
+    // Color basado en la salud del ecosistema
     if (ecosystemHealth > 0.6) {
-      fill(0, 255, 80); // Verde más vibrante
+      fill(0, 255, 80); 
     } else if (ecosystemHealth > 0.3) {
-      fill(255, 230, 0); // Amarillo más vibrante
+      fill(255, 230, 0); 
     } else {
-      fill(255, 60, 60); // Rojo más vibrante
+      fill(255, 60, 60); 
     }
     
-    // Cantidad de barra del ecosistema llena - con bordes redondeados solo en el lado derecho cuando es parcial
+    // Cantidad de barra del ecosistema llena
     float ecoWidth = map(ecosystemHealth, 0, 1, 0, barWidth - 4);
     if (ecoWidth > 0) {
-      // Si la barra no está completamente llena, solo redondear el lado derecho
       float rightRadius = min(cornerRadius - 2, ecoWidth / 2);
       if (ecoWidth < barWidth - 4) {
         rect(centerX + 2, topPosition + 2, ecoWidth, barHeight - 4, 0, rightRadius, rightRadius, 0);
       } else {
-        // Si está completa o casi, usar el mismo radio en todos los lados
         rect(centerX + 2, topPosition + 2, ecoWidth, barHeight - 4, cornerRadius - 2);
       }
     }
@@ -1098,17 +1257,16 @@ class Game {
     // Texto del ecosistema
     fill(255);
     textAlign(CENTER, CENTER);
-    textSize(20); // Texto más grande
+    textSize(28); 
     
     // Añadir icono o símbolo antes del texto
     String ecosystemText = "ECOSISTEMA";
     
     // Dibujamos un pequeño icono de hoja o árbol antes del texto
     pushMatrix();
-    translate(centerX + barWidth/2 - textWidth(ecosystemText)/2 - iconSize - 5, topPosition + barHeight/2);
+    translate(centerX + barWidth/2 - textWidth(ecosystemText)/2 - iconSize - 8, topPosition + barHeight/2);
     noStroke();
     fill(255);
-    // Dibujar una hoja simple
     beginShape();
     vertex(0, 0);
     bezierVertex(iconSize/2, -iconSize/2, iconSize, 0, iconSize/2, iconSize/2);
@@ -1120,37 +1278,132 @@ class Game {
     
     // Porcentaje numérico para mayor claridad
     textAlign(RIGHT, CENTER);
-    text(int(ecosystemHealth * 100) + "%", centerX + barWidth - 10, topPosition + barHeight/2);
+    textSize(26); 
+    text(int(ecosystemHealth * 100) + "%", centerX + barWidth - 15, topPosition + barHeight/2);
     
-    // La barra del ecosistema está ahora centrada en la parte superior de la pantalla
-    // para que el jugador esté siempre consciente de la salud del ecosistema.
-    // Su mayor tamaño la hace más visible y prominente durante el juego.
+  }
+  
+  // Mostrar el cronómetro del juego junto a la barra del ecosistema
+  void displayGameTimer() {
+    pushStyle();
+    
+    // Variables para posicionar el cronómetro junto a la barra del ecosistema
+    int barWidth = 450;        
+    int timerWidth = 180;      
+    int timerHeight = 60;      
+    int topPosition = 25;      
+    float cornerRadius = 15;   
+    
+    // Posicionar el cronómetro a la derecha de la barra del ecosistema
+    int centerX = width / 2 - barWidth / 2;  
+    int timerX = centerX + barWidth + 20;    
+    int timerY = topPosition;                
+    
+    // Panel de fondo para el cronómetro con el mismo estilo que la barra del ecosistema
+    fill(0, 0, 0, 200);
+    stroke(accessManager.getUIBorderColor(color(100, 150, 255)));
+    strokeWeight(3); 
+    rect(timerX, timerY, timerWidth, timerHeight, cornerRadius);
+    
+    // Calcular minutos y segundos desde playTimeSeconds
+    int minutes = playTimeSeconds / 60;
+    int seconds = playTimeSeconds % 60;
+    
+    // Formatear el tiempo como MM:SS (siempre con dos dígitos)
+    String timeText = String.format("%02d:%02d", minutes, seconds);
+    
+    // Configurar tamaño del texto primero para calcular posiciones correctas
+    textSize(accessManager.getAdjustedTextSize(32)); 
+    
+    int iconSize = 28;  
+    int spacing = 15;   
+    
+    // Calcular el ancho total (icono + espacio + texto) para centrar todo el conjunto
+    float textWidth = textWidth(timeText);
+    float totalWidth = iconSize + spacing + textWidth;
+    
+    // Posición inicial centrada en el panel
+    float startX = timerX + (timerWidth - totalWidth) / 2;
+    
+    // Posiciones finales alineadas
+    int iconX = (int)startX + iconSize/2;  // Centro del icono
+    int iconY = timerY + timerHeight/2;    
+    float textX = startX + iconSize + spacing + textWidth/2;  
+    int textY = timerY + timerHeight/2 - 2;    
+    
+    // Dibujar el icono del reloj
+    pushMatrix();
+    translate(iconX, iconY);
+    noStroke();
+    
+    // Fondo del reloj
+    fill(accessManager.getTextColor(color(220, 220, 220)));
+    ellipse(0, 0, iconSize, iconSize);
+    
+    // Borde del reloj
+    stroke(accessManager.getTextColor(color(100, 100, 100)));
+    strokeWeight(3); 
+    noFill();
+    ellipse(0, 0, iconSize, iconSize);
+    
+    // Manecillas del reloj
+    stroke(accessManager.getTextColor(color(80, 80, 80)));
+    strokeWeight(3); 
+    line(0, 0, 0, -iconSize/3);
+    line(0, 0, iconSize/4, -iconSize/4);
+    
+    // Punto central del reloj
+    fill(accessManager.getTextColor(color(80, 80, 80)));
+    noStroke();
+    ellipse(0, 0, 4, 4); 
+    
+    popMatrix();
+    
+    // Mostrar el cronómetro con un color que cambia según el tiempo transcurrido
+    color timeColor = accessManager.getTextColor(color(255, 255, 255)); 
+    
+    // Cambiar color después de ciertos hitos de tiempo para hacer el cronómetro más interesante
+    if (playTimeSeconds >= 300) {      
+      timeColor = accessManager.getTextColor(color(255, 215, 0));
+    } else if (playTimeSeconds >= 120) { 
+      timeColor = accessManager.getTextColor(color(100, 255, 100));
+    } else if (playTimeSeconds >= 60) { 
+      timeColor = accessManager.getTextColor(color(100, 200, 255));
+    }
+    
+    // Dibujar el texto del tiempo perfectamente alineado con el icono
+    fill(timeColor);
+    textAlign(CENTER, CENTER);
+    text(timeText, textX, textY);
+    
+    popStyle();
   }
   
   void displayTutorial() {
-    // Variables para una UI más consistente
-    int barWidth = 400;
-    int barHeight = 60;
-    int topPosition = 80; // Posición debajo de la barra del ecosistema
+    // Variables para una UI más consistente y accesible
+    int barWidth = 520;       
+    int barHeight = 80;       
+    int topPosition = 100;    
     
-    // Caja de tutorial 
-    fill(0, 0, 0, 200);
-    rect(width/2 - barWidth/2, topPosition, barWidth, barHeight, 10);
+    // Caja de tutorial
+    fill(0, 0, 0, 220); 
+    rect(width/2 - barWidth/2, topPosition, barWidth, barHeight, 15); 
     
-    // Texto de tutorial
+    // Texto de tutorial mucho más grande y legible
     fill(255);
     textAlign(CENTER, CENTER);
-    textSize(16);
-    text(tutorialMessages.get(currentTutorialMessage), width/2, topPosition + barHeight/2 - 5);
+    textSize(22); // Tamaño de texto significativamente mayor para mejor accesibilidad
+    text(tutorialMessages.get(currentTutorialMessage), width/2, topPosition + barHeight/2 - 8);
     
-    // Puntos de progreso
+    // Puntos de progreso más grandes y visibles
     for (int i = 0; i < tutorialMessages.size(); i++) {
       if (i == currentTutorialMessage) {
-        fill(255);
+        fill(255); // Punto activo blanco brillante
       } else {
-        fill(150);
+        fill(150); // Puntos inactivos gris medio
       }
-      ellipse(width/2 - 30 + i * 20, topPosition + barHeight - 12, 8, 8);
+      // Puntos de progreso más grandes con mejor separación
+      ellipse(width/2 - 40 + i * 28, topPosition + barHeight - 18, 12, 12);
     }
     
     // Los mensajes de tutorial ahora aparecen debajo de la barra de ecosistema
@@ -1167,20 +1420,23 @@ class Game {
   // Mostrar el framerate actual en la esquina superior izquierda
   void displayFramerate() {
     pushStyle();
-    int fpsWidth = 80;
-    int fpsHeight = 35;
-    int leftMargin = 25;
-    int topPosition = 90; // Posición debajo de la barra de salud
-    float cornerRadius = 10;
+    // Tamaños aumentados considerablemente para mejor accesibilidad
+    int fpsWidth = 110;       // Panel más ancho para texto más grande
+    int fpsHeight = 50;       // Panel más alto para mejor proporción
+    int leftMargin = 35;      // Margen más generoso desde el borde (ajustado para nuevos tamaños de corazones)
+    int topPosition = 120;    // Posición debajo de la barra de salud (ajustada para nuevos tamaños)
+    float cornerRadius = 12;  // Bordes más redondeados para consistencia
     
-    // Panel para el FPS
-    fill(0, 0, 0, 180);
+    // Panel para el FPS con mejor contraste
+    fill(0, 0, 0, 200); // Fondo más opaco para mejor legibilidad
+    stroke(255, 255, 255, 100); // Borde sutil para definir el panel
+    strokeWeight(2);
     rect(leftMargin, topPosition, fpsWidth, fpsHeight, cornerRadius);
     
     // Mostrar el texto con color adaptativo según el rendimiento
     int fps = round(frameRate);
     
-    // Color basado en el rendimiento
+    // Color basado en el rendimiento (mantenemos la lógica original pero con mejor contraste)
     if (fps >= 55) {
       fill(0, 255, 80); // Verde para buen rendimiento
     } else if (fps >= 30) {
@@ -1190,7 +1446,7 @@ class Game {
     }
     
     textAlign(CENTER, CENTER);
-    textSize(18);
+    textSize(24); // Texto mucho más grande para mejor legibilidad
     text("FPS: " + fps, leftMargin + fpsWidth/2, topPosition + fpsHeight/2);
     popStyle();
   }
