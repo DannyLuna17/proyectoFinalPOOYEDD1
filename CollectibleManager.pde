@@ -8,7 +8,7 @@
 class CollectibleManager {
   ArrayList<Collectible> collectibles;
   ArrayList<PowerUp> activePowerUps;
-  ArrayList<FloatingText> floatingTexts;
+  Queue<FloatingText> floatingTexts; // Cola para procesar textos flotantes en orden FIFO
   
   float groundLevel;
   
@@ -33,6 +33,9 @@ class CollectibleManager {
   // Gestor de assets
   AssetManager assetManager;
   
+  // Sistema de progresión del jugador para otorgar XP en tiempo real
+  PlayerProgression playerProgression;
+  
   // Control de equilibrio
   int consecutiveCoins = 0;
   int consecutivePowerUps = 0;
@@ -44,13 +47,18 @@ class CollectibleManager {
     this.accessManager = accessManager;
     collectibles = new ArrayList<Collectible>();
     activePowerUps = new ArrayList<PowerUp>();
-    floatingTexts = new ArrayList<FloatingText>();
+    floatingTexts = new Queue<FloatingText>();
   }
   
   // Constructor con gestor de accesibilidad
   CollectibleManager(float groundLevel, float collectibleSpeed, EcoSystem ecoSystem, AccessibilityManager accessManager, AssetManager assetManager) {
     this(groundLevel, collectibleSpeed, ecoSystem, accessManager);
     this.assetManager = assetManager;
+  }
+  
+  // Método para establecer la referencia del sistema de progresión
+  void setPlayerProgression(PlayerProgression playerProgression) {
+    this.playerProgression = playerProgression;
   }
   
   void update(float obstacleSpeed, ArrayList<Platform> platforms) {
@@ -90,14 +98,23 @@ class CollectibleManager {
   }
   
   void updateFloatingTexts() {
-    // Actualizar y eliminar textos flotantes expirados
-    for (int i = floatingTexts.size() - 1; i >= 0; i--) {
-      FloatingText text = floatingTexts.get(i);
+    // Actualizar y eliminar textos flotantes expirados usando cola FIFO
+    Queue<FloatingText> tempQueue = new Queue<FloatingText>(); // Cola temporal para mantener textos que no han expirado
+    
+    // Procesar todos los textos de la cola principal
+    while (!floatingTexts.isEmpty()) {
+      FloatingText text = floatingTexts.dequeue(); // Sacar el texto más antiguo
       text.update();
       
-      if (text.isExpired()) {
-        floatingTexts.remove(i);
+      if (!text.isExpired()) {
+        tempQueue.enqueue(text); // Guardar en cola temporal si no ha expirado
       }
+      // Si ha expirado, simplemente no lo volvemos a añadir
+    }
+    
+    // Restaurar los textos no expirados a la cola principal
+    while (!tempQueue.isEmpty()) {
+      floatingTexts.enqueue(tempQueue.dequeue());
     }
   }
   
@@ -313,55 +330,83 @@ class CollectibleManager {
     switch (collectible.type) {
       case Collectible.COIN:
         addPoints(50, collectible.x, collectible.y);
+        // Otorgar XP inmediatamente por recoger moneda
+        if (playerProgression != null) {
+          playerProgression.awardCollectibleXP("Moneda");
+        }
         break;
       case Collectible.GEM:
         addPoints(200, collectible.x, collectible.y);
+        // Otorgar XP inmediatamente por recoger gema (más XP que moneda)
+        if (playerProgression != null) {
+          playerProgression.awardBonusXP(40, "¡Gema valiosa!");
+        }
         break;
       case Collectible.SHIELD:
         activateShield(player);
+        // Otorgar XP por recoger power-up de escudo
+        if (playerProgression != null) {
+          playerProgression.awardBonusXP(30, "¡Escudo protector!");
+        }
         break;
       case Collectible.SPEED_BOOST:
         activateSpeedBoost(player);
+        // Otorgar XP por recoger power-up de velocidad
+        if (playerProgression != null) {
+          playerProgression.awardBonusXP(30, "¡Impulso de velocidad!");
+        }
         break;
       case Collectible.DOUBLE_POINTS:
         activateDoublePoints(player);
+        // Otorgar XP por recoger power-up de puntos dobles
+        if (playerProgression != null) {
+          playerProgression.awardBonusXP(35, "¡Puntos dobles!");
+        }
         break;
       case Collectible.HEART:
         // Aumentar vida del jugador
         player.health++;
         
-        // Efecto visual mejorado - crear múltiples partículas en forma de círculo
+        // Otorgar XP especial por recoger corazón (muy valioso)
+        if (playerProgression != null) {
+          playerProgression.awardBonusXP(50, "¡Vida extra!");
+        }
+        
         for (int i = 0; i < 15; i++) {
           float angle = map(i, 0, 15, 0, TWO_PI);
           float px = collectible.x + cos(angle) * 30;
           float py = collectible.y + sin(angle) * 30;
           FloatingText particle = new FloatingText("♥", px, py, color(255, 50, 50), accessManager);
           particle.setVelocity(cos(angle) * 2, sin(angle) * 2);
-          floatingTexts.add(particle);
+          floatingTexts.enqueue(particle); // Añadir partícula a la cola
         }
         
-        // Mostrar texto flotante más grande y llamativo
         FloatingText heartText = new FloatingText("¡VIDA EXTRA!", collectible.x, collectible.y - 30, color(255, 50, 50), accessManager);
-        heartText.setSize(1.5); // Texto más grande
-        floatingTexts.add(heartText);
+        heartText.setSize(1.5); 
+        floatingTexts.enqueue(heartText); // Añadir texto principal a la cola
         
         // Reproducir sonido especial para recoger corazón
         if (player.soundManager != null) {
           // Reproducir el sonido una vez de inmediato
           player.soundManager.playCollectSound();
           
-          // Programar otro sonido para reproducirse más tarde sin bloquear con delay()
-          // Esto se podría implementar con un sistema de eventos temporizado
-          // Por ahora, simplemente reproducimos el sonido una vez
         }
         break;
       case Collectible.ECO_BOOST:
         ecoSystem.boost(0.1);
         addPoints(100, collectible.x, collectible.y);
+        // ¡NUEVO! Otorgar XP extra por coleccionable ecológico (bonus por ayudar al planeta)
+        if (playerProgression != null) {
+          playerProgression.awardCollectibleXP("eco verde"); // Activará el bonus del 50%
+        }
         break;
       case Collectible.ECO_CLEANUP:
         ecoSystem.reduce(0.15);
         addPoints(150, collectible.x, collectible.y);
+        // ¡NUEVO! Otorgar XP extra por coleccionable de limpieza ecológica (el más valioso)
+        if (playerProgression != null) {
+          playerProgression.awardBonusXP(60, "¡Limpieza ecológica!");
+        }
         break;
     }
   }
@@ -428,7 +473,7 @@ class CollectibleManager {
   
   void addFloatingText(String text, float x, float y, color textColor) {
     FloatingText floatingText = new FloatingText(text, x, y, textColor, accessManager);
-    floatingTexts.add(floatingText);
+    floatingTexts.enqueue(floatingText); // Añadir al final de la cola
   }
   
   ArrayList<Collectible> getCollectibles() {
@@ -439,8 +484,26 @@ class CollectibleManager {
     return activePowerUps;
   }
   
-  ArrayList<FloatingText> getFloatingTexts() {
+  Queue<FloatingText> getFloatingTexts() {
     return floatingTexts;
+  }
+  
+  // Método para mostrar todos los textos flotantes sin exponer la estructura interna de la cola
+  void displayFloatingTexts() {
+    // Crear una cola temporal para mostrar todos los textos sin modificar la cola principal
+    Queue<FloatingText> tempQueue = new Queue<FloatingText>();
+    
+    // Procesar todos los textos para mostrarlos
+    while (!floatingTexts.isEmpty()) {
+      FloatingText text = floatingTexts.dequeue();
+      text.display(); // Mostrar el texto
+      tempQueue.enqueue(text); // Guardar en cola temporal
+    }
+    
+    // Restaurar todos los textos a la cola principal
+    while (!tempQueue.isEmpty()) {
+      floatingTexts.enqueue(tempQueue.dequeue());
+    }
   }
   
   void reset() {
