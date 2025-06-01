@@ -13,6 +13,7 @@ class GameRenderer {
   AccessibilityManager accessManager;
   Leaderboard leaderboard;
   PlayerNameInput playerNameInput;
+  XPSummaryScreen xpSummaryScreen; // Pantalla de resumen de XP
   
   // Estado de la interfaz
   int selectedMenuItem;
@@ -35,13 +36,14 @@ class GameRenderer {
   // Constructor actualizado con leaderboard y playerNameInput
   GameRenderer(Game game, Menu menu, VideoIntroMenu videoIntroMenu, 
               AccessibilityManager accessManager, Leaderboard leaderboard,
-              PlayerNameInput playerNameInput) {
+              PlayerNameInput playerNameInput, XPSummaryScreen xpSummaryScreen) {
     this.game = game;
     this.menu = menu;
     this.videoIntroMenu = videoIntroMenu;
     this.accessManager = accessManager;
     this.leaderboard = leaderboard;
     this.playerNameInput = playerNameInput;
+    this.xpSummaryScreen = xpSummaryScreen;
     
     // Inicializar referencia al gestor de estado
     if (game != null) {
@@ -129,6 +131,9 @@ class GameRenderer {
       case STATE_NAME_INPUT:
         renderNameInput();
         break;
+      case STATE_XP_SUMMARY:
+        renderXPSummary();
+        break;
     }
   }
   
@@ -204,6 +209,20 @@ class GameRenderer {
     } else {
       // Fallback si la entrada de nombre no está disponible
       renderGameOver();
+    }
+  }
+  
+  void renderXPSummary() {
+    // Primero renderizar fondo tenue del juego
+    game.display();
+    
+    // Actualizar la pantalla de resumen de XP
+    if (xpSummaryScreen != null) {
+      xpSummaryScreen.update();
+      xpSummaryScreen.display();
+    } else {
+      // Fallback si no está disponible, volver al menú principal
+      stateManager.setState(STATE_MAIN_MENU);
     }
   }
   
