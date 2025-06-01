@@ -1,5 +1,4 @@
 /**
- * Queue.pde
  * Implementación de una Cola (Queue) usando una lista doblemente enlazada.
  */
 
