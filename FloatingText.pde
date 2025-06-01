@@ -78,64 +78,50 @@ class FloatingText {
     
     textAlign(CENTER);
     
-    // Usar tamaños más grandes para mejor visibilidad
-    float baseTextSize = isEcoMessage ? 26 : 20;
+    float baseTextSize = isEcoMessage ? 32 : 26; 
     
-    // Usar tamaño de texto ajustado desde el gestor de accesibilidad
     float textSizeValue = accessManager.getAdjustedTextSize(baseTextSize);
     
-    // Aplicar multiplicador de tamaño
     textSizeValue *= textSizeMultiplier;
     textSize(textSizeValue);
     
-    // Aplicar alfa al color del texto
     fill(red(textColor), green(textColor), blue(textColor), alpha);
     
-    // Destacar mensajes educativos con fondo
     if (isEcoMessage) {
-      // Dibujar fondo semitransparente para mejor legibilidad
       color bgColor = accessManager.highContrastMode ? 
                     color(0, alpha * 0.8) : 
                     color(30, 30, 30, alpha * 0.8);
-      float padding = 15;
+      float padding = 20; 
       rectMode(CENTER);
       noStroke();
       fill(bgColor);
-      rect(x, y, textWidth(message) + padding * 2, textSizeValue * 1.5, 10);
+      rect(x, y, textWidth(message) + padding * 2, textSizeValue * 1.6, 12); 
       
-      // Texto con contorno para mensajes destacados
       fill(red(textColor), green(textColor), blue(textColor), alpha);
     } else {
-      // Para mensajes normales como puntos, añadir un fondo sutil
       float textWidth = textWidth(message);
-      float padding = 8;
+      float padding = 12; 
       
-      // Solo añadir fondo si es un mensaje numérico (+50, -1, etc.)
       boolean isNumeric = message.matches("^[\\+\\-]?\\d+.*");
       if (isNumeric) {
         rectMode(CENTER);
         noStroke();
-        fill(0, 0, 0, alpha * 0.5);
-        rect(x, y, textWidth + padding * 2, textSizeValue * 1.2, 8);
+        fill(0, 0, 0, alpha * 0.6); 
+        rect(x, y, textWidth + padding * 2, textSizeValue * 1.3, 10); 
       }
     }
     
-    // Dibujar sombra para mejor legibilidad en modo de alto contraste
     if (accessManager.highContrastMode) {
-      // Dibujar sombra más definida
-      fill(0, 0, 0, alpha * 0.8);
-      text(message, x + 2, y + 2);
+      fill(0, 0, 0, alpha * 0.9);
+      text(message, x + 3, y + 3); 
       
-      // Dibujar texto principal
       fill(red(textColor), green(textColor), blue(textColor), alpha);
     } else {
-      // Para modo normal, añadir un sutil contorno
       pushStyle();
-      fill(0, 0, 0, alpha * 0.5);
-      text(message, x + 1, y + 1);
+      fill(0, 0, 0, alpha * 0.6); 
+      text(message, x + 2, y + 2); 
       popStyle();
       
-      // Dibujar el texto principal
       fill(red(textColor), green(textColor), blue(textColor), alpha);
     }
     
@@ -150,7 +136,6 @@ class FloatingText {
   }
   
   boolean isExpired() {
-    // Alias para isDead() para coincidir con la llamada al método en CollectibleManager
     return isDead();
   }
   
