@@ -36,6 +36,9 @@ class AssetManager {
   // Animaciones del jugador
   private Gif jumpAnimationGif;    // salto1.gif (animación de salto)
   private PImage jumpFallbackImage; // Imagen de respaldo para el salto
+  // Cache para la imagen de salto limpia 
+  private PImage cachedCleanJumpImage; // Imagen procesada una sola vez
+  private boolean jumpImageProcessed = false; // Flag para saber si ya se procesó
   
   // Imágenes de obstáculos
   private PImage factoryObstacleImage; // fabricaContaminante.png
@@ -464,22 +467,28 @@ class AssetManager {
   // Esto soluciona el problema del rectángulo negro que parpadea en los pies del personaje
   PImage getCleanJumpAnimationImage() {
     if (jumpAnimationGif != null && jumpAnimationGif.width > 0) {
-      // Crear una versión limpia del frame actual del GIF
-      PImage cleanFrame = jumpAnimationGif.copy();
-      cleanFrame.loadPixels();
+      // Si ya procesamos la imagen, devolver la versión cacheada 
+      if (jumpImageProcessed && cachedCleanJumpImage != null) {
+        return cachedCleanJumpImage;
+      }
+      
+      // Solo procesar la imagen una vez y guardarla en cache
+      cachedCleanJumpImage = jumpAnimationGif.copy();
+      cachedCleanJumpImage.loadPixels();
       
       // Procesar píxeles para eliminar fondos negros que causan artefactos visuales
-      for (int i = 0; i < cleanFrame.pixels.length; i++) {
-        color pixel = cleanFrame.pixels[i];
+      for (int i = 0; i < cachedCleanJumpImage.pixels.length; i++) {
+        color pixel = cachedCleanJumpImage.pixels[i];
         float brightness = brightness(pixel);
         
         // Hacer transparentes los píxeles negros o muy oscuros (el rectángulo negro problemático)
         if (brightness < 25) { // Umbral para detectar píxeles problemáticos del GIF
-          cleanFrame.pixels[i] = color(0, 0); // Completamente transparente - elimina el artefacto
+          cachedCleanJumpImage.pixels[i] = color(0, 0); // Completamente transparente
         }
       }
-      cleanFrame.updatePixels();
-      return cleanFrame;
+      cachedCleanJumpImage.updatePixels();
+      jumpImageProcessed = true; // Marcar como procesada
+      return cachedCleanJumpImage;
     } else {
       // Devolver la imagen de respaldo que no tiene problemas de fondo negro
       return jumpFallbackImage;

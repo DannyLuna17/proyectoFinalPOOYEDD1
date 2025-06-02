@@ -239,16 +239,6 @@ class Player {
         jumpAnimationTimer = 0;
       }
     }
-    
-    // Manejar la animación de salto
-    if (playingJumpAnimation) {
-      jumpAnimationTimer++;
-      // Detener la animación cuando termine el tiempo o cuando el jugador toque el suelo
-      if (jumpAnimationTimer >= jumpAnimationDuration || !isJumping) {
-        playingJumpAnimation = false;
-        jumpAnimationTimer = 0;
-      }
-    }
   }
   
   void handleJump() {
@@ -284,9 +274,6 @@ class Player {
         jumpHoldTime = 0;
         isOnPlatform = false;
         currentPlatform = null;
-        // Detener la animación de salto cuando aterrizamos
-        playingJumpAnimation = false;
-        jumpAnimationTimer = 0;
         // Detener la animación de salto cuando aterrizamos
         playingJumpAnimation = false;
         jumpAnimationTimer = 0;
@@ -327,9 +314,6 @@ class Player {
           vSpeed = 0;
           isJumping = false;
           jumpHoldTime = 0;
-          // Detener la animación de salto cuando aterrizamos en plataforma
-          playingJumpAnimation = false;
-          jumpAnimationTimer = 0;
           // Detener la animación de salto cuando aterrizamos en plataforma
           playingJumpAnimation = false;
           jumpAnimationTimer = 0;
@@ -519,24 +503,8 @@ class Player {
         
         // Dibujar la animación de salto sin artefactos negros
         image(jumpImage, 0, 0, size*1.2, size*1.2);
-      } else if (playingJumpAnimation && assetManager != null) {
-        // Mostrar animación de salto cuando está saltando
-        translate(x, y - size/2); // Aplicar transformación para posicionar correctamente
-        
-        // Aplicar efecto de parpadeo si es invencible
-        if (isInvincible && invincibilityTimer % 10 < 5) {
-          tint(255, 255, 100);
-        }
-        
-        // Usar el método optimizado que elimina automáticamente los fondos negros
-        PImage jumpImage = assetManager.getCleanJumpAnimationImage();
-        
-        // Dibujar la animación de salto sin artefactos negros
-        image(jumpImage, 0, 0, size*1.2, size*1.2);
       } else {
         // Personaje en posición normal
-          
-          
         // Aplicar efecto de parpadeo si es invencible
         if (isInvincible && invincibilityTimer % 10 < 5) {
           tint(255, 255, 100);
@@ -622,10 +590,6 @@ class Player {
       
       isJumping = true;
       spacePressed = true;
-      
-      // Iniciar la animación de salto
-      playingJumpAnimation = true;
-      jumpAnimationTimer = 0;
       
       // Iniciar la animación de salto
       playingJumpAnimation = true;
