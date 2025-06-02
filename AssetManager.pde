@@ -36,9 +36,11 @@ class AssetManager {
   // Animaciones del jugador
   private Gif jumpAnimationGif;    // salto1.gif (animación de salto)
   private PImage jumpFallbackImage; // Imagen de respaldo para el salto
-  // Cache para la imagen de salto limpia 
-  private PImage cachedCleanJumpImage; // Imagen procesada una sola vez
-  private boolean jumpImageProcessed = false; // Flag para saber si ya se procesó
+  // Cache optimizado para frames pre-procesados
+  private PImage[] processedJumpFrames; // Todos los frames ya procesados
+  private int currentJumpFrame = 0;     // Frame actual a mostrar
+  private int jumpFrameTimer = 0;       // Timer para cambiar frames
+  private int jumpFrameDelay = 6;       // Frames entre cambios (ajustable)
   
   // Imágenes de obstáculos
   private PImage factoryObstacleImage; // fabricaContaminante.png
@@ -150,6 +152,9 @@ class AssetManager {
           jumpAnimationGif = new Gif(p, jumpGifPath);
           jumpAnimationGif.loop(); 
           println("GIF de salto cargado exitosamente");
+          
+          // Pre-procesar todos los frames del GIF para optimización
+          preProcessJumpFrames();
         } else {
           println("ERROR: No se encontró el archivo GIF en: " + jumpGifPath);
           jumpAnimationGif = null;
@@ -463,36 +468,32 @@ class AssetManager {
     }
   }
   
-  // Método alternativo que devuelve una imagen limpia del GIF sin fondos negros
-  // Esto soluciona el problema del rectángulo negro que parpadea en los pies del personaje
+  // Método optimizado que usa frames pre-procesados (sin procesamiento en tiempo real)
   PImage getCleanJumpAnimationImage() {
-    if (jumpAnimationGif != null && jumpAnimationGif.width > 0) {
-      // Si ya procesamos la imagen, devolver la versión cacheada 
-      if (jumpImageProcessed && cachedCleanJumpImage != null) {
-        return cachedCleanJumpImage;
+    // Si tenemos frames pre-procesados, usarlos para máximo rendimiento
+    if (processedJumpFrames != null && processedJumpFrames.length > 0) {
+      // Actualizar timer y frame actual
+      jumpFrameTimer++;
+      if (jumpFrameTimer >= jumpFrameDelay) {
+        jumpFrameTimer = 0;
+        currentJumpFrame = (currentJumpFrame + 1) % processedJumpFrames.length;
       }
       
-      // Solo procesar la imagen una vez y guardarla en cache
-      cachedCleanJumpImage = jumpAnimationGif.copy();
-      cachedCleanJumpImage.loadPixels();
-      
-      // Procesar píxeles para eliminar fondos negros que causan artefactos visuales
-      for (int i = 0; i < cachedCleanJumpImage.pixels.length; i++) {
-        color pixel = cachedCleanJumpImage.pixels[i];
-        float brightness = brightness(pixel);
-        
-        // Hacer transparentes los píxeles negros o muy oscuros (el rectángulo negro problemático)
-        if (brightness < 25) { // Umbral para detectar píxeles problemáticos del GIF
-          cachedCleanJumpImage.pixels[i] = color(0, 0); // Completamente transparente
-        }
-      }
-      cachedCleanJumpImage.updatePixels();
-      jumpImageProcessed = true; // Marcar como procesada
-      return cachedCleanJumpImage;
-    } else {
-      // Devolver la imagen de respaldo que no tiene problemas de fondo negro
-      return jumpFallbackImage;
+      // Devolver el frame pre-procesado actual (SIN procesamiento adicional)
+      return processedJumpFrames[currentJumpFrame];
     }
+    
+    // Fallback: usar GIF original si no hay frames pre-procesados
+    if (jumpAnimationGif != null && jumpAnimationGif.width > 0) {
+      // Asegurarse de que el GIF esté reproduciéndose
+      if (!jumpAnimationGif.isPlaying()) {
+        jumpAnimationGif.play();
+      }
+      return jumpAnimationGif; // Sin procesamiento para mejor rendimiento
+    }
+    
+    // Último fallback: imagen estática
+    return jumpFallbackImage;
   }
   
   // Getter para acceder al objeto Gif de salto directamente
@@ -509,4 +510,142 @@ class AssetManager {
   PImage getAvalancheImage() {
     return avalancheImage;
   }
-} 
+  
+  
+  
+  // Pre-procesar todos los frames del GIF de salto para máximo rendimiento
+  void preProcessJumpFrames() {
+    if (jumpAnimationGif == null) {
+      processedJumpFrames = null;
+      return;
+    }
+    
+    println("Pre-procesando frames del GIF de salto para optimización...");
+    
+    try {
+      // Pausar el GIF temporalmente para obtener frames individuales
+      jumpAnimationGif.pause();
+      jumpAnimationGif.jump(0); // Ir al primer frame
+      
+      // Obtener número total de frames de manera compatible
+      ArrayList<PImage> tempFrames = new ArrayList<PImage>();
+      int frameIndex = 0;
+      int maxFramesToCheck = 200; // Límite de seguridad para evitar bucles infinitos
+      
+      // Iterar a través de todos los frames disponibles
+      while (frameIndex < maxFramesToCheck) {
+        try {
+          jumpAnimationGif.jump(frameIndex);
+          PImage currentFrame = jumpAnimationGif.copy();
+          
+          // Si conseguimos una imagen válida, agregarla
+          if (currentFrame != null && currentFrame.width > 0) {
+            tempFrames.add(currentFrame);
+            frameIndex++;
+          } else {
+            // No hay más frames válidos
+            break;
+          }
+        } catch (Exception e) {
+          // Si falla al acceder a un frame, hemos llegado al final
+          break;
+        }
+      }
+      
+      int totalFrames = tempFrames.size();
+      if (totalFrames == 0) {
+        println("ERROR: No se pudieron obtener frames del GIF");
+        processedJumpFrames = null;
+        return;
+      }
+      
+      processedJumpFrames = new PImage[totalFrames];
+      println("Procesando " + totalFrames + " frames del GIF de salto...");
+      
+      // Procesar cada frame ya obtenido
+      for (int i = 0; i < totalFrames; i++) {
+        PImage originalFrame = tempFrames.get(i);
+        originalFrame.loadPixels();
+        
+        // Crear frame procesado
+        PImage cleanFrame = createImage(originalFrame.width, originalFrame.height, ARGB);
+        cleanFrame.loadPixels();
+        
+        // Procesar píxeles para eliminar fondos negros
+        for (int j = 0; j < originalFrame.pixels.length; j++) {
+          color pixel = originalFrame.pixels[j];
+          
+          // Detectar píxeles negros o muy oscuros (fondo)
+          if (red(pixel) < 30 && green(pixel) < 30 && blue(pixel) < 30) {
+            cleanFrame.pixels[j] = color(0, 0, 0, 0); // Hacer transparente
+          } else {
+            cleanFrame.pixels[j] = pixel; // Mantener el pixel original
+          }
+        }
+        
+        cleanFrame.updatePixels();
+        processedJumpFrames[i] = cleanFrame;
+      }
+      
+      println("✓ Pre-procesamiento completado - " + totalFrames + " frames listos");
+      
+      // Volver a reproducir el GIF desde el primer frame
+      jumpAnimationGif.jump(0);
+      jumpAnimationGif.play();
+      
+    } catch (Exception e) {
+      println("ERROR en pre-procesamiento: " + e.getMessage());
+      e.printStackTrace();
+      processedJumpFrames = null;
+    }
+  }
+  
+  // Métodos para controlar la animación de salto optimizada
+  void startJumpAnimation() {
+    // Reiniciar la animación desde el primer frame
+    currentJumpFrame = 0;
+    jumpFrameTimer = 0;
+    
+    // También controlar el GIF original si está disponible
+    if (jumpAnimationGif != null) {
+      jumpAnimationGif.jump(0); // Ir al primer frame
+      jumpAnimationGif.play();
+    }
+  }
+  
+  void stopJumpAnimation() {
+    // Pausar en el primer frame
+    currentJumpFrame = 0;
+    jumpFrameTimer = 0;
+    
+    // También controlar el GIF original si está disponible
+    if (jumpAnimationGif != null) {
+      jumpAnimationGif.pause();
+      jumpAnimationGif.jump(0); // Volver al primer frame
+    }
+  }
+  
+  void pauseJumpAnimation() {
+    // Pausar el timer (mantiene el frame actual)
+    jumpFrameTimer = 0;
+    
+    // También controlar el GIF original si está disponible
+    if (jumpAnimationGif != null) {
+      jumpAnimationGif.pause();
+    }
+  }
+  
+  boolean isJumpAnimationPlaying() {
+    // Si tenemos frames pre-procesados, siempre puede "reproducirse"
+    if (processedJumpFrames != null && processedJumpFrames.length > 0) {
+      return true;
+    }
+    
+    // Fallback al GIF original
+    if (jumpAnimationGif != null) {
+      return jumpAnimationGif.isPlaying();
+    }
+    
+    return false;
+  }
+}
