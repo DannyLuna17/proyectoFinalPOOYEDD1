@@ -15,6 +15,7 @@ class GameManager {
   Leaderboard leaderboard;
   PlayerNameInput playerNameInput;
   XPSummaryScreen xpSummaryScreen; // Pantalla de resumen de XP que se muestra después del leaderboard
+  LoadingScreen loadingScreen;
   
   // Gestores
   GameStateManager stateManager;
@@ -49,6 +50,9 @@ class GameManager {
     leaderboard = initializer.getLeaderboard();
     playerNameInput = initializer.getPlayerNameInput();
     
+    // Crear pantalla de carga
+    loadingScreen = new LoadingScreen(accessManager);
+    
     // Inicializar pantalla de resumen de XP
     xpSummaryScreen = new XPSummaryScreen(accessManager, game.playerProgression);
     
@@ -57,15 +61,17 @@ class GameManager {
     
     // Mostrar instrucciones del juego
     initializer.printGameInstructions();
+    
+    loadingScreen.setAssetsLoaded(true);
   }
   
   void createManagers() {
     // Crear gestor de estados
     stateManager = new GameStateManager();
-    stateManager.setState(STATE_INTRO_VIDEO);
+    stateManager.setState(STATE_LOADING); 
     
     // Crear renderizador con todos los componentes necesarios
-    renderer = new GameRenderer(game, menu, videoIntroMenu, accessManager, leaderboard, playerNameInput, xpSummaryScreen);
+    renderer = new GameRenderer(game, menu, videoIntroMenu, accessManager, leaderboard, playerNameInput, xpSummaryScreen, loadingScreen);
     renderer.setGameState(stateManager.getState());
     renderer.setSelectedMenuItem(selectedMenuItem);
     
@@ -82,6 +88,11 @@ class GameManager {
   }
   
   void update() {
+    // Actualizar pantalla de carga si estamos en ese estado
+    if (stateManager.getState() == STATE_LOADING) {
+      loadingScreen.update();
+    }
+    
     // Verificar transiciones de estado
     checkForStateTransitions();
     
@@ -96,6 +107,12 @@ class GameManager {
   }
   
   void checkForStateTransitions() {
+    // Verificar si la carga inicial ha terminado
+    if (stateManager.getState() == STATE_LOADING && loadingScreen.isLoadingComplete()) {
+      stateManager.setState(STATE_INTRO_VIDEO);
+      updateComponentsAfterStateChange();
+    }
+    
     // Verificar si el video de introducción ha terminado
     if (stateManager.getState() == STATE_INTRO_VIDEO && videoIntroMenu.isComplete()) {
       stateManager.setState(STATE_MAIN_MENU);

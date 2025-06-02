@@ -14,6 +14,7 @@ class GameRenderer {
   Leaderboard leaderboard;
   PlayerNameInput playerNameInput;
   XPSummaryScreen xpSummaryScreen; // Pantalla de resumen de XP
+  LoadingScreen loadingScreen; 
   
   // Estado de la interfaz
   int selectedMenuItem;
@@ -44,6 +45,26 @@ class GameRenderer {
     this.leaderboard = leaderboard;
     this.playerNameInput = playerNameInput;
     this.xpSummaryScreen = xpSummaryScreen;
+    
+    // Inicializar referencia al gestor de estado
+    if (game != null) {
+      this.stateManager = game.gameStateManager;
+    }
+  }
+  
+  // Constructor completo con pantalla de carga
+  GameRenderer(Game game, Menu menu, VideoIntroMenu videoIntroMenu, 
+              AccessibilityManager accessManager, Leaderboard leaderboard,
+              PlayerNameInput playerNameInput, XPSummaryScreen xpSummaryScreen,
+              LoadingScreen loadingScreen) {
+    this.game = game;
+    this.menu = menu;
+    this.videoIntroMenu = videoIntroMenu;
+    this.accessManager = accessManager;
+    this.leaderboard = leaderboard;
+    this.playerNameInput = playerNameInput;
+    this.xpSummaryScreen = xpSummaryScreen;
+    this.loadingScreen = loadingScreen;
     
     // Inicializar referencia al gestor de estado
     if (game != null) {
@@ -104,6 +125,9 @@ class GameRenderer {
     }
     
     switch(currentState) {
+      case STATE_LOADING:
+        renderLoadingScreen();
+        break;
       case STATE_INTRO_VIDEO:
         renderIntroVideo();
         break;
@@ -134,6 +158,15 @@ class GameRenderer {
       case STATE_XP_SUMMARY:
         renderXPSummary();
         break;
+    }
+  }
+  
+  void renderLoadingScreen() {
+    if (loadingScreen != null) {
+      loadingScreen.display();
+    } else {
+      // fallback si no hay pantalla de carga - ir directo al video intro
+      stateManager.setState(STATE_INTRO_VIDEO);
     }
   }
   

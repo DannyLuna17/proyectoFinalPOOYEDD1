@@ -6,6 +6,7 @@
  */
 
 // Estados del juego
+final int STATE_LOADING = -2; 
 final int STATE_INTRO_VIDEO = -1;
 final int STATE_MAIN_MENU = 0;
 final int STATE_INSTRUCTIONS = 1;
