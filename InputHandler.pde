@@ -67,6 +67,16 @@ class InputHandler {
       return;
     }
     
+    // Manejar input en pantalla XP
+    if (getGameState() == STATE_XP_SUMMARY && gameManager != null && gameManager.xpSummaryScreen != null) {
+      gameManager.xpSummaryScreen.handleKeyPressed();
+      if (keyCode == ESC) {
+        handleEscapeKey();
+        key = 0; 
+      }
+      return;
+    }
+    
     // Manejar navegación con teclado en pantallas de menú
     if (getGameState() != STATE_GAME) {
       handleMenuKeyboardNavigation();
@@ -259,6 +269,8 @@ class InputHandler {
     
     if (getGameState() == STATE_XP_SUMMARY && gameManager != null && gameManager.xpSummaryScreen != null) {
       // Manejar clics en la pantalla de resumen de XP
+      gameManager.xpSummaryScreen.handleMousePressed();
+      
       if (gameManager.xpSummaryScreen.checkContinueClick()) {
         // Si se hizo clic en continuar, ir al menú principal
         stateManager.setState(STATE_MAIN_MENU);
@@ -458,6 +470,11 @@ class InputHandler {
       videoIntroMenu.skipVideo();
     } else if (getGameState() == STATE_GAME) {
       pauseGame();
+    } else if (getGameState() == STATE_XP_SUMMARY) {
+      // Desde la pantalla de resumen de XP, regresar al menú principal
+      selectedMenuItem = 0;
+      stateManager.setState(STATE_MAIN_MENU);
+      menu.updateSelectedItem(getGameState(), selectedMenuItem);
     } else if (getGameState() == STATE_LEADERBOARD) {
       // Manejo especial para el leaderboard según su origen
       if (stateManager.isLeaderboardFromMainMenu()) {

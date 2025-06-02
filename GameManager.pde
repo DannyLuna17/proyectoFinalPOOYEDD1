@@ -52,6 +52,9 @@ class GameManager {
     // Inicializar pantalla de resumen de XP
     xpSummaryScreen = new XPSummaryScreen(accessManager, game.playerProgression);
     
+    // Establecer referencia del GameManager en PlayerNameInput para acceso a XP
+    playerNameInput.setGameManager(this);
+    
     // Mostrar instrucciones del juego
     initializer.printGameInstructions();
   }

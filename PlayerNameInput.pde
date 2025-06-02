@@ -16,9 +16,11 @@ class PlayerNameInput {
   AccessibilityManager accessManager;
   GameStateManager stateManager;
   Leaderboard leaderboard;
+  GameManager gameManager; // Referencia para acceder a XP Summary
   
-  // Botón para continuar - usando la misma clase Button del menú principal
+  // Botón para continuar 
   Button continueButton;
+  Button skipButton; 
   
   // Datos del juego finalizado
   int finalScore;
@@ -28,12 +30,17 @@ class PlayerNameInput {
     this.accessManager = accessManager;
     this.stateManager = stateManager;
     this.leaderboard = leaderboard;
+    this.gameManager = null; 
     this.finalScore = 0;
     this.playTimeInSeconds = 0;
     
     // Inicializar botón de continuar con el mismo estilo que los botones del menú
-    continueButton = new Button(width/2, height/2 + (height * 0.35)/2 - 35, 180, 45, "CONTINUAR", 
+    continueButton = new Button(width/2 + 95, height/2 + (height * 0.35)/2 - 35, 180, 45, "CONTINUAR", 
                                color(80, 150, 80), accessManager);
+    
+    // Inicializar botón de saltar al XP
+    skipButton = new Button(width/2 - 95, height/2 + (height * 0.35)/2 - 35, 180, 45, "SALTAR", 
+                           color(150, 100, 50), accessManager);
   }
   
   // Establecer datos del juego finalizado
@@ -42,11 +49,22 @@ class PlayerNameInput {
     this.playTimeInSeconds = playTime;
   }
   
+  // Establecer referencia al GameManager
+  void setGameManager(GameManager gm) {
+    this.gameManager = gm;
+  }
+  
   // Procesar entrada de teclado
   void keyPressed() {
     if (!inputActive) return;
     
-    if (key == BACKSPACE && playerName.length() > 0) {
+    if (keyCode == ESC) {
+      // Regresar al menú principal cuando se presiona escape
+      stateManager.setState(STATE_MAIN_MENU);
+      reset();
+      key = 0; // Evitar que Processing salga
+      return;
+    } else if (key == BACKSPACE && playerName.length() > 0) {
       // Eliminar último carácter
       playerName = playerName.substring(0, playerName.length() - 1);
     } else if (key == ENTER || key == RETURN) {
@@ -74,6 +92,29 @@ class PlayerNameInput {
       // Reiniciar para futuros usos
       reset();
     }
+  }
+  
+  // Método para saltar directamente a la pantalla XP
+  void skipToXP() {
+    // Configurar datos XP si tenemos acceso al GameManager
+    if (gameManager != null && gameManager.xpSummaryScreen != null && gameManager.game != null) {
+      Game game = gameManager.game;
+      gameManager.xpSummaryScreen.setXPData(
+        game.lastRunXP,
+        game.lastRunDistance,
+        game.lastRunCollectibles,
+        game.lastRunTimeSeconds,
+        game.lastRunAvgEcoHealth,
+        game.lastRunWasHit,
+        game.lastRunGoodEcoTime
+      );
+    }
+    
+    // Ir directamente al estado de resumen XP sin guardar en leaderboard
+    stateManager.setState(STATE_XP_SUMMARY);
+    
+    // Reiniciar para futuros usos
+    reset();
   }
   
   // Reiniciar para futuros usos
@@ -153,11 +194,13 @@ class PlayerNameInput {
     fill(accessManager.getTextColor(color(150, 150, 150)));
     text("(Máximo " + maxNameLength + " caracteres)", width/2, height/2 + 70);
     
-    // Botón continuar - usando la clase Button para consistencia con el menú principal
     // Actualizar posición y estado habilitado/deshabilitado
-    // Así mantenemos la UI siempre actualizada, sin importar si la ventana cambia de tamaño
-    continueButton.x = width/2;
-    continueButton.y = height/2 + popupHeight/2 - 35;
+    continueButton.x = width/2 + 95;
+    continueButton.y = height/2 + popupHeight/2 - 50;
+    
+    // Actualizar posición del botón saltar
+    skipButton.x = width/2 - 95;
+    skipButton.y = height/2 + popupHeight/2 - 50;
     
     // Desactivar visualmente el botón si no hay texto
     // Esto da feedback visual al usuario - muy importante para la experiencia de usuario
@@ -172,6 +215,11 @@ class PlayerNameInput {
     continueButton.updateHoverColor();
     continueButton.display();
     
+    // El botón saltar siempre está habilitado
+    skipButton.baseColor = color(150, 100, 50);
+    skipButton.updateHoverColor();
+    skipButton.display();
+    
     popStyle();
   }
   
@@ -184,10 +232,17 @@ class PlayerNameInput {
     return false;
   }
   
+  // Verificar si se hizo clic en el botón saltar
+  boolean checkSkipButtonClick(int mouseX, int mouseY) {
+    return skipButton.isClicked();
+  }
+  
   // Procesar clic de mouse
   void mousePressed(int mouseX, int mouseY) {
     if (checkButtonClick(mouseX, mouseY)) {
       submitName();
+    } else if (checkSkipButtonClick(mouseX, mouseY)) {
+      skipToXP();
     }
   }
 } 

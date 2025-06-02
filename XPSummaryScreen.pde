@@ -199,7 +199,7 @@ class XPSummaryScreen {
     
     // Panel principal más compacto para overlay
     int panelWidth = 450;
-    int panelHeight = 380;
+    int panelHeight = 450; 
     int panelX = (width - panelWidth) / 2;
     int panelY = (height - panelHeight) / 2;
     
@@ -217,20 +217,22 @@ class XPSummaryScreen {
     // Desglose de XP con animación
     drawXPBreakdown(panelX, panelY, panelWidth, panelHeight);
     
-    // Total con efecto especial
-    drawTotalXP(panelX, panelY, panelWidth, panelHeight);
-    
-    // Mostrar nivel actual y barra de progreso compacta
-    drawLevelProgressCompact(panelX, panelY + panelHeight + 10, panelWidth);
+    // Total con efecto especial e información de nivel integrada
+    drawTotalXPWithLevel(panelX, panelY, panelWidth, panelHeight);
     
     // Actualizar posición del botón continuar para el overlay
     continueButton.x = panelX + panelWidth/2;
-    continueButton.y = panelY + panelHeight + 100; // Más espacio debajo del panel
+    continueButton.y = panelY + panelHeight + 50; 
     continueButton.display();
     
     // Efecto de level up superpuesto
     if (showLevelUpEffect) {
       drawLevelUpOverlay();
+    }
+    
+    // Mostrar indicación para saltar animación si está activa
+    if (isAnimating) {
+      drawSkipAnimationHint();
     }
     
     popStyle();
@@ -356,10 +358,10 @@ class XPSummaryScreen {
     popStyle();
   }
   
-  // Dibujar total de XP con efecto especial
-  void drawTotalXP(int panelX, int panelY, int panelWidth, int panelHeight) {
+  // Dibujar total de XP con efecto especial e información de nivel integrada
+  void drawTotalXPWithLevel(int panelX, int panelY, int panelWidth, int panelHeight) {
     if (currentAnimationStage >= maxAnimationStages - 1) {
-      int totalY = panelY + panelHeight - 70;
+      int totalY = panelY + panelHeight - 140; // Ajustado para hacer espacio para nivel
       
       // Línea separadora
       stroke(accessManager.getTextColor(color(200, 200, 200)));
@@ -378,31 +380,33 @@ class XPSummaryScreen {
       
       textAlign(CENTER, CENTER);
       textSize(accessManager.getAdjustedTextSize(24));
-      text("TOTAL: +" + totalXPEarned + " XP", panelX + panelWidth/2, totalY + 5);
+      text("TOTAL: +" + totalXPEarned + " XP", panelX + panelWidth/2, totalY + 2.5);
+      
+      // Información de nivel integrada dentro del panel
+      drawLevelInfoIntegrated(panelX, totalY + 50, panelWidth);
     }
   }
   
-  // Dibujar progreso de nivel compacto para overlay
-  void drawLevelProgressCompact(int x, int y, int panelWidth) {
+  // Dibujar información de nivel integrada dentro del panel principal
+  void drawLevelInfoIntegrated(int x, int y, int panelWidth) {
     if (currentAnimationStage >= maxAnimationStages) {
-      // Panel de nivel compacto
-      fill(accessManager.getBackgroundColor(color(20, 20, 30, 200)));
-      stroke(accessManager.getUIBorderColor(color(100, 150, 255)));
-      strokeWeight(2);
-      rect(x, y, panelWidth, 45, 8);
+      // Línea separadora para la sección de nivel
+      stroke(accessManager.getTextColor(color(180, 180, 180)));
+      strokeWeight(1);
+      line(x + 25, y - 10, x + panelWidth - 25, y - 10);
       
       // Información de nivel
       fill(accessManager.getTextColor(color(255, 220, 100)));
       textAlign(LEFT, CENTER);
-      textSize(accessManager.getAdjustedTextSize(18));
-      text("NIVEL " + playerProgression.getCurrentLevel(), x + 15, y + 15);
+      textSize(accessManager.getAdjustedTextSize(20));
+      text("NIVEL " + playerProgression.getCurrentLevel(), x + 25, y + 15);
       
       // Barra de progreso de XP
       if (!playerProgression.isMaxLevel()) {
-        int barWidth = panelWidth - 30;
-        int barHeight = 6;
-        int barX = x + 15;
-        int barY = y + 28;
+        int barWidth = panelWidth - 50;
+        int barHeight = 8;
+        int barX = x + 25;
+        int barY = y + 35;
         
         // Fondo de la barra
         fill(accessManager.getBackgroundColor(color(50, 50, 50)));
@@ -416,23 +420,19 @@ class XPSummaryScreen {
         fill(accessManager.getUIElementColor(color(100, 255, 100)));
         rect(barX, barY, fillWidth, barHeight, barHeight/2);
         
-        // Texto de XP compacto
-        textSize(accessManager.getAdjustedTextSize(12));
-        textAlign(RIGHT, CENTER);
-        text(playerProgression.getCurrentXP() + "/" + playerProgression.getXPToNextLevel() + " XP", 
-             x + panelWidth - 15, y + 35);
-      } else {
+        // Texto de XP debajo de la barra
         textSize(accessManager.getAdjustedTextSize(14));
-        textAlign(RIGHT, CENTER);
+        textAlign(CENTER, CENTER);
+        fill(accessManager.getTextColor(color(200, 200, 200)));
+        text(playerProgression.getCurrentXP() + " / " + playerProgression.getXPToNextLevel() + " XP hasta el siguiente nivel", 
+             x + panelWidth/2, y + 55);
+      } else {
+        textSize(accessManager.getAdjustedTextSize(16));
+        textAlign(CENTER, CENTER);
         fill(accessManager.getTextColor(color(255, 215, 0)));
-        text("¡NIVEL MÁXIMO!", x + panelWidth - 15, y + 22);
+        text("¡NIVEL MÁXIMO ALCANZADO!", x + panelWidth/2, y + 35);
       }
     }
-  }
-  
-  // Dibujar progreso de nivel (método original
-  void drawLevelProgress(int x, int y, int panelWidth) {
-    drawLevelProgressCompact(x, y, panelWidth);
   }
   
   // Dibujar overlay de level up como notificación elegante sin oscurecer toda la pantalla
@@ -506,6 +506,38 @@ class XPSummaryScreen {
     popStyle();
   }
   
+  // Dibujar indicación para saltar animación
+  void drawSkipAnimationHint() {
+    pushStyle();
+    
+    // Posición en la parte inferior del botón de continuar
+    float hintY = continueButton.y + continueButton.height/2 + 25;
+    
+    // Efecto de parpadeo sutil para llamar la atención
+    float alpha = 180 + sin(millis() * 0.008) * 75; // Oscila entre 105 y 255
+    
+    // Texto con fondo semi-transparente para mejor legibilidad
+    color hintBgColor = accessManager.getBackgroundColor(color(0, 0, 0, 100));
+    fill(hintBgColor);
+    noStroke();
+    
+    // Calcular ancho del texto para el fondo
+    textSize(accessManager.getAdjustedTextSize(16));
+    String hintText = "Presiona cualquier tecla o haz clic para saltar la animación";
+    float textWidth = textWidth(hintText);
+    
+    // Dibujar fondo redondeado
+    rectMode(CENTER);
+    rect(width/2, hintY, textWidth + 20, 25, 12);
+    
+    // Dibujar el texto de la indicación
+    fill(accessManager.getTextColor(color(255, 255, 255, alpha)));
+    textAlign(CENTER, CENTER);
+    text(hintText, width/2, hintY);
+    
+    popStyle();
+  }
+  
   // Verificar clic en botón continuar
   boolean checkContinueClick() {
     return continueButton.isClicked() && currentAnimationStage >= maxAnimationStages;
@@ -517,6 +549,26 @@ class XPSummaryScreen {
       isAnimating = false;
       currentAnimationStage = maxAnimationStages;
       animationTimer = animationDuration;
+    }
+  }
+  
+  // Manejar input de teclado
+  void handleKeyPressed() {
+    if (keyCode == ESC) {
+      if (isAnimating) {
+        skipAnimation();
+      }
+    }
+    else if (isAnimating) {
+      skipAnimation();
+    }
+  }
+  
+  // Manejar clicks del mouse
+  void handleMousePressed() {
+    // Click en cualquier parte salta la animación (pero no cierra la pantalla)
+    if (isAnimating) {
+      skipAnimation();
     }
   }
 } 
