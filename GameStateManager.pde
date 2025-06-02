@@ -33,7 +33,7 @@ class GameStateManager {
     this.onStateChangeCallback = callback;
   }
   
-  // Método principal para cambiar estados - ahora más inteligente
+  // Método principal para cambiar estados
   void setState(int newState) {
     // Guardar el estado anterior antes de cambiar
     previousState = currentState;
@@ -57,21 +57,21 @@ class GameStateManager {
     }
   }
   
-  // Método especial para abrir leaderboard desde menú principal - más claro y explícito
+  // Método especial para abrir leaderboard desde menú principal
   void openLeaderboardFromMenu() {
     previousState = currentState;
     currentState = STATE_LEADERBOARD;
-    leaderboardFromMainMenu = true; // Marca explícita de que viene del menú
+    leaderboardFromMainMenu = true; 
   }
   
-  // Método especial para abrir leaderboard después de partida - más claro y explícito  
+  // Método especial para abrir leaderboard después de partida  
   void openLeaderboardFromGame() {
     previousState = currentState;
     currentState = STATE_LEADERBOARD;
-    leaderboardFromMainMenu = false; // Marca explícita de que viene de una partida
+    leaderboardFromMainMenu = false; 
   }
   
-  // Getter para saber el origen del leaderboard - útil para otros componentes
+  // Getter para saber el origen del leaderboard
   boolean isLeaderboardFromMainMenu() {
     return leaderboardFromMainMenu;
   }

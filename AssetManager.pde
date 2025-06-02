@@ -18,6 +18,9 @@ class AssetManager {
   private PImage instructionsImage; // Imagen para la pantalla de instrucciones
   private PImage floorImage;        // Imagen para el suelo
   
+  // Efectos visuales
+  private PImage avalancheImage;    
+  
   // Imágenes de coleccionables
   private PImage heartImage;       // corazon.png
   private PImage shieldImage;      // escudo.png
@@ -29,6 +32,10 @@ class AssetManager {
   private PImage coinFallbackImage; // Imagen de respaldo para monedas
   private PImage characterImage;   // personaje
   private PImage shadowImage;      // sombra
+  
+  // Animaciones del jugador
+  private Gif jumpAnimationGif;    // salto1.gif (animación de salto)
+  private PImage jumpFallbackImage; // Imagen de respaldo para el salto
   
   // Imágenes de obstáculos
   private PImage factoryObstacleImage; // fabricaContaminante.png
@@ -71,6 +78,9 @@ class AssetManager {
     floorImage = loadImage("assets/piso.png");
     optimizeFloorImageForTiling();
     
+    // Cargar efectos visuales
+    avalancheImage = loadImage("assets/avalancha.png");
+    
     // Cargar imágenes de coleccionables
     heartImage = loadImage("assets/corazon.png");
     shieldImage = loadImage("assets/escudo.png");
@@ -85,6 +95,13 @@ class AssetManager {
     
     // Cargar imagen de lluvia
     rainImage = loadImage("assets/lluvia.gif");
+    
+    // Cargar otras imágenes
+    characterImage = loadImage("assets/personaje.png");
+    shadowImage = loadImage("assets/sombra.png");
+    
+    // Crear imagen de respaldo para el salto
+    jumpFallbackImage = createJumpFallbackImage();
     
     // Para tener acceso a Processing directamente
     PApplet p = applet;  // Usamos la variable global
@@ -120,23 +137,36 @@ class AssetManager {
           coinGif = null;
         }
         
+        // Cargar GIF animado para el salto del jugador
+        String jumpGifPath = p.sketchPath("assets/salto1.gif");
+        println("Intentando cargar salto1.gif desde: " + jumpGifPath);
+        
+        // Comprobar si el archivo existe
+        File jumpGifFile = new File(jumpGifPath);
+        if (jumpGifFile.exists()) {
+          jumpAnimationGif = new Gif(p, jumpGifPath);
+          jumpAnimationGif.loop(); 
+          println("GIF de salto cargado exitosamente");
+        } else {
+          println("ERROR: No se encontró el archivo GIF en: " + jumpGifPath);
+          jumpAnimationGif = null;
+        }
+        
       } catch (Exception e) {
         // Si falla, cargar una imagen estática de respaldo
         println("Error cargando GIFs: " + e.getMessage());
         e.printStackTrace();
         speedBoostGif = null;
         coinGif = null;
+        jumpAnimationGif = null;
       }
     } else {
       // Si no tenemos acceso a PApplet, no podemos cargar GIFs
       println("No se puede cargar GIF: falta referencia a PApplet");
       speedBoostGif = null;
       coinGif = null;
+      jumpAnimationGif = null;
     }
-    
-    // Cargar otras imágenes
-    characterImage = loadImage("assets/personaje.png");
-    shadowImage = loadImage("assets/sombra.png");
     
     // Cargar imágenes de obstáculos
     factoryObstacleImage = loadImage("assets/fabricaContaminante.png");
@@ -158,6 +188,33 @@ class AssetManager {
     pg.ellipse(STD_SIZE/2, STD_SIZE/2, STD_SIZE-4, STD_SIZE-4);
     pg.fill(255, 235, 50); // Centro más claro
     pg.ellipse(STD_SIZE/2, STD_SIZE/2, (STD_SIZE-4) * 0.7, (STD_SIZE-4) * 0.7);
+    pg.endDraw();
+    return pg;
+  }
+  
+  // Crear una imagen de salto como respaldo
+  PImage createJumpFallbackImage() {
+    // Crear una imagen simple del personaje saltando (personaje con líneas de movimiento)
+    PGraphics pg = createGraphics(int(STD_SIZE * 1.5), int(STD_SIZE * 1.5));
+    pg.beginDraw();
+    pg.clear(); // Fondo completamente transparente - esto es mejor que background(0,0,0,0)
+    
+    // Dibujar el cuerpo del personaje (círculo principal)
+    pg.fill(255, 100, 100); // Color rojizo como el personaje original
+    pg.noStroke();
+    pg.ellipse(pg.width/2, pg.height/2, STD_SIZE, STD_SIZE);
+    
+    // Dibujar líneas de movimiento para indicar salto (más suaves y transparentes)
+    pg.stroke(255, 255, 255, 100); // Líneas más transparentes para evitar artefactos
+    pg.strokeWeight(2); // Líneas más finas
+    pg.noFill(); // Asegurar que no hay relleno en las líneas
+    
+    for (int i = 0; i < 3; i++) {
+      int lineY = pg.height/2 + 20 + (i * 6);
+      // Líneas curvas en lugar de rectas para un efecto más suave
+      pg.arc(pg.width/2, lineY, 25 + (i * 5), 8, 0, PI);
+    }
+    
     pg.endDraw();
     return pg;
   }
@@ -390,5 +447,57 @@ class AssetManager {
   // Getter para la imagen de lluvia
   PImage getRainImage() {
     return rainImage;
+  }
+  
+  // Métodos para la animación de salto
+  PImage getJumpAnimationImage() {
+    if (jumpAnimationGif != null && jumpAnimationGif.width > 0) {
+      // Para GIFs, devolver directamente - el filtro se aplica en Player.pde
+      return jumpAnimationGif;
+    } else {
+      // Devolver la imagen de respaldo precargada
+      return jumpFallbackImage;
+    }
+  }
+  
+  // Método alternativo que devuelve una imagen limpia del GIF sin fondos negros
+  // Esto soluciona el problema del rectángulo negro que parpadea en los pies del personaje
+  PImage getCleanJumpAnimationImage() {
+    if (jumpAnimationGif != null && jumpAnimationGif.width > 0) {
+      // Crear una versión limpia del frame actual del GIF
+      PImage cleanFrame = jumpAnimationGif.copy();
+      cleanFrame.loadPixels();
+      
+      // Procesar píxeles para eliminar fondos negros que causan artefactos visuales
+      for (int i = 0; i < cleanFrame.pixels.length; i++) {
+        color pixel = cleanFrame.pixels[i];
+        float brightness = brightness(pixel);
+        
+        // Hacer transparentes los píxeles negros o muy oscuros (el rectángulo negro problemático)
+        if (brightness < 25) { // Umbral para detectar píxeles problemáticos del GIF
+          cleanFrame.pixels[i] = color(0, 0); // Completamente transparente - elimina el artefacto
+        }
+      }
+      cleanFrame.updatePixels();
+      return cleanFrame;
+    } else {
+      // Devolver la imagen de respaldo que no tiene problemas de fondo negro
+      return jumpFallbackImage;
+    }
+  }
+  
+  // Getter para acceder al objeto Gif de salto directamente
+  Gif getJumpAnimationGif() {
+    return jumpAnimationGif;
+  }
+  
+  // Método para verificar si el GIF de salto está activo
+  boolean isJumpAnimationGifActive() {
+    return jumpAnimationGif != null && jumpAnimationGif.width > 0;
+  }
+  
+  // Getter para la imagen de avalancha
+  PImage getAvalancheImage() {
+    return avalancheImage;
   }
 } 

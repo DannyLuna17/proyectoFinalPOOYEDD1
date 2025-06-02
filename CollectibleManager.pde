@@ -395,7 +395,7 @@ class CollectibleManager {
       case Collectible.ECO_BOOST:
         ecoSystem.boost(0.1);
         addPoints(100, collectible.x, collectible.y);
-        // ¡NUEVO! Otorgar XP extra por coleccionable ecológico (bonus por ayudar al planeta)
+        // Otorgar XP extra por coleccionable ecológico (bonus por ayudar al planeta)
         if (playerProgression != null) {
           playerProgression.awardCollectibleXP("eco verde"); // Activará el bonus del 50%
         }
@@ -403,7 +403,7 @@ class CollectibleManager {
       case Collectible.ECO_CLEANUP:
         ecoSystem.reduce(0.15);
         addPoints(150, collectible.x, collectible.y);
-        // ¡NUEVO! Otorgar XP extra por coleccionable de limpieza ecológica (el más valioso)
+        // Otorgar XP extra por coleccionable de limpieza ecológica (el más valioso)
         if (playerProgression != null) {
           playerProgression.awardBonusXP(60, "¡Limpieza ecológica!");
         }
@@ -421,8 +421,7 @@ class CollectibleManager {
       powerUp = new PowerUp(PowerUp.SHIELD, 300, accessManager);
     }
     
-    // Posicionar en la parte inferior de la pantalla (lado izquierdo)
-    powerUp.setPosition(width/4, height - 70); // Posición en la parte inferior izquierda
+    powerUp.setPosition(width/4, height - 70); 
     activePowerUps.add(powerUp);
     
     addFloatingText("¡Escudo Activo!", player.x, player.y - 30, color(100, 255, 100));
@@ -430,7 +429,7 @@ class CollectibleManager {
   }
   
   void activateSpeedBoost(Player player) {
-    player.activateSpeedBoost(300, 1.5); // 5 seconds, 50% boost
+    player.activateSpeedBoost(300, 1.5); 
     
     PowerUp powerUp;
     if (assetManager != null) {
@@ -439,17 +438,14 @@ class CollectibleManager {
       powerUp = new PowerUp(PowerUp.SPEED_BOOST, 300, accessManager);
     }
     
-    // Posicionar en la parte inferior de la pantalla (centro)
-    powerUp.setPosition(width/2, height - 70); // Posición en la parte inferior central
+    powerUp.setPosition(width/2, height - 70); 
     activePowerUps.add(powerUp);
     
-    // Show floating text
     addFloatingText("¡Velocidad Aumentada!", player.x, player.y - 30, color(255, 100, 100));
   }
   
   void activateDoublePoints(Player player) {
-    // Apply double points power-up to player
-    player.activateDoublePoints(300); // 5 seconds
+    player.activateDoublePoints(300); 
     
     PowerUp powerUp;
     if (assetManager != null) {
@@ -458,22 +454,19 @@ class CollectibleManager {
       powerUp = new PowerUp(PowerUp.DOUBLE_POINTS, 300, accessManager);
     }
     
-    // Posicionar en la parte inferior de la pantalla (lado derecho)
-    powerUp.setPosition(3*width/4, height - 70); // Posición en la parte inferior derecha
+    powerUp.setPosition(3*width/4, height - 70); 
     activePowerUps.add(powerUp);
     
-    // Show floating text
     addFloatingText("¡Puntos Dobles!", player.x, player.y - 30, color(255, 200, 50));
   }
   
   void addPoints(int points, float x, float y) {
-    // Create floating text for points
     addFloatingText("+" + points, x, y - 20, color(255, 255, 50));
   }
   
   void addFloatingText(String text, float x, float y, color textColor) {
     FloatingText floatingText = new FloatingText(text, x, y, textColor, accessManager);
-    floatingTexts.enqueue(floatingText); // Añadir al final de la cola
+    floatingTexts.enqueue(floatingText); 
   }
   
   ArrayList<Collectible> getCollectibles() {
@@ -488,19 +481,15 @@ class CollectibleManager {
     return floatingTexts;
   }
   
-  // Método para mostrar todos los textos flotantes sin exponer la estructura interna de la cola
   void displayFloatingTexts() {
-    // Crear una cola temporal para mostrar todos los textos sin modificar la cola principal
     Queue<FloatingText> tempQueue = new Queue<FloatingText>();
     
-    // Procesar todos los textos para mostrarlos
     while (!floatingTexts.isEmpty()) {
       FloatingText text = floatingTexts.dequeue();
-      text.display(); // Mostrar el texto
-      tempQueue.enqueue(text); // Guardar en cola temporal
+      text.display(); 
+      tempQueue.enqueue(text); 
     }
     
-    // Restaurar todos los textos a la cola principal
     while (!tempQueue.isEmpty()) {
       floatingTexts.enqueue(tempQueue.dequeue());
     }

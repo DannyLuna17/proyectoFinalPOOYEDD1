@@ -33,6 +33,9 @@ class Game {
   // Soporte de assets
   AssetManager assetManager;
   
+  // Efectos visuales
+  AvalancheEffect avalancheEffect;  // efecto visual de avalancha en segundo plano
+  
   // Imagen de fondo
   PImage backgroundImage;
   PImage scaledBackground; // Imagen redimensionada
@@ -195,6 +198,21 @@ class Game {
       } catch (Exception e) {
         println("Error inicializando sistema de clima: " + e.getMessage());
         weatherSystem = null;
+      }
+      
+      // Inicializar efecto de avalancha
+      try {
+        if (assetManager != null) {
+          avalancheEffect = new AvalancheEffect(assetManager, groundLevel, accessManager);
+          println("Efecto de avalancha inicializado con éxito");
+        } else {
+          println("No se puede inicializar el efecto de avalancha: AssetManager no disponible");
+          avalancheEffect = null;
+        }
+      } catch (Exception e) {
+        println("ERROR al inicializar efecto de avalancha: " + e.getMessage());
+        e.printStackTrace();
+        avalancheEffect = null;
       }
       
       // Inicializar gestores con manejo de errores
@@ -527,6 +545,11 @@ class Game {
       // Actualizar apariencia del jugador
       player.updateEnvironmentalAppearance(ecoSystem);
       
+      // Actualizar efecto de avalancha
+      if (avalancheEffect != null) {
+        avalancheEffect.update();
+      }
+      
       // Aplicar efectos del clima
       applyWeatherEffectsToPlayer();
       
@@ -547,7 +570,6 @@ class Game {
       player.checkPlatformCollision(platformManager.getPlatforms());
       
       // Actualizar obstáculos
-      obstacleManager.setObstacleSpeed(obstacleSpeed);
       obstacleManager.update();
       
       // Actualizar coleccionables
@@ -945,6 +967,9 @@ class Game {
     // Efectos de clima en capa de fondo
     weatherSystem.displayBackgroundEffects();
     
+    // Dibujar efecto de avalancha (detrás de todos los elementos del juego)
+    displayAvalancheEffect();
+    
     // Dibujar plataformas
     displayPlatforms();
     
@@ -1069,6 +1094,13 @@ class Game {
   void displayFloatingTexts() {
     // Usar el método del CollectibleManager para mostrar textos flotantes
     collectibleManager.displayFloatingTexts();
+  }
+  
+  void displayAvalancheEffect() {
+    // Dibujar el efecto de avalancha si está disponible
+    if (avalancheEffect != null) {
+      avalancheEffect.display();
+    }
   }
   
   void displayUI() {
@@ -1389,25 +1421,20 @@ class Game {
     fill(0, 0, 0, 220); 
     rect(width/2 - barWidth/2, topPosition, barWidth, barHeight, 15); 
     
-    // Texto de tutorial mucho más grande y legible
     fill(255);
     textAlign(CENTER, CENTER);
-    textSize(22); // Tamaño de texto significativamente mayor para mejor accesibilidad
+    textSize(22); 
     text(tutorialMessages.get(currentTutorialMessage), width/2, topPosition + barHeight/2 - 8);
     
-    // Puntos de progreso más grandes y visibles
     for (int i = 0; i < tutorialMessages.size(); i++) {
       if (i == currentTutorialMessage) {
-        fill(255); // Punto activo blanco brillante
+        fill(255); 
       } else {
-        fill(150); // Puntos inactivos gris medio
+        fill(150); 
       }
-      // Puntos de progreso más grandes con mejor separación
       ellipse(width/2 - 40 + i * 28, topPosition + barHeight - 18, 12, 12);
     }
     
-    // Los mensajes de tutorial ahora aparecen debajo de la barra de ecosistema
-    // para evitar superposiciones y mantener una interfaz limpia
   }
   
   void displayActivePowerUps() {
@@ -1420,16 +1447,15 @@ class Game {
   // Mostrar el framerate actual en la esquina superior izquierda
   void displayFramerate() {
     pushStyle();
-    // Tamaños aumentados considerablemente para mejor accesibilidad
-    int fpsWidth = 110;       // Panel más ancho para texto más grande
-    int fpsHeight = 50;       // Panel más alto para mejor proporción
-    int leftMargin = 35;      // Margen más generoso desde el borde (ajustado para nuevos tamaños de corazones)
-    int topPosition = 120;    // Posición debajo de la barra de salud (ajustada para nuevos tamaños)
-    float cornerRadius = 12;  // Bordes más redondeados para consistencia
+    int fpsWidth = 110;       
+    int fpsHeight = 50;       
+    int leftMargin = 35;      
+    int topPosition = 120;    
+    float cornerRadius = 12;  
     
-    // Panel para el FPS con mejor contraste
-    fill(0, 0, 0, 200); // Fondo más opaco para mejor legibilidad
-    stroke(255, 255, 255, 100); // Borde sutil para definir el panel
+    // Panel para el FPS
+    fill(0, 0, 0, 200); 
+    stroke(255, 255, 255, 100); 
     strokeWeight(2);
     rect(leftMargin, topPosition, fpsWidth, fpsHeight, cornerRadius);
     
@@ -1438,15 +1464,15 @@ class Game {
     
     // Color basado en el rendimiento (mantenemos la lógica original pero con mejor contraste)
     if (fps >= 55) {
-      fill(0, 255, 80); // Verde para buen rendimiento
+      fill(0, 255, 80); 
     } else if (fps >= 30) {
-      fill(255, 230, 0); // Amarillo para rendimiento aceptable
+      fill(255, 230, 0); 
     } else {
-      fill(255, 60, 60); // Rojo para rendimiento bajo
+      fill(255, 60, 60); 
     }
     
     textAlign(CENTER, CENTER);
-    textSize(24); // Texto mucho más grande para mejor legibilidad
+    textSize(24); 
     text("FPS: " + fps, leftMargin + fpsWidth/2, topPosition + fpsHeight/2);
     popStyle();
   }

@@ -92,6 +92,11 @@ class Player {
   boolean wantsToDrop = false;   // Si el jugador quiere bajar por plataforma
   float fastFallSpeed = 30;      // Velocidad de caída rápida
   
+  // Animación de salto
+  boolean playingJumpAnimation = false; /
+  int jumpAnimationTimer = 0;          // Contador para la duración de la animación
+  int jumpAnimationDuration = 120;      // Duración de la animación en frames 
+  
   // Constructor simplificado
   Player(float x, float groundY) {
     // Crear un AccessibilityManager y pasarlo tanto al constructor padre como al SoundManager
@@ -224,6 +229,26 @@ class Player {
         deactivateDoublePoints();
       }
     }
+    
+    // Manejar la animación de salto
+    if (playingJumpAnimation) {
+      jumpAnimationTimer++;
+      // Detener la animación cuando termine el tiempo o cuando el jugador toque el suelo
+      if (jumpAnimationTimer >= jumpAnimationDuration || !isJumping) {
+        playingJumpAnimation = false;
+        jumpAnimationTimer = 0;
+      }
+    }
+    
+    // Manejar la animación de salto
+    if (playingJumpAnimation) {
+      jumpAnimationTimer++;
+      // Detener la animación cuando termine el tiempo o cuando el jugador toque el suelo
+      if (jumpAnimationTimer >= jumpAnimationDuration || !isJumping) {
+        playingJumpAnimation = false;
+        jumpAnimationTimer = 0;
+      }
+    }
   }
   
   void handleJump() {
@@ -259,6 +284,12 @@ class Player {
         jumpHoldTime = 0;
         isOnPlatform = false;
         currentPlatform = null;
+        // Detener la animación de salto cuando aterrizamos
+        playingJumpAnimation = false;
+        jumpAnimationTimer = 0;
+        // Detener la animación de salto cuando aterrizamos
+        playingJumpAnimation = false;
+        jumpAnimationTimer = 0;
       }
     }
   }
@@ -296,6 +327,12 @@ class Player {
           vSpeed = 0;
           isJumping = false;
           jumpHoldTime = 0;
+          // Detener la animación de salto cuando aterrizamos en plataforma
+          playingJumpAnimation = false;
+          jumpAnimationTimer = 0;
+          // Detener la animación de salto cuando aterrizamos en plataforma
+          playingJumpAnimation = false;
+          jumpAnimationTimer = 0;
         }
       }
     }
@@ -468,9 +505,38 @@ class Player {
         }
         
         image(characterImage, 0, 0, size * 0.8, size * 1.2);
+      } else if (playingJumpAnimation && assetManager != null) {
+        // Mostrar animación de salto cuando está saltando
+        translate(x, y - size/2); // Aplicar transformación para posicionar correctamente
+        
+        // Aplicar efecto de parpadeo si es invencible
+        if (isInvincible && invincibilityTimer % 10 < 5) {
+          tint(255, 255, 100);
+        }
+        
+        // Usar el método optimizado que elimina automáticamente los fondos negros
+        PImage jumpImage = assetManager.getCleanJumpAnimationImage();
+        
+        // Dibujar la animación de salto sin artefactos negros
+        image(jumpImage, 0, 0, size*1.2, size*1.2);
+      } else if (playingJumpAnimation && assetManager != null) {
+        // Mostrar animación de salto cuando está saltando
+        translate(x, y - size/2); // Aplicar transformación para posicionar correctamente
+        
+        // Aplicar efecto de parpadeo si es invencible
+        if (isInvincible && invincibilityTimer % 10 < 5) {
+          tint(255, 255, 100);
+        }
+        
+        // Usar el método optimizado que elimina automáticamente los fondos negros
+        PImage jumpImage = assetManager.getCleanJumpAnimationImage();
+        
+        // Dibujar la animación de salto sin artefactos negros
+        image(jumpImage, 0, 0, size*1.2, size*1.2);
       } else {
         // Personaje en posición normal
-        
+          
+          
         // Aplicar efecto de parpadeo si es invencible
         if (isInvincible && invincibilityTimer % 10 < 5) {
           tint(255, 255, 100);
@@ -556,6 +622,14 @@ class Player {
       
       isJumping = true;
       spacePressed = true;
+      
+      // Iniciar la animación de salto
+      playingJumpAnimation = true;
+      jumpAnimationTimer = 0;
+      
+      // Iniciar la animación de salto
+      playingJumpAnimation = true;
+      jumpAnimationTimer = 0;
       
       // Salto desde plataforma
       if (isOnPlatform) {
@@ -814,6 +888,18 @@ class Player {
       
       // Dibujar corazón vacío solo con borde
       drawHeartShape(heartX, heartY, heartSize, emptyHeartColor, outlineColor, false);
+      // Dibujar corazón lleno con borde
+      drawHeartShape(heartX, heartY, heartSize, heartColor, outlineColor, true);
+    }
+    
+    // Dibujar corazones vacíos (representan la vida perdida)
+    for (int i = 0; i < emptyHearts; i++) {
+      // Posición del corazón vacío (continúa después de los llenos)
+      float heartX = x + heartSpacing + (filledHearts + i) * (heartSize + heartSpacing);
+      float heartY = y + (h - heartSize) / 2;
+      
+      // Dibujar corazón vacío solo con borde
+      drawHeartShape(heartX, heartY, heartSize, emptyHeartColor, outlineColor, false);
     }
     
     // Si hay más corazones de los que se pueden mostrar, dibujar indicador más grande
@@ -824,6 +910,7 @@ class Player {
       text("+" + (health - visibleHearts), x + w - 50, y + h/2); 
     }
     
+    // Borde final sin relleno
     // Borde final sin relleno
     stroke(accessManager.getForegroundColor(color(255)));
     strokeWeight(2);
@@ -845,6 +932,10 @@ class Player {
     vSpeed = 0;
     jumpHoldTime = 0;
     slideDuration = 0;
+    
+    // Reiniciar animación de salto
+    playingJumpAnimation = false;
+    jumpAnimationTimer = 0;
     
     // Reiniciar plataformas
     isOnPlatform = false;
@@ -874,11 +965,23 @@ class Player {
     // Restaurar color
     currentColor = normalColor;
   }
-  
+
   // Dibuja la forma de un corazón con opciones mejoradas
   void drawHeartShape(float x, float y, float size, color fillColor, color borderColor, boolean filled) {
     pushMatrix();
     translate(x + size/2, y + size/2);
+    
+    // Configurar el borde negro
+    stroke(borderColor);
+    strokeWeight(3); 
+    
+    if (filled) {
+      // Corazón lleno
+      fill(fillColor);
+    } else {
+      // Corazón vacío
+      noFill();
+    }
     
     // Configurar el borde negro
     stroke(borderColor);

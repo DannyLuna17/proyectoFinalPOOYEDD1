@@ -644,7 +644,7 @@ class Leaderboard {
       }
       // Click abajo del thumb = página abajo  
       else if (mouseY > scrollbarY + scrollbarHeight) {
-        scrollOffset = min(getRecordsSize() - visibleRecords, scrollOffset + visibleRecords); // Usar getRecordsSize()
+        scrollOffset = min(getRecordsSize() - visibleRecords, scrollOffset + visibleRecords); 
       }
     }
   }
@@ -657,7 +657,7 @@ class Leaderboard {
   
   // Manejar el arrastre del mouse
   void handleMouseDragged() {
-    if (!isDraggingScrollbar || getRecordsSize() <= visibleRecords) return; // Usar getRecordsSize()
+    if (!isDraggingScrollbar || getRecordsSize() <= visibleRecords) return; 
     
     // Calcular nueva posición del scrollbar basada en el movimiento del mouse
     float newScrollbarY = mouseY - scrollbarMouseOffset;
@@ -669,14 +669,14 @@ class Leaderboard {
     
     // Convertir la posición del scrollbar a offset de scroll
     float scrollPercentage = (newScrollbarY - minScrollbarY) / (maxScrollbarY - minScrollbarY);
-    int maxScrollOffset = getRecordsSize() - visibleRecords; // Usar getRecordsSize()
+    int maxScrollOffset = getRecordsSize() - visibleRecords; 
     scrollOffset = round(scrollPercentage * maxScrollOffset);
     scrollOffset = constrain(scrollOffset, 0, maxScrollOffset);
   }
   
   // Manejar la rueda del mouse para scroll suave
   void handleMouseWheel(float wheelDirection) {
-    if (getRecordsSize() <= visibleRecords) return; // Usar getRecordsSize()
+    if (getRecordsSize() <= visibleRecords) return; 
     
     // wheelDirection es positivo cuando se rueda hacia arriba, negativo hacia abajo
     if (wheelDirection > 0) {
