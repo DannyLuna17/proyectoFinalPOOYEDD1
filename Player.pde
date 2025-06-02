@@ -93,7 +93,7 @@ class Player {
   float fastFallSpeed = 30;      // Velocidad de caída rápida
   
   // Animación de salto
-  boolean playingJumpAnimation = false; /
+  boolean playingJumpAnimation = false; 
   int jumpAnimationTimer = 0;          // Contador para la duración de la animación
   int jumpAnimationDuration = 120;      // Duración de la animación en frames 
   
