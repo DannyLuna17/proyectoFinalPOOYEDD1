@@ -97,14 +97,19 @@ class Player {
   int jumpAnimationTimer = 0;          // Contador para la duración de la animación
   int jumpAnimationDuration = 120;      // Duración de la animación en frames 
   
+  // Animación de corrida
+  boolean playingRunningAnimation = false;  // Si está reproduciendo la animación de correr
+  boolean isRunning = false;               // Si el jugador está en estado de correr
+  int lastObstacleSpeed = 0;              // Para detectar cambios en la velocidad del mundo
+  
   // Constructor simplificado
   Player(float x, float groundY) {
     // Crear un AccessibilityManager y pasarlo tanto al constructor padre como al SoundManager
     AccessibilityManager am = new AccessibilityManager();
     SoundManager sm = new SoundManager(am);
     this.x = x;
-    this.groundY = groundY;
-    this.y = groundY;
+    this.groundY = groundY + 15;
+    this.y = groundY + 55;
     this.size = 90;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
@@ -115,9 +120,9 @@ class Player {
   // Constructor principal
   Player(float x, float groundY, AccessibilityManager accessManager, SoundManager soundManager) {
     this.x = x;
-    this.groundY = groundY;
-    this.y = groundY;
-    this.size = 150;
+    this.groundY = groundY + 15;
+    this.y = groundY + 55;
+    this.size = 250;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
     this.accessManager = accessManager;
@@ -127,8 +132,8 @@ class Player {
   // Constructor con AssetManager
   Player(float x, float groundY, AccessibilityManager accessManager, SoundManager soundManager, AssetManager assetManager) {
     this.x = x;
-    this.groundY = groundY;
-    this.y = groundY;
+    this.groundY = groundY + 15;
+    this.y = groundY + 55;
     this.size = 135;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
@@ -238,6 +243,52 @@ class Player {
         playingJumpAnimation = false;
         jumpAnimationTimer = 0;
       }
+    }
+    
+    // Manejar la animación de corrida
+    updateRunningState();
+  }
+  
+  void updateRunningState() {
+    // El jugador está "corriendo" cuando el mundo se mueve (obstacleSpeed > 0) y no está saltando ni deslizándose
+    boolean shouldBeRunning = !isJumping && !isSliding && !isInAir();
+    
+    // Transiciones de estado de corrida
+    if (shouldBeRunning && !isRunning) {
+      // Comenzar a correr
+      startRunning();
+    } else if (!shouldBeRunning && isRunning) {
+      // Dejar de correr
+      stopRunning();
+    }
+    
+    // Actualizar la animación de corrida si está activa
+    if (playingRunningAnimation) {
+      // Asegurarse de que el AssetManager esté disponible y controlar la animación
+      if (assetManager != null) {
+      }
+    }
+  }
+  
+  // Método para iniciar la corrida  
+  void startRunning() {
+    isRunning = true;
+    playingRunningAnimation = true;
+    
+    // Inicializar la animación en el AssetManager si está disponible
+    if (assetManager != null) {
+      assetManager.startRunningAnimation();
+    }
+  }
+  
+  // Método para detener la corrida  
+  void stopRunning() {
+    isRunning = false;
+    playingRunningAnimation = false;
+    
+    // Detener la animación en el AssetManager si está disponible
+    if (assetManager != null) {
+      assetManager.stopRunningAnimation();
     }
   }
   
@@ -477,6 +528,9 @@ class Player {
       
       // Dibujar personaje
       pushMatrix();
+      // Configurar modo de blend para transparencias
+      blendMode(BLEND);
+      
       if (isSliding) {
         // Personaje en posición de deslizamiento (más horizontal)
         translate(x, y - size * 0.2);
@@ -503,8 +557,31 @@ class Player {
         
         // Dibujar la animación de salto sin artefactos negros
         image(jumpImage, 0, 0, size*1.2, size*1.2);
+      } else if (playingRunningAnimation && assetManager != null) {
+        // Mostrar animación de corrida cuando está corriendo
+        translate(x, y - size/2); // Posicionar correctamente
+        
+        // Aplicar efecto de parpadeo si es invencible
+        if (isInvincible && invincibilityTimer % 10 < 5) {
+          tint(255, 255, 100);
+        }
+        
+        // Usar el método optimizado que elimina automáticamente los fondos negros
+        PImage runningImage = assetManager.getCleanRunningAnimationImage();
+        
+        // Verificar que la imagen sea válida antes de dibujarla
+        if (runningImage != null && runningImage.width > 0 && runningImage.height > 0) {
+          // Dibujar la animación de corrida sin artefactos
+          image(runningImage, 0, 0, size, size);
+        } else {
+          // Fallback de seguridad: usar la imagen de personaje normal si algo falla
+          if (isInvincible && invincibilityTimer % 10 < 5) {
+            tint(255, 255, 100);
+          }
+          image(characterImage, x, y - size/2, size, size);
+        }
       } else {
-        // Personaje en posición normal
+        // Personaje en posición normal (idle)
         // Aplicar efecto de parpadeo si es invencible
         if (isInvincible && invincibilityTimer % 10 < 5) {
           tint(255, 255, 100);
@@ -513,6 +590,7 @@ class Player {
         image(characterImage, x, y - size/2, size, size);
       }
       noTint();
+      blendMode(BLEND); // Restaurar modo de blend por defecto
       popMatrix();
     } else {
       // Dibujar sombra para modo accesibilidad
@@ -590,6 +668,11 @@ class Player {
       
       isJumping = true;
       spacePressed = true;
+      
+      // Detener la animación de corrida si estaba activa 
+      if (playingRunningAnimation) {
+        stopRunning();
+      }
       
       // Iniciar la animación de salto
       playingJumpAnimation = true;
@@ -900,6 +983,11 @@ class Player {
     // Reiniciar animación de salto
     playingJumpAnimation = false;
     jumpAnimationTimer = 0;
+    
+    // Reiniciar animación de corrida
+    playingRunningAnimation = false;
+    isRunning = false;
+    lastObstacleSpeed = 0;
     
     // Reiniciar plataformas
     isOnPlatform = false;

@@ -164,7 +164,7 @@ class Game {
       // Inicializar jugador con manejo de errores
       try {
         if (assetManager != null) {
-          player = new Player(width * 0.2, groundLevel, accessManager, soundManager, assetManager);
+          player = new Player(width * 0.2, groundLevel , accessManager, soundManager, assetManager);
         } else {
           player = new Player(width * 0.2, groundLevel, accessManager, soundManager);
         }

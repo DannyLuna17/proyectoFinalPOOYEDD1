@@ -42,6 +42,15 @@ class AssetManager {
   private int jumpFrameTimer = 0;       // Timer para cambiar frames
   private int jumpFrameDelay = 6;       // Frames entre cambios (ajustable)
   
+  // Animación de corrida del jugador 
+  private Gif runningAnimationGif;      // EcoEarthRunning.gif 
+  private PImage runningFallbackImage;  // Imagen de respaldo 
+  // Cache optimizado para frames de corrida pre-procesados
+  private PImage[] processedRunningFrames; // Todos los frames de corrida ya procesados
+  private int currentRunningFrame = 0;     // Frame actual de corrida a mostrar
+  private int runningFrameTimer = 0;       // Timer para cambiar frames de corrida
+  private int runningFrameDelay = 8;       // Frames entre cambios de corrida 
+  
   // Imágenes de obstáculos
   private PImage factoryObstacleImage; // fabricaContaminante.png
   private PImage trashObstacleImage;   // basura.png para obstáculos
@@ -108,6 +117,9 @@ class AssetManager {
     // Crear imagen de respaldo para el salto
     jumpFallbackImage = createJumpFallbackImage();
     
+    // Crear imagen de respaldo para la corrida 
+    runningFallbackImage = createRunningFallbackImage();
+    
     // Para tener acceso a Processing directamente
     PApplet p = applet;  // Usamos la variable global
     if (p != null) {
@@ -160,6 +172,24 @@ class AssetManager {
           jumpAnimationGif = null;
         }
         
+        // Cargar GIF animado para la corrida del jugador 
+        String runningGifPath = p.sketchPath("assets/EcoEarthRunning.gif");
+        println("Intentando cargar EcoEarthRunning.gif desde: " + runningGifPath);
+        
+        // Comprobar si el archivo existe
+        File runningGifFile = new File(runningGifPath);
+        if (runningGifFile.exists()) {
+          runningAnimationGif = new Gif(p, runningGifPath);
+          runningAnimationGif.loop(); 
+          println("GIF de corrida cargado exitosamente");
+          
+          // Pre-procesar todos los frames del GIF de correr para optimización
+          preProcessRunningFrames();
+        } else {
+          println("ERROR: No se encontró el archivo GIF en: " + runningGifPath);
+          runningAnimationGif = null;
+        }
+        
       } catch (Exception e) {
         // Si falla, cargar una imagen estática de respaldo
         println("Error cargando GIFs: " + e.getMessage());
@@ -167,6 +197,7 @@ class AssetManager {
         speedBoostGif = null;
         coinGif = null;
         jumpAnimationGif = null;
+        runningAnimationGif = null; // También resetear el GIF de corrida en caso de error
       }
     } else {
       // Si no tenemos acceso a PApplet, no podemos cargar GIFs
@@ -174,6 +205,7 @@ class AssetManager {
       speedBoostGif = null;
       coinGif = null;
       jumpAnimationGif = null;
+      runningAnimationGif = null;
     }
     
     // Cargar imágenes de obstáculos
@@ -221,6 +253,49 @@ class AssetManager {
       int lineY = pg.height/2 + 20 + (i * 6);
       // Líneas curvas en lugar de rectas para un efecto más suave
       pg.arc(pg.width/2, lineY, 25 + (i * 5), 8, 0, PI);
+    }
+    
+    pg.endDraw();
+    return pg;
+  }
+  
+  // Crear una imagen de corrida como respaldo 
+  PImage createRunningFallbackImage() {
+    // Crear una imagen simple del personaje corriendo 
+    PGraphics pg = createGraphics(int(STD_SIZE * 1.2), int(STD_SIZE * 1.2));
+    pg.beginDraw();
+    pg.clear(); // Fondo completamente transparente
+    
+    // Dibujar el cuerpo del personaje (círculo principal)
+    pg.fill(100, 200, 100); // Color verdoso para diferenciarlo del salto
+    pg.stroke(50, 150, 50); // Borde del personaje
+    pg.strokeWeight(2);
+    pg.ellipse(pg.width/2, pg.height/2, STD_SIZE * 0.9, STD_SIZE * 0.9);
+    
+    // Dibujar líneas de velocidad horizontal para indicar corrida
+    pg.stroke(255, 255, 255, 150); // Líneas de velocidad más visibles
+    pg.strokeWeight(3);
+    pg.noFill();
+    
+    // Líneas horizontales que indican movimiento hacia adelante
+    for (int i = 0; i < 3; i++) {
+      int lineX = pg.width/2 - 30 - (i * 8);  // Líneas hacia atrás del personaje
+      int lineY = pg.height/2 - 8 + (i * 8);  // Escalonadas verticalmente
+      int lineLength = 20 - (i * 3); // Líneas más cortas conforme se alejan
+      
+      // Líneas con efecto de desvanecimiento
+      float alpha = map(i, 0, 2, 150, 80);
+      pg.stroke(255, 255, 255, alpha);
+      pg.line(lineX, lineY, lineX + lineLength, lineY);
+    }
+    
+    pg.fill(200, 200, 200, 100);
+    pg.noStroke();
+    for (int i = 0; i < 4; i++) {
+      float dustX = pg.width/2 - 35 - (i * 6) + random(-2, 2);
+      float dustY = pg.height/2 + 15 + random(-3, 3);
+      float dustSize = 3 + random(2);
+      pg.ellipse(dustX, dustY, dustSize, dustSize);
     }
     
     pg.endDraw();
@@ -511,8 +586,6 @@ class AssetManager {
     return avalancheImage;
   }
   
-  
-  
   // Pre-procesar todos los frames del GIF de salto para máximo rendimiento
   void preProcessJumpFrames() {
     if (jumpAnimationGif == null) {
@@ -600,6 +673,101 @@ class AssetManager {
     }
   }
   
+  // Pre-procesar todos los frames del GIF de corrida para máximo rendimiento 
+  void preProcessRunningFrames() {
+    if (runningAnimationGif == null) {
+      processedRunningFrames = null;
+      return;
+    }
+    
+    println("Pre-procesando frames del GIF de corrida para optimización...");
+    
+    try {
+      // Pausar el GIF temporalmente para obtener frames individuales
+      runningAnimationGif.pause();
+      runningAnimationGif.jump(0); // Ir al primer frame
+      
+      // Obtener número total de frames de manera compatible
+      ArrayList<PImage> tempFrames = new ArrayList<PImage>();
+      int frameIndex = 0;
+      int maxFramesToCheck = 200; // Límite de seguridad para evitar bucles infinitos
+      
+      // Iterar a través de todos los frames disponibles
+      while (frameIndex < maxFramesToCheck) {
+        try {
+          runningAnimationGif.jump(frameIndex);
+          PImage currentFrame = runningAnimationGif.copy();
+          
+          // Si conseguimos una imagen válida, agregarla
+          if (currentFrame != null && currentFrame.width > 0) {
+            tempFrames.add(currentFrame);
+            frameIndex++;
+          } else {
+            // No hay más frames válidos
+            break;
+          }
+        } catch (Exception e) {
+          // Si falla al acceder a un frame, hemos llegado al final
+          break;
+        }
+      }
+      
+      int totalFrames = tempFrames.size();
+      if (totalFrames == 0) {
+        println("ERROR: No se pudieron obtener frames del GIF de corrida");
+        processedRunningFrames = null;
+        return;
+      }
+      
+      processedRunningFrames = new PImage[totalFrames];
+      println("Procesando " + totalFrames + " frames del GIF de corrida...");
+      
+      // Procesar cada frame ya obtenido 
+      for (int i = 0; i < totalFrames; i++) {
+        PImage originalFrame = tempFrames.get(i);
+        originalFrame.loadPixels();
+        
+        // Crear frame procesado
+        PImage cleanFrame = createImage(originalFrame.width, originalFrame.height, ARGB);
+        cleanFrame.loadPixels();
+        
+        // Procesar píxeles para eliminar fondos negros/transparentes no deseados
+        for (int j = 0; j < originalFrame.pixels.length; j++) {
+          color pixel = originalFrame.pixels[j];
+          
+          // Obtener componentes de color
+          float r = red(pixel);
+          float g = green(pixel);
+          float b = blue(pixel);
+          float a = alpha(pixel);
+          
+          // Detectar píxeles negros, muy oscuros, o con transparencia muy baja (fondo)
+          // Usar un umbral más alto para eliminar mejor los fondos negros
+          if ((r < 50 && g < 50 && b < 50) || a < 100) {
+            cleanFrame.pixels[j] = color(0, 0, 0, 0); // Hacer completamente transparente
+          } else {
+            // Mantener el pixel original pero asegurar que tenga opacidad completa
+            cleanFrame.pixels[j] = color(r, g, b, 255);
+          }
+        }
+        
+        cleanFrame.updatePixels();
+        processedRunningFrames[i] = cleanFrame;
+      }
+      
+      println("✓ Pre-procesamiento de corrida completado - " + totalFrames + " frames listos");
+      
+      // Volver a reproducir el GIF desde el primer frame
+      runningAnimationGif.jump(0);
+      runningAnimationGif.play();
+      
+    } catch (Exception e) {
+      println("ERROR en pre-procesamiento de corrida: " + e.getMessage());
+      e.printStackTrace();
+      processedRunningFrames = null;
+    }
+  }
+  
   // Métodos para controlar la animación de salto optimizada
   void startJumpAnimation() {
     // Reiniciar la animación desde el primer frame
@@ -644,6 +812,110 @@ class AssetManager {
     // Fallback al GIF original
     if (jumpAnimationGif != null) {
       return jumpAnimationGif.isPlaying();
+    }
+    
+    return false;
+  }
+  
+  // Métodos para la animación de corrida 
+  PImage getRunningAnimationImage() {
+    if (runningAnimationGif != null && runningAnimationGif.width > 0) {
+      // Para GIFs, devolver directamente
+      return runningAnimationGif;
+    } else {
+      // Devolver la imagen de respaldo precargada
+      return runningFallbackImage;
+    }
+  }
+  
+  // Método optimizado que usa frames pre-procesados 
+  PImage getCleanRunningAnimationImage() {
+    // Si tenemos frames pre-procesados, usarlos para máximo rendimiento
+    if (processedRunningFrames != null && processedRunningFrames.length > 0) {
+      // Actualizar timer y frame actual
+      runningFrameTimer++;
+      if (runningFrameTimer >= runningFrameDelay) {
+        runningFrameTimer = 0;
+        currentRunningFrame = (currentRunningFrame + 1) % processedRunningFrames.length;
+      }
+      
+      // Asegurar que el índice esté dentro del rango válido
+      if (currentRunningFrame >= 0 && currentRunningFrame < processedRunningFrames.length) {
+        PImage frame = processedRunningFrames[currentRunningFrame];
+        if (frame != null) {
+          // Devolver el frame pre-procesado actual 
+          return frame;
+        }
+      }
+    }
+    
+    // Fallback: usar GIF original si no hay frames pre-procesados, pero aplicar filtro
+    if (runningAnimationGif != null && runningAnimationGif.width > 0) {
+      // Asegurarse de que el GIF esté reproduciéndose
+      if (!runningAnimationGif.isPlaying()) {
+        runningAnimationGif.play();
+      }
+      return runningFallbackImage;
+    }
+    
+    // Último fallback: imagen estática 
+    return runningFallbackImage;
+  }
+  
+  // Getter para acceder al objeto Gif de corrida directamente
+  Gif getRunningAnimationGif() {
+    return runningAnimationGif;
+  }
+  
+  // Método para verificar si el GIF de corrida está activo
+  boolean isRunningAnimationGifActive() {
+    return runningAnimationGif != null && runningAnimationGif.width > 0;
+  }
+  
+  // Métodos para controlar la animación
+  void startRunningAnimation() {
+    // Reiniciar la animación desde el primer frame
+    currentRunningFrame = 0;
+    runningFrameTimer = 0;
+    
+    // También controlar el GIF original si está disponible
+    if (runningAnimationGif != null) {
+      runningAnimationGif.jump(0); // Ir al primer frame
+      runningAnimationGif.play();
+    }
+  }
+  
+  void stopRunningAnimation() {
+    // Pausar en el primer frame
+    currentRunningFrame = 0;
+    runningFrameTimer = 0;
+    
+    // También controlar el GIF original si está disponible
+    if (runningAnimationGif != null) {
+      runningAnimationGif.pause();
+      runningAnimationGif.jump(0); // Volver al primer frame
+    }
+  }
+  
+  void pauseRunningAnimation() {
+    // Pausar el timer (mantiene el frame actual)
+    runningFrameTimer = 0;
+    
+    // También controlar el GIF original si está disponible
+    if (runningAnimationGif != null) {
+      runningAnimationGif.pause();
+    }
+  }
+  
+  boolean isRunningAnimationPlaying() {
+    // Si tenemos frames pre-procesados, siempre puede "reproducirse"
+    if (processedRunningFrames != null && processedRunningFrames.length > 0) {
+      return true;
+    }
+    
+    // Fallback al GIF original
+    if (runningAnimationGif != null) {
+      return runningAnimationGif.isPlaying();
     }
     
     return false;
