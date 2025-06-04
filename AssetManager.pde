@@ -155,8 +155,8 @@ class AssetManager {
         }
         
         // Cargar GIF animado para el salto del jugador
-        String jumpGifPath = p.sketchPath("assets/salto1.gif");
-        println("Intentando cargar salto1.gif desde: " + jumpGifPath);
+        String jumpGifPath = p.sketchPath("assets/jump.gif");
+        println("Intentando cargar jump.gif desde: " + jumpGifPath);
         
         // Comprobar si el archivo existe
         File jumpGifFile = new File(jumpGifPath);
@@ -173,8 +173,8 @@ class AssetManager {
         }
         
         // Cargar GIF animado para la corrida del jugador 
-        String runningGifPath = p.sketchPath("assets/EcoEarthRunning.gif");
-        println("Intentando cargar EcoEarthRunning.gif desde: " + runningGifPath);
+        String runningGifPath = p.sketchPath("assets/running.gif");
+        println("Intentando cargar running.gif desde: " + runningGifPath);
         
         // Comprobar si el archivo existe
         File runningGifFile = new File(runningGifPath);
@@ -855,7 +855,7 @@ class AssetManager {
       if (!runningAnimationGif.isPlaying()) {
         runningAnimationGif.play();
       }
-      return runningFallbackImage;
+      return runningAnimationGif; // Devolver el GIF real, no el fallback
     }
     
     // Último fallback: imagen estática 

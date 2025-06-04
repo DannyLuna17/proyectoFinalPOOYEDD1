@@ -123,6 +123,8 @@ class GameInitializer {
     println("- Presiona ABAJO para deslizarte");
     println("- Presiona P para pausar");
     println("- Presiona M para silenciar");
+    println("- Presiona C para activar/desactivar filtro de daltonismo");
+    println("- Presiona H para activar/desactivar filtro de alto contraste");
     println("- Recoge items buenos y evita obstáculos");
     println("===================================\n");
   }

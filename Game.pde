@@ -49,6 +49,16 @@ class Game {
   float groundLevel;
   float[] backgroundX = new float[2]; // desplazamiento continuo
   
+  // Variables para progresión de velocidad
+  float baseScrollSpeed = 5;           // Velocidad inicial de scroll del mundo
+  float maxScrollSpeed = 12;           // Velocidad máxima de scroll que puede alcanzar
+  float maxObstacleSpeedIncrease = 8;  // Incremento máximo para obstacleSpeed
+  float speedProgressionRate = 0.02;   // Qué tan rápido aumenta la velocidad
+  float currentSpeedMultiplier = 1.0;  // Multiplicador actual de velocidad
+  
+  // Distancia para progresión suave de velocidad
+  float distanceForMaxSpeed = 3000;    // Distancia en unidades para alcanzar velocidad máxima
+  
   // Cámara
   float cameraY = 0;
   float targetCameraY = 0;
@@ -323,6 +333,10 @@ class Game {
       lastDifficultyIncrease = 0;
       obstacleSpeed = baseObstacleSpeed;
       
+      // Reiniciar variables de progresión de velocidad
+      scrollSpeed = baseScrollSpeed;
+      currentSpeedMultiplier = 1.0;
+      
       // Reiniciar sistema DDA
       resetDDASystem();
       
@@ -590,6 +604,9 @@ class Game {
       // Actualizar dificultad
       updateDifficulty();
       
+      // Actualizar progresión de velocidad basada en distancia
+      updateSpeedProgression();
+      
       // Actualizar sistema de ajuste dinámico de dificultad
       updateDDASystem();
       
@@ -770,17 +787,60 @@ class Game {
     }
   }
   
+  // Método para manejar el aumento progresivo de velocidad del juego
+  void updateSpeedProgression() {
+    // Calcular la distancia total recorrida basada en el tiempo y velocidad actual
+    float currentDistance = (float)playTimeSeconds * (scrollSpeed + obstacleSpeed) / 10.0;
+    
+    // Calcular el progreso de velocidad usando una curva suave
+    float progressRatio = min(currentDistance / distanceForMaxSpeed, 1.0);
+    
+    // Usa una curva de aceleración suave
+    float smoothProgress = (sin((progressRatio * PI) - (PI/2)) + 1) / 2;
+    
+    // Actualizar el multiplicador de velocidad
+    currentSpeedMultiplier = 1.0 + (smoothProgress * speedProgressionRate * currentDistance / 100);
+    
+    // Aplica el aumento progresivo a la velocidad de scroll
+    float newScrollSpeed = baseScrollSpeed + (maxScrollSpeed - baseScrollSpeed) * smoothProgress;
+    scrollSpeed = newScrollSpeed;
+    
+    // También aplicar un aumento adicional a la velocidad de obstáculos
+    float additionalObstacleSpeed = maxObstacleSpeedIncrease * smoothProgress;
+    
+    // Combina con el sistema de dificultad existente
+    float baseDifficultySpeed = baseObstacleSpeed;
+    if (difficultyLevel > 1) {
+      int maxDifficultyLevel = 15;
+      float difficultyFactor = log(difficultyLevel + 1) / log(maxDifficultyLevel + 1);
+      baseDifficultySpeed = baseObstacleSpeed + 3.0 * difficultyFactor;
+    }
+    
+    // La velocidad final de obstáculos combina dificultad por puntos + progresión por distancia
+    obstacleSpeed = baseDifficultySpeed + additionalObstacleSpeed;
+    
+    // Mostrar mensaje visual ocasional sobre el aumento de velocidad
+    if (currentDistance > 0 && ((int)currentDistance) % 500 == 0 && frameCount % 60 == 0) {
+      if (smoothProgress > 0.1) {
+        collectibleManager.addFloatingText("¡Velocidad aumentando!", player.x + 100, player.y - 80, color(100, 255, 200));
+      }
+    }
+  }
+  
   void updateDDASystem() {
     ddaTimer++;
     
     if (ddaTimer >= ddaAnalysisInterval) {
+      // Guardar las velocidades base antes de aplicar modificadores 
+      float currentBaseObstacleSpeed = obstacleSpeed;
+      
       // Analizar rendimiento del jugador y ajustar dificultad
       if (consecutiveCollisions > 3) {
         // Demasiado difícil, hacerlo más fácil
         ddaMultiplier = max(0.75, ddaMultiplier - 0.15);
         
-        // Aplicar modificadores
-        obstacleSpeed *= ddaMultiplier;
+        // Aplicar modificadores para no interferir con progresión
+        obstacleSpeed = currentBaseObstacleSpeed * ddaMultiplier;
         
         // Aumentar el intervalo entre obstáculos para dar más respiro al jugador
         obstacleManager.obstacleInterval = min(obstacleManager.obstacleInterval + 15, 180);
@@ -810,11 +870,10 @@ class Game {
         // Demasiado fácil, hacerlo más difícil
         ddaMultiplier = min(1.15, ddaMultiplier + 0.05);
         
-        // Aplicar modificadores
-        obstacleSpeed *= ddaMultiplier;
+        // Aplicar modificadores 
+        obstacleSpeed = currentBaseObstacleSpeed * ddaMultiplier;
         
         // Reducir el intervalo con un límite más conservador según el nivel de dificultad
-        // para evitar que se vuelva imposible
         float minIntervalBasedOnDifficulty = 60 + (difficultyLevel * 1.5);
         obstacleManager.obstacleInterval = max(obstacleManager.obstacleInterval - 5, minIntervalBasedOnDifficulty);
       }

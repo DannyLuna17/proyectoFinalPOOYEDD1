@@ -2,6 +2,7 @@ class Player {
   float x, y;
   float size;
   float groundY;
+  float restingY; // Posición vertical donde el jugador descansa en el suelo
   float vSpeed = 0;
   float gravity = 0.5;
   float jumpForce = -4.5;
@@ -95,7 +96,7 @@ class Player {
   // Animación de salto
   boolean playingJumpAnimation = false; 
   int jumpAnimationTimer = 0;          // Contador para la duración de la animación
-  int jumpAnimationDuration = 120;      // Duración de la animación en frames 
+  int jumpAnimationDuration = 90;      // Duración de la animación en frames (1.5 segundos a 60 FPS)
   
   // Animación de corrida
   boolean playingRunningAnimation = false;  // Si está reproduciendo la animación de correr
@@ -108,8 +109,9 @@ class Player {
     AccessibilityManager am = new AccessibilityManager();
     SoundManager sm = new SoundManager(am);
     this.x = x;
-    this.groundY = groundY + 15;
-    this.y = groundY + 55;
+    this.groundY = groundY + 10;
+    this.restingY = this.groundY + 40; // Calcular posición de reposo consistente
+    this.y = this.restingY; // Usar la posición de reposo
     this.size = 90;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
@@ -120,8 +122,9 @@ class Player {
   // Constructor principal
   Player(float x, float groundY, AccessibilityManager accessManager, SoundManager soundManager) {
     this.x = x;
-    this.groundY = groundY + 15;
-    this.y = groundY + 55;
+    this.groundY = groundY + 10;
+    this.restingY = this.groundY + 55; // Calcular posición de reposo consistente
+    this.y = this.restingY; // Usar la posición de reposo
     this.size = 250;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
@@ -132,8 +135,9 @@ class Player {
   // Constructor con AssetManager
   Player(float x, float groundY, AccessibilityManager accessManager, SoundManager soundManager, AssetManager assetManager) {
     this.x = x;
-    this.groundY = groundY + 15;
-    this.y = groundY + 55;
+    this.groundY = groundY + 10;
+    this.restingY = this.groundY + 40; // Calcular posición de reposo consistente
+    this.y = this.restingY; // Usar la posición de reposo
     this.size = 135;
     this.currentColor = normalColor;
     this.baseSpeed = 0;
@@ -145,6 +149,9 @@ class Player {
     if (assetManager != null) {
       characterImage = assetManager.getCharacterImage();
       shadowImage = assetManager.getShadowImage();
+      
+      // Iniciar la animación de correr automáticamente al crear el jugador
+      startRunning();
     }
   }
   
@@ -238,57 +245,17 @@ class Player {
     // Manejar la animación de salto
     if (playingJumpAnimation) {
       jumpAnimationTimer++;
-      // Detener la animación cuando termine el tiempo o cuando el jugador toque el suelo
-      if (jumpAnimationTimer >= jumpAnimationDuration || !isJumping) {
+      // Solo detener la animación cuando termine el tiempo completo
+      // No depender del estado isJumping para que la animación se vea completa
+      if (jumpAnimationTimer >= jumpAnimationDuration) {
         playingJumpAnimation = false;
         jumpAnimationTimer = 0;
       }
     }
     
-    // Manejar la animación de corrida
-    updateRunningState();
-  }
-  
-  void updateRunningState() {
-    // El jugador está "corriendo" cuando el mundo se mueve (obstacleSpeed > 0) y no está saltando ni deslizándose
-    boolean shouldBeRunning = !isJumping && !isSliding && !isInAir();
-    
-    // Transiciones de estado de corrida
-    if (shouldBeRunning && !isRunning) {
-      // Comenzar a correr
-      startRunning();
-    } else if (!shouldBeRunning && isRunning) {
-      // Dejar de correr
-      stopRunning();
-    }
-    
-    // Actualizar la animación de corrida si está activa
-    if (playingRunningAnimation) {
-      // Asegurarse de que el AssetManager esté disponible y controlar la animación
-      if (assetManager != null) {
-      }
-    }
-  }
-  
-  // Método para iniciar la corrida  
-  void startRunning() {
-    isRunning = true;
-    playingRunningAnimation = true;
-    
-    // Inicializar la animación en el AssetManager si está disponible
-    if (assetManager != null) {
-      assetManager.startRunningAnimation();
-    }
-  }
-  
-  // Método para detener la corrida  
-  void stopRunning() {
-    isRunning = false;
-    playingRunningAnimation = false;
-    
-    // Detener la animación en el AssetManager si está disponible
-    if (assetManager != null) {
-      assetManager.stopRunningAnimation();
+    // Manejar la animación de corrida - siempre debe estar activa
+    if (!isRunning || !playingRunningAnimation) {
+      startRunning(); // Asegurar que siempre esté corriendo
     }
   }
   
@@ -317,17 +284,15 @@ class Player {
       y += vSpeed;
       
       // Comprobar si aterrizamos en el suelo
-      if (y >= groundY) {
-        y = groundY;
+      if (y >= restingY) { // Usar restingY en lugar de groundY para mantener consistencia
+        y = restingY; // Aterrizar en la misma posición que al inicio
         vSpeed = 0;
         isJumping = false;
         isPlatformJump = false;
         jumpHoldTime = 0;
         isOnPlatform = false;
         currentPlatform = null;
-        // Detener la animación de salto cuando aterrizamos
-        playingJumpAnimation = false;
-        jumpAnimationTimer = 0;
+        // La animación de salto continuará hasta completarse por su propio timer
       }
     }
   }
@@ -365,9 +330,7 @@ class Player {
           vSpeed = 0;
           isJumping = false;
           jumpHoldTime = 0;
-          // Detener la animación de salto cuando aterrizamos en plataforma
-          playingJumpAnimation = false;
-          jumpAnimationTimer = 0;
+          // La animación de salto continuará hasta completarse por su propio timer
         }
       }
     }
@@ -453,6 +416,11 @@ class Player {
     
     color adjustedCurrentColor = accessManager.getForegroundColor(currentColor);
     
+    // Debug: imprimir estado de las animaciones
+    if (frameCount % 60 == 0) { // Cada segundo
+      println("DEBUG - Jump anim: " + playingJumpAnimation + ", Running anim: " + playingRunningAnimation);
+    }
+    
     // Dibujar escudo
     if (hasShield) {
       pushStyle();
@@ -481,10 +449,10 @@ class Player {
     }
     
     // Determinar si usar imágenes o formas geométricas basado en accesibilidad y disponibilidad
+    // Con filtros overlay, siempre preferir las imágenes originales si están disponibles
     boolean useImages = assetManager != null && 
                        characterImage != null && 
-                       shadowImage != null && 
-                       !accessManager.highContrastMode;
+                       shadowImage != null;
     
     if (useImages) {
       // Dibujar sombra mejorada
@@ -498,28 +466,27 @@ class Player {
       
       // La sombra se proyecta en el suelo o plataforma donde está el jugador
       if (isSliding) {
-        // Sombra en posición de deslizamiento
-        shadowY = y + 2;
+        // Sombra en posición de deslizamiento - justo debajo del jugador
+        shadowY = y + size/3; // Pequeño offset debajo del personaje deslizándose
         shadowWidth = size * 1.4;
         shadowHeight = size * 0.35;
       } else {
-        // Sombra en posición normal
-        shadowY = y + 2;
+        // Sombra en posición normal - justo debajo de los pies
+        shadowY = y + size/12; // Pequeño offset debajo de los pies del personaje
         shadowWidth = size * 1.1;
         shadowHeight = size * 0.35;
       }
       
       // La sombra se achata más cuando el personaje está más alto (efecto perspectiva)
-      float heightFromGround = groundY - y;
+      float heightFromGround = restingY - y; // Usar restingY como base para calcular la altura del jugador
       if (isJumping && heightFromGround > 0) {
         // Reducir tamaño de sombra proporcionalmente a la altura
         float reductionFactor = map(heightFromGround, 0, 200, 1.0, 0.5);
         shadowWidth *= reductionFactor;
         shadowHeight *= reductionFactor;
         
-        // Aplicar ligero desplazamiento para simular perspectiva
-        float shadowOffset = map(heightFromGround, 0, 200, 0, size/2);
-        shadowY = groundY - 2; // La sombra siempre está en el suelo/plataforma
+        // Cuando está saltando, la sombra se proyecta en el suelo pero sigue siendo visible
+        shadowY = restingY + size/12; // Proyectar la sombra en el nivel del suelo
       }
       
       // Dibujar la sombra en la posición calculada
@@ -543,8 +510,8 @@ class Player {
         }
         
         image(characterImage, 0, 0, size * 0.8, size * 1.2);
-      } else if (playingJumpAnimation && assetManager != null) {
-        // Mostrar animación de salto cuando está saltando
+      } else if (playingJumpAnimation) {
+        // PRIORIDAD 1: Mostrar animación de salto cuando está activa
         translate(x, y - size/2); // Aplicar transformación para posicionar correctamente
         
         // Aplicar efecto de parpadeo si es invencible
@@ -552,13 +519,22 @@ class Player {
           tint(255, 255, 100);
         }
         
-        // Usar el método optimizado que elimina automáticamente los fondos negros
-        PImage jumpImage = assetManager.getCleanJumpAnimationImage();
-        
-        // Dibujar la animación de salto sin artefactos negros
-        image(jumpImage, 0, 0, size*1.2, size*1.2);
-      } else if (playingRunningAnimation && assetManager != null) {
-        // Mostrar animación de corrida cuando está corriendo
+        // Obtener el GIF de salto directamente
+        if (assetManager != null && assetManager.isJumpAnimationGifActive()) {
+          Gif jumpGif = assetManager.getJumpAnimationGif();
+          if (jumpGif != null) {
+            // Dibujar el GIF de salto
+            image(jumpGif, 0, 0, size*1.2, size*1.2);
+          } else {
+            // Fallback
+            image(characterImage, 0, 0, size, size);
+          }
+        } else {
+          // Fallback si no hay AssetManager
+          image(characterImage, 0, 0, size, size);
+        }
+      } else if (playingRunningAnimation) {
+        // PRIORIDAD 2: Mostrar animación de corrida
         translate(x, y - size/2); // Posicionar correctamente
         
         // Aplicar efecto de parpadeo si es invencible
@@ -566,22 +542,22 @@ class Player {
           tint(255, 255, 100);
         }
         
-        // Usar el método optimizado que elimina automáticamente los fondos negros
-        PImage runningImage = assetManager.getCleanRunningAnimationImage();
-        
-        // Verificar que la imagen sea válida antes de dibujarla
-        if (runningImage != null && runningImage.width > 0 && runningImage.height > 0) {
-          // Dibujar la animación de corrida sin artefactos
-          image(runningImage, 0, 0, size, size);
-        } else {
-          // Fallback de seguridad: usar la imagen de personaje normal si algo falla
-          if (isInvincible && invincibilityTimer % 10 < 5) {
-            tint(255, 255, 100);
+        // Obtener el GIF de correr directamente
+        if (assetManager != null && assetManager.isRunningAnimationGifActive()) {
+          Gif runningGif = assetManager.getRunningAnimationGif();
+          if (runningGif != null) {
+            // Dibujar el GIF de correr
+            image(runningGif, 0, 0, size, size);
+          } else {
+            // Fallback
+            image(characterImage, 0, 0, size, size);
           }
-          image(characterImage, x, y - size/2, size, size);
+        } else {
+          // Fallback si no hay AssetManager
+          image(characterImage, 0, 0, size, size);
         }
       } else {
-        // Personaje en posición normal (idle)
+        // Personaje en posición normal (idle) - solo si no hay animaciones activas
         // Aplicar efecto de parpadeo si es invencible
         if (isInvincible && invincibilityTimer % 10 < 5) {
           tint(255, 255, 100);
@@ -596,16 +572,19 @@ class Player {
       // Dibujar sombra para modo accesibilidad
       pushStyle();
       fill(0, 100);
-      float shadowY = groundY - 2;
+      // Sombra justo debajo del jugador, similar al modo con imágenes
+      float shadowY = y + size/4; // Pequeño offset debajo de los pies
       float shadowWidth = size * (isSliding ? 1.3 : 1.0);
       float shadowHeight = size * 0.2;
       
       // Si está saltando, ajustar tamaño de sombra
       if (isJumping) {
-        float heightFromGround = groundY - y;
+        float heightFromGround = restingY - y;
         float reductionFactor = map(heightFromGround, 0, 200, 1.0, 0.5);
         shadowWidth *= reductionFactor;
         shadowHeight *= reductionFactor;
+        // Cuando salta, proyectar la sombra en el suelo
+        shadowY = restingY + size/4;
       }
       
       ellipse(x, shadowY, shadowWidth, shadowHeight);
@@ -669,10 +648,8 @@ class Player {
       isJumping = true;
       spacePressed = true;
       
-      // Detener la animación de corrida si estaba activa 
-      if (playingRunningAnimation) {
-        stopRunning();
-      }
+      // Ya no detenemos la animación de correr al saltar
+      // El jugador puede correr en el aire también
       
       // Iniciar la animación de salto
       playingJumpAnimation = true;
@@ -734,7 +711,7 @@ class Player {
   
   // Para saber si está en el aire (no en el suelo ni en plataforma)
   boolean isInAir() {
-    return isJumping && !isOnPlatform && y < groundY;
+    return isJumping && !isOnPlatform && y < restingY; // Usar restingY para verificar correctamente si está en el aire
   }
   
   // Para saber si está muerto
@@ -969,8 +946,8 @@ class Player {
   
   // Método para reiniciar el jugador a su estado inicial
   void reset() {
-    // Reiniciar posición
-    y = groundY;
+    // Reiniciar posición usando la misma altura que al inicio
+    y = restingY; // Usar restingY para mantener consistencia de altura
     
     // Reiniciar estados
     isJumping = false;
@@ -984,10 +961,9 @@ class Player {
     playingJumpAnimation = false;
     jumpAnimationTimer = 0;
     
-    // Reiniciar animación de corrida
-    playingRunningAnimation = false;
-    isRunning = false;
-    lastObstacleSpeed = 0;
+    // Iniciar automáticamente la animación de corrida
+    // El jugador siempre está corriendo en el juego
+    startRunning();
     
     // Reiniciar plataformas
     isOnPlatform = false;
@@ -1076,6 +1052,28 @@ class Player {
       currentPlatform = null;
       isJumping = true;
       vSpeed = 0;
+    }
+  }
+  
+  // Método para iniciar la corrida  
+  void startRunning() {
+    isRunning = true;
+    playingRunningAnimation = true;
+    
+    // Inicializar la animación en el AssetManager si está disponible
+    if (assetManager != null) {
+      assetManager.startRunningAnimation();
+    }
+  }
+  
+  // Método para detener la corrida  
+  void stopRunning() {
+    isRunning = false;
+    playingRunningAnimation = false;
+    
+    // Detener la animación en el AssetManager si está disponible
+    if (assetManager != null) {
+      assetManager.stopRunningAnimation();
     }
   }
 }

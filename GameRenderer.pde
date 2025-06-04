@@ -112,6 +112,12 @@ class GameRenderer {
     
     renderCurrentGameState();
     displayAccessibilityHelpers();
+    
+    // Aplicar filtros de accesibilidad como overlay al final de todo
+    // Esto asegura que afecten a todos los elementos visuales del juego
+    // El orden importa: primero alto contraste, luego daltonismo
+    accessManager.applyHighContrastFilter();
+    accessManager.applyColorBlindFilter();
   }
   
   void renderCurrentGameState() {

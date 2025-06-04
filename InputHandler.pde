@@ -109,6 +109,32 @@ class InputHandler {
         selectedMenuItem = 3; // Posicionar en la primera opción de accesibilidad
         menu.updateSelectedItem(getGameState(), selectedMenuItem);
       }
+    } else if (key == 'c' || key == 'C') {
+      // Atajo rápido para alternar el filtro de daltonismo
+      // Funciona desde cualquier pantalla para mayor accesibilidad
+      accessManager.toggleColorBlindMode();
+      // Si estamos en el menú de configuración, actualizar el texto del botón
+      if (getGameState() == STATE_SETTINGS) {
+        menu.updateSettingsButtonText();
+      }
+      // Mostrar confirmación visual
+      if (accessManager.visualCuesForAudio) {
+        String status = accessManager.colorBlindMode ? "activado" : "desactivado";
+        accessManager.displaySoundCue("Filtro daltonismo " + status, width/2, height/2);
+      }
+    } else if (key == 'h' || key == 'H') {
+      // Atajo rápido para alternar el filtro de alto contraste
+      // Funciona desde cualquier pantalla para mayor accesibilidad
+      accessManager.toggleHighContrastMode();
+      // Si estamos en el menú de configuración, actualizar el texto del botón
+      if (getGameState() == STATE_SETTINGS) {
+        menu.updateSettingsButtonText();
+      }
+      // Mostrar confirmación visual
+      if (accessManager.visualCuesForAudio) {
+        String status = accessManager.highContrastMode ? "activado" : "desactivado";
+        accessManager.displaySoundCue("Alto contraste " + status, width/2, height/2);
+      }
     } else if (keyCode == ESC) {
       handleEscapeKey();
       key = 0; // Evitar que Processing salga
