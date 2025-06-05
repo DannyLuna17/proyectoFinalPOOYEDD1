@@ -153,17 +153,24 @@ class ObstacleManager {
   }
   
   void createRandomObstacle() {
-    // Incluir tipos con diferentes probabilidades según dificultad
+    // Incluir tipos con diferentes probabilidade
     ArrayList<Integer> availableTypes = new ArrayList<Integer>();
     
     // Siempre incluir tipos básicos
     availableTypes.add(0); // Básico
-    availableTypes.add(1); // Alto
+    // Baja probabilidad de obstaculo alto
+    if (random(1) < 0.03) {
+      availableTypes.add(1); // Alto
+    }
     availableTypes.add(2); // Bajo
     
     availableTypes.add(4); // Nube tóxica
     
-    // Seleccionar tipo aleatorio
+    // Seleccionar tipo aleatorio, aumentar probabilidad de nube tóxica, más que los demás sin importar puntaje
+    availableTypes.add(4); // Nube tóxica
+    availableTypes.add(4); // Nube tóxica
+    availableTypes.add(4); // Nube tóxica
+    
     int randomIndex = int(random(availableTypes.size()));
     int obstacleType = availableTypes.get(randomIndex);
     createObstacleByType(obstacleType);

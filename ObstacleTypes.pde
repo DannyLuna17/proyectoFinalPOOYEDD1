@@ -6,16 +6,17 @@
 
 // Obstáculo alto (requiere saltar)
 class TallObstacle extends Obstacle {
+  // Aumentar ancho de obstáculo alto
   TallObstacle(float x, float y) {
-    super(x, y, 45, 180, 5.0, 2, new AccessibilityManager());
+    super(x, y, 120, 180, 5.0, 2, new AccessibilityManager());
   }
   
   TallObstacle(float x, float y, AccessibilityManager accessManager) {
-    super(x, y, 45, 180, 5.0, 2, accessManager);
+    super(x, y, 120, 180, 5.0, 2, accessManager);
   }
   
   TallObstacle(float x, float y, AccessibilityManager accessManager, AssetManager assetManager) {
-    super(x, y, 45, 180, 5.0, 2, accessManager, assetManager);
+    super(x, y, 120, 180, 5.0, 2, accessManager, assetManager);
   }
 }
 
