@@ -15,6 +15,8 @@ class AssetManager {
   private PImage scaledBackground;
   private PImage menuBackground;
   private PImage finalBackground;
+  private PImage nightBackground;
+  private PImage scaledNightBackground;
   private PImage instructionsImage; // Imagen para la pantalla de instrucciones
   private PImage floorImage;        // Imagen para el suelo
   
@@ -84,6 +86,7 @@ class AssetManager {
     backgroundImage = loadImage("assets/fondo1.png");
     menuBackground = loadImage("assets/menuFinal.png");
     finalBackground = loadImage("assets/menuFinal.png");
+    nightBackground = loadImage("assets/nocturno.png"); // Cargar el fondo nocturno
     
     // Cargar imagen de instrucciones
     instructionsImage = loadImage("assets/instrucciones.png");
@@ -344,6 +347,11 @@ class AssetManager {
     if (backgroundImage != null) {
       scaledBackground = backgroundImage.copy();
       scaledBackground.resize(w, h);
+    }
+    // También escalar el fondo nocturno si está disponible
+    if (nightBackground != null) {
+      scaledNightBackground = nightBackground.copy();
+      scaledNightBackground.resize(w, h);
     }
   }
   
@@ -919,5 +927,13 @@ class AssetManager {
     }
     
     return false;
+  }
+  
+  PImage getNightBackground() {
+    return nightBackground;
+  }
+  
+  PImage getScaledNightBackground() {
+    return scaledNightBackground;
   }
 }

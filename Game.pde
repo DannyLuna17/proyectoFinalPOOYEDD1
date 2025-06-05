@@ -42,6 +42,13 @@ class Game {
   float bgX = 0; // Posición de desplazamiento
   int scaledBgWidth; // Ancho redimensionado
   
+  // Variables para transición nocturna
+  PImage scaledNightBackground; // Imagen nocturna escalada
+  int scoreForNightTransition = 500; // Puntaje para empezar la transición (ajustable!)
+  float nightTransitionProgress = 0.0; // Progreso de la transición (0.0 a 1.0)
+  float nightTransitionSpeed = 0.001; // Velocidad de la transición
+  boolean nightTransitionStarted = false; // Si la transición ya empezó
+  
   // Parámetros del juego
   float scrollSpeed = 5;
   float baseObstacleSpeed = 5;
@@ -328,6 +335,10 @@ class Game {
       backgroundX[0] = 0;
       backgroundX[1] = width;
       
+      // Resetear variables de transición nocturna
+      nightTransitionProgress = 0.0;
+      nightTransitionStarted = false;
+      
       // Dificultad
       difficultyLevel = 1;
       lastDifficultyIncrease = 0;
@@ -467,10 +478,18 @@ class Game {
         // Obtener la versión escalada
         scaledBackground = assetManager.getScaledBackground();
         
+        // También obtener el fondo nocturno escalado
+        scaledNightBackground = assetManager.getScaledNightBackground();
+        
         // Guardar ancho escalado
         if (scaledBackground != null) {
           scaledBgWidth = scaledBackground.width;
           println("Fondo cargado desde AssetManager y escalado: " + scaledBgWidth + "x" + height);
+        }
+        
+        // Verificar que el fondo nocturno también se cargó
+        if (scaledNightBackground != null) {
+          println("Fondo nocturno cargado y escalado correctamente");
         }
       } else {
         // Cargar la imagen original
@@ -1060,25 +1079,83 @@ class Game {
   }
   
   void displayBackground() {
-    // Dibujar fondo desplazable optimizado con máxima eficiencia
+    // Chequear si debemos empezar la transición nocturna
+    if (!nightTransitionStarted && scoreManager.getScore() >= scoreForNightTransition) {
+      nightTransitionStarted = true;
+      collectibleManager.addFloatingText("¡La noche se acerca!", width/2, height/2, color(150, 150, 255));
+    }
+    
+    // Actualizar el progreso de la transición si ya empezó
+    if (nightTransitionStarted && nightTransitionProgress < 1.0) {
+      nightTransitionProgress += nightTransitionSpeed;
+      nightTransitionProgress = constrain(nightTransitionProgress, 0.0, 1.0);
+    }
+    
+    // Dibujar fondo desplazable con transición
     if (scaledBackground != null) {
-      // Solo dibujamos las partes visibles de la imagen
-      // Primera parte: desde bgX hasta el borde
-      int visibleWidth = min(width, scaledBgWidth - int(bgX));
-      
-      if (visibleWidth > 0) {
-        // Solo copiamos la parte visible de la imagen
-        copy(scaledBackground, 
-             int(bgX), 0, visibleWidth, height, 
-             0, 0, visibleWidth, height);
+      // Primero dibujamos el fondo normal (de día)
+      if (nightTransitionProgress < 1.0) {
+        // Solo dibujamos las partes visibles de la imagen
+        int visibleWidth = min(width, scaledBgWidth - int(bgX));
+        
+        if (visibleWidth > 0) {
+          copy(scaledBackground, 
+               int(bgX), 0, visibleWidth, height, 
+               0, 0, visibleWidth, height);
+        }
+        
+        // Si necesitamos mostrar más contenido (cuando la posición está cerca del final)
+        if (visibleWidth < width) {
+          copy(scaledBackground, 
+               0, 0, width - visibleWidth, height, 
+               visibleWidth, 0, width - visibleWidth, height);
+        }
       }
       
-      // Si necesitamos mostrar más contenido (cuando la posición está cerca del final)
-      if (visibleWidth < width) {
-        // Segunda parte: desde el inicio hasta completar la pantalla
-        copy(scaledBackground, 
-             0, 0, width - visibleWidth, height, 
-             visibleWidth, 0, width - visibleWidth, height);
+      // Ahora dibujamos el fondo nocturno con transición
+      if (nightTransitionProgress > 0.0 && scaledNightBackground != null) {
+        // Calculamos cuánto del fondo nocturno mostrar (de derecha a izquierda)
+        int nightWidth = int(width * nightTransitionProgress);
+        int nightStartX = width - nightWidth;
+        
+        // Usamos tint para hacer una transición más suave
+        pushStyle();
+        tint(255); // Sin transparencia, queremos el efecto de "barrido"
+        
+        // Dibujamos la porción nocturna del fondo
+        // Necesitamos calcular qué parte del fondo nocturno mostrar considerando el scroll
+        int srcX = int(bgX + nightStartX) % scaledBgWidth;
+        int srcWidth = nightWidth;
+        
+        // Si la sección cruza el borde de la imagen, la dividimos
+        if (srcX + srcWidth > scaledBgWidth) {
+          // Primera parte (final de la imagen)
+          int firstPartWidth = scaledBgWidth - srcX;
+          copy(scaledNightBackground,
+               srcX, 0, firstPartWidth, height,
+               nightStartX, 0, firstPartWidth, height);
+          
+          // Segunda parte (inicio de la imagen)
+          int secondPartWidth = srcWidth - firstPartWidth;
+          copy(scaledNightBackground,
+               0, 0, secondPartWidth, height,
+               nightStartX + firstPartWidth, 0, secondPartWidth, height);
+        } else {
+          // La sección no cruza el borde, copiar directamente
+          copy(scaledNightBackground,
+               srcX, 0, srcWidth, height,
+               nightStartX, 0, srcWidth, height);
+        }
+        
+        // Dibujamos una línea suave de transición entre día y noche
+        // pa' que se vea más cool el cambio
+        for (int i = 0; i < 20; i++) {
+          float alpha = map(i, 0, 19, 100, 0);
+          stroke(150, 150, 200, alpha);
+          line(nightStartX - i, 0, nightStartX - i, height);
+        }
+        
+        popStyle();
       }
     } else {
       // Fondo de respaldo cuando la imagen no está disponible
