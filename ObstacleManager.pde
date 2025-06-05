@@ -161,12 +161,7 @@ class ObstacleManager {
     availableTypes.add(1); // Alto
     availableTypes.add(2); // Bajo
     
-    // Nubes tóxicas (tipo 4) aparecen con menos frecuencia
-    // A mayor dificultad, menos nubes tóxicas para compensar
-    float toxicCloudProbability = map(scoreBasedDifficultyLevel, 1, 15, 0.25, 0.1);
-    if (random(1) < toxicCloudProbability) {
-      availableTypes.add(4); // Nube tóxica
-    }
+    availableTypes.add(4); // Nube tóxica
     
     // Seleccionar tipo aleatorio
     int randomIndex = int(random(availableTypes.size()));

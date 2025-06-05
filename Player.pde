@@ -109,8 +109,8 @@ class Player {
     AccessibilityManager am = new AccessibilityManager();
     SoundManager sm = new SoundManager(am);
     this.x = x;
-    this.groundY = groundY + 10;
-    this.restingY = this.groundY + 40; // Calcular posición de reposo consistente
+    this.groundY = groundY;
+    this.restingY = this.groundY + 15; // Calcular posición de reposo consistente
     this.y = this.restingY; // Usar la posición de reposo
     this.size = 90;
     this.currentColor = normalColor;
@@ -122,8 +122,8 @@ class Player {
   // Constructor principal
   Player(float x, float groundY, AccessibilityManager accessManager, SoundManager soundManager) {
     this.x = x;
-    this.groundY = groundY + 10;
-    this.restingY = this.groundY + 55; // Calcular posición de reposo consistente
+    this.groundY = groundY;
+    this.restingY = this.groundY + 15; // Calcular posición de reposo consistente
     this.y = this.restingY; // Usar la posición de reposo
     this.size = 250;
     this.currentColor = normalColor;
@@ -135,8 +135,8 @@ class Player {
   // Constructor con AssetManager
   Player(float x, float groundY, AccessibilityManager accessManager, SoundManager soundManager, AssetManager assetManager) {
     this.x = x;
-    this.groundY = groundY + 10;
-    this.restingY = this.groundY + 40; // Calcular posición de reposo consistente
+    this.groundY = groundY;
+    this.restingY = this.groundY + 15; // Calcular posición de reposo consistente
     this.y = this.restingY; // Usar la posición de reposo
     this.size = 135;
     this.currentColor = normalColor;
